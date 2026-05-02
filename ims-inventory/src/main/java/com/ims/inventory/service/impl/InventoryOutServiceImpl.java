@@ -1,0 +1,135 @@
+package com.ims.inventory.service.impl;
+
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.ims.core.dto.PageResult;
+import com.ims.inventory.entity.InventoryOut;
+import com.ims.inventory.entity.InventoryOutDetail;
+import com.ims.inventory.mapper.InventoryOutDetailMapper;
+import com.ims.inventory.mapper.InventoryOutMapper;
+import com.ims.inventory.service.InventoryOutService;
+import com.ims.inventory.service.InventoryService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
+
+/**
+ * 出库单 Service 实现
+ */
+@Service
+public class InventoryOutServiceImpl extends ServiceImpl<InventoryOutMapper, InventoryOut> implements InventoryOutService {
+    
+    @Autowired
+    private InventoryOutDetailMapper outDetailMapper;
+    @Autowired
+    private InventoryService inventoryService;
+
+    @Override
+    public PageResult<InventoryOut> pageOut(Long page, Long pageSize, Long warehouseId, Integer outType, Integer status) {
+        LambdaQueryWrapper<InventoryOut> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(warehouseId != null, InventoryOut::getWarehouseId, warehouseId)
+               .eq(outType != null, InventoryOut::getOutType, outType)
+               .eq(status != null, InventoryOut::getStatus, status)
+               .orderByDesc(InventoryOut::getId);
+        
+        Page<InventoryOut> result = this.page(new Page<>(page, pageSize), wrapper);
+        return PageResult.of(result);
+    }
+
+    @Override
+    public InventoryOut getOutById(Long id) {
+        return this.getById(id);
+    }
+
+    @Override
+    public List<InventoryOutDetail> getOutDetails(Long outId) {
+        return outDetailMapper.selectList(new LambdaQueryWrapper<InventoryOutDetail>()
+            .eq(InventoryOutDetail::getOutId, outId));
+    }
+
+    @Override
+    public boolean saveOut(InventoryOut out) {
+        if (out.getId() == null) {
+            out.setOutNo(generateOutNo());
+            out.setOutDate(LocalDateTime.now());
+            out.setStatus(1);
+            return this.save(out);
+        }
+        return this.updateById(out);
+    }
+
+    @Override
+    @Transactional
+    public boolean saveOutWithDetails(InventoryOut out, List<InventoryOutDetail> details) {
+        if (out.getId() == null) {
+            out.setOutNo(generateOutNo());
+            out.setOutDate(LocalDateTime.now());
+            out.setStatus(1);
+            this.save(out);
+            
+            BigDecimal total = BigDecimal.ZERO;
+            for (InventoryOutDetail detail : details) {
+                detail.setOutId(out.getId());
+                detail.setAmount(detail.getPrice().multiply(detail.getQuantity()));
+                outDetailMapper.insert(detail);
+                total = total.add(detail.getAmount());
+            }
+            out.setTotalAmount(total);
+            this.updateById(out);
+        }
+        return true;
+    }
+
+    @Override
+    @Transactional
+    public boolean auditOut(Long id, Long auditorId) {
+        InventoryOut out = this.getById(id);
+        if (out == null || out.getStatus() != 1) {
+            return false;
+        }
+        
+        // 获取出库明细
+        List<InventoryOutDetail> details = getOutDetails(id);
+        
+        // 扣减库存
+        for (InventoryOutDetail detail : details) {
+            inventoryService.reduceStock(
+                detail.getProductId(),
+                out.getWarehouseId(),
+                detail.getLocationId(),
+                detail.getQuantity(),
+                detail.getBatchNo(),
+                "INVENTORY_OUT",
+                id
+            );
+        }
+        
+        // 更新状态
+        out.setStatus(2);
+        out.setAuditorId(auditorId);
+        out.setAuditTime(LocalDateTime.now());
+        
+        return this.updateById(out);
+    }
+
+    @Override
+    @Transactional
+    public boolean cancelOut(Long id) {
+        InventoryOut out = this.getById(id);
+        if (out == null || out.getStatus() != 1) {
+            return false;
+        }
+        
+        out.setStatus(3);
+        return this.updateById(out);
+    }
+    
+    private String generateOutNo() {
+        return "OUT" + System.currentTimeMillis();
+    }
+}
