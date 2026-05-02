@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ims.sales.mapper.SalesOutDetailMapper">
+
+    <resultMap id="BaseResultMap" type="com.ims.sales.entity.SalesOutDetail">
+        <id column="id" property="id"/>
+        <result column="out_id" property="outId"/>
+        <result column="out_no" property="outNo"/>
+        <result column="order_detail_id" property="orderDetailId"/>
+        <result column="product_id" property="productId"/>
+        <result column="product_name" property="productName"/>
+        <result column="spec" property="spec"/>
+        <result column="unit" property="unit"/>
+        <result column="quantity" property="quantity"/>
+        <result column="price" property="price"/>
+        <result column="amount" property="amount"/>
+        <result column="created_at" property="createdAt"/>
+    </resultMap>
+
+    <sql id="baseColumns">
+        id, out_id, out_no, order_detail_id, product_id, product_name, spec, unit, quantity, price, amount, created_at
+    </sql>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="baseColumns"/>
+        FROM sales_out_detail
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectByOutId" resultMap="BaseResultMap">
+        SELECT <include refid="baseColumns"/>
+        FROM sales_out_detail
+        WHERE out_id = #{outId}
+    </select>
+
+    <select id="selectByOutNo" resultMap="BaseResultMap">
+        SELECT <include refid="baseColumns"/>
+        FROM sales_out_detail
+        WHERE out_no = #{outNo}
+    </select>
+
+    <insert id="insert" parameterType="com.ims.sales.entity.SalesOutDetail">
+        INSERT INTO sales_out_detail (
+            id, out_id, out_no, order_detail_id, product_id, product_name, spec, unit, quantity, price, amount, created_at
+        ) VALUES (
+            #{id}, #{outId}, #{outNo}, #{orderDetailId}, #{productId}, #{productName}, #{spec}, #{unit}, #{quantity}, #{price}, #{amount}, #{createdAt}
+        )
+    </insert>
+
+    <insert id="batchInsert" parameterType="list">
+        INSERT INTO sales_out_detail (
+            id, out_id, out_no, order_detail_id, product_id, product_name, spec, unit, quantity, price, amount, created_at
+        ) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.id}, #{item.outId}, #{item.outNo}, #{item.orderDetailId}, #{item.productId}, #{item.productName}, #{item.spec}, #{item.unit}, #{item.quantity}, #{item.price}, #{item.amount}, #{item.createdAt})
+        </foreach>
+    </insert>
+
+    <delete id="deleteByOutId">
+        DELETE FROM sales_out_detail WHERE out_id = #{outId}
+    </delete>
+
+</mapper>
