@@ -2,6 +2,7 @@ package com.ims.finance.controller;
 
 import com.ims.core.dto.PageResult;
 import com.ims.core.dto.Result;
+import com.ims.finance.dto.FinanceStatDTO;
 import com.ims.finance.entity.*;
 import com.ims.finance.service.FinanceService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -134,5 +135,30 @@ public class FinanceController {
     @DeleteMapping("/account/{id}")
     public Result<Void> deleteAccount(@PathVariable Long id) {
         return Result.success(financeService.deleteAccount(id));
+    }
+
+    // ========== 财务报表 ==========
+    @GetMapping("/stat")
+    public Result<FinanceStatDTO> getStat() {
+        return Result.success(financeService.getStat());
+    }
+
+    // ========== 账户交易历史 ==========
+    @GetMapping("/account-trans/page")
+    public Result<PageResult<AccountTransaction>> pageAccountTrans(
+            @RequestParam(defaultValue = "1") Long page,
+            @RequestParam(defaultValue = "10") Long pageSize,
+            @RequestParam Long accountId) {
+        return Result.success(financeService.pageAccountTrans(page, pageSize, accountId));
+    }
+
+    @GetMapping("/account-trans/list")
+    public Result<List<AccountTransaction>> listAccountTrans(@RequestParam Long accountId) {
+        return Result.success(financeService.listAccountTrans(accountId));
+    }
+
+    @PostMapping("/account-trans")
+    public Result<Void> saveAccountTrans(@RequestBody AccountTransaction trans) {
+        return Result.success(financeService.saveAccountTrans(trans));
     }
 }

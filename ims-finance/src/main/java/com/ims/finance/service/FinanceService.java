@@ -3,7 +3,9 @@ package com.ims.finance.service;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.ims.core.dto.PageResult;
-import com.ims.finance.entity.*;
+import com.ims.core.dto.PageResult;
+import com.ims.finance.dto.FinanceStatDTO;
+import com.ims.finance.entity.AccountTransaction;
 import com.ims.finance.mapper.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -21,6 +23,8 @@ public class FinanceService {
     private FinanceOutMapper financeOutMapper;
     @Autowired
     private AccountMapper accountMapper;
+    @Autowired
+    private AccountTransactionMapper accountTransactionMapper;
 
     // ========== 收款管理 ==========
     public PageResult<FinanceIn> pageIn(Long page, Long pageSize, Long customerId, Integer status) {
@@ -223,5 +227,81 @@ public class FinanceService {
 
     private String generateAccountNo() {
         return "ACC" + System.currentTimeMillis();
+    }
+
+    // ========== 财务报表 ==========
+    public FinanceStatDTO getStat() {
+        // 收款统计
+        LambdaQueryWrapper<FinanceIn> wrapperIn = new LambdaQueryWrapper<>();
+        wrapperIn.select(FinanceIn::getAmount);
+        List<FinanceIn> inList = financeInMapper.selectList(wrapperIn);
+        BigDecimal totalIn = inList.stream()
+            .map(FinanceIn::getAmount)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+        
+        LambdaQueryWrapper<FinanceIn> wrapperPendingIn = new LambdaQueryWrapper<>();
+        wrapperPendingIn.eq(FinanceIn::getStatus, 1);
+        int pendingInCount = financeInMapper.selectCount(wrapperPendingIn).intValue();
+        
+        // 付款统计
+        LambdaQueryWrapper<FinanceOut> wrapperOut = new LambdaQueryWrapper<>();
+        wrapperOut.select(FinanceOut::getAmount);
+        List<FinanceOut> outList = financeOutMapper.selectList(wrapperOut);
+        BigDecimal totalOut = outList.stream()
+            .map(FinanceOut::getAmount)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+        
+        LambdaQueryWrapper<FinanceOut> wrapperPendingOut = new LambdaQueryWrapper<>();
+        wrapperPendingOut.eq(FinanceOut::getStatus, 1);
+        int pendingOutCount = financeOutMapper.selectCount(wrapperPendingOut).intValue();
+        
+        // Build stat result
+        FinanceStatDTO stat = new FinanceStatDTO();
+        stat.setTotalInAmount(totalIn);
+        stat.setTotalOutAmount(totalOut);
+        stat.setNetAmount(totalIn.subtract(totalOut));
+        stat.setPendingInCount(pendingInCount);
+        stat.setPendingOutCount(pendingOutCount);
+        stat.setTotalInCount(inList.size());
+        stat.setTotalOutCount(outList.size());
+        return stat;
+    }
+
+    // ========== 账户交易历史 ==========
+    public PageResult<AccountTransaction> pageAccountTrans(Long page, Long pageSize, Long accountId) {
+        LambdaQueryWrapper<AccountTransaction> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(accountId != null, AccountTransaction::getAccountId, accountId)
+              .orderByDesc(AccountTransaction::getId);
+        Page<AccountTransaction> result = accountTransactionMapper.selectPage(new Page<>(page, pageSize), wrapper);
+        return PageResult.of(result);
+    }
+
+    public List<AccountTransaction> listAccountTrans(Long accountId) {
+        LambdaQueryWrapper<AccountTransaction> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(AccountTransaction::getAccountId, accountId)
+              .orderByDesc(AccountTransaction::getId);
+        return accountTransactionMapper.selectList(wrapper);
+    }
+
+    @Transactional
+    public boolean saveAccountTrans(AccountTransaction trans) {
+        if (trans.getId() == null) {
+            // 更新账户余额
+            Account account = accountMapper.selectById(trans.getAccountId());
+            if (account != null) {
+                BigDecimal balance = account.getBalance();
+                if (trans.getTransType() == 1 || trans.getTransType() == 3) {
+                    // 收款入账/调整增加
+                    balance = balance.add(trans.getAmount());
+                } else {
+                    // 付款出账/调整减少
+                    balance = balance.subtract(trans.getAmount());
+                }
+                account.setBalance(balance);
+                accountMapper.updateById(account);
+            }
+            return accountTransactionMapper.insert(trans) > 0;
+        }
+        return false;
     }
 }

@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS `finance_in` (
     `order_type` VARCHAR(20) DEFAULT NULL COMMENT '来源单据类型',
     `order_id` BIGINT DEFAULT NULL COMMENT '来源单据ID',
     `order_no` VARCHAR(50) DEFAULT NULL COMMENT '来源单据号',
+    `customer_id` BIGINT DEFAULT NULL COMMENT '客户ID',
     `status` INT NOT NULL DEFAULT '1' COMMENT '状态: 1-待审核 2-已审核 3-已取消',
     `auditor_id` BIGINT DEFAULT NULL COMMENT '审核人ID',
     `audit_time` DATETIME DEFAULT NULL COMMENT '审核时间',
@@ -53,6 +54,7 @@ CREATE TABLE IF NOT EXISTS `finance_out` (
     `order_type` VARCHAR(20) DEFAULT NULL COMMENT '来源单据类型',
     `order_id` BIGINT DEFAULT NULL COMMENT '来源单据ID',
     `order_no` VARCHAR(50) DEFAULT NULL COMMENT '来源单据号',
+    `supplier_id` BIGINT DEFAULT NULL COMMENT '供应商ID',
     `status` INT NOT NULL DEFAULT '1' COMMENT '状态: 1-待审核 2-已审核 3-已取消',
     `auditor_id` BIGINT DEFAULT NULL COMMENT '审核人ID',
     `audit_time` DATETIME DEFAULT NULL COMMENT '审核时间',
@@ -65,3 +67,22 @@ CREATE TABLE IF NOT EXISTS `finance_out` (
     KEY `idx_account_id` (`account_id`),
     KEY `idx_order` (`order_type`, `order_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='支出记录表';
+
+-- 账户交易记录表
+CREATE TABLE IF NOT EXISTS `account_transaction` (
+    `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键',
+    `account_id` BIGINT NOT NULL COMMENT '账户ID',
+    `account_no` VARCHAR(50) DEFAULT NULL COMMENT '账户编号',
+    `trans_type` INT NOT NULL COMMENT '交易类型: 1-收款入账 2-付款出账 3-调整增加 4-调整减少',
+    `amount` DECIMAL(18,2) NOT NULL COMMENT '交易金额',
+    `ref_id` BIGINT DEFAULT NULL COMMENT '相关单据ID',
+    `ref_no` VARCHAR(50) DEFAULT NULL COMMENT '相关单据号',
+    `remark` VARCHAR(500) DEFAULT NULL COMMENT '备注',
+    `creator_id` BIGINT DEFAULT NULL COMMENT '经手人ID',
+    `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    `deleted` BIT(1) DEFAULT b'0' COMMENT '删除标记',
+    PRIMARY KEY (`id`),
+    KEY `idx_account_id` (`account_id`),
+    KEY `idx_ref` (`ref_type`, `ref_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='账户交易记录表';
