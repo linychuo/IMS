@@ -1,5 +1,6 @@
 package com.ims.inventory.mapper;
 
+<<<<<<< HEAD
 import com.ims.inventory.entity.InventoryOut;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -22,4 +23,15 @@ public interface InventoryOutMapper {
     int update(InventoryOut inventoryOut);
     
     int deleteById(@Param("id") Long id);
+=======
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.ims.inventory.entity.InventoryOut;
+import org.apache.ibatis.annotations.Mapper;
+
+/**
+ * 出库单 Mapper
+ */
+@Mapper
+public interface InventoryOutMapper extends BaseMapper<InventoryOut> {
+>>>>>>> 21bd09fedd2f343af76a217bcc3b0e666ca0ac30
 }
