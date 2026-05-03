@@ -3,11 +3,15 @@ package com.ims.finance.controller;
 import com.ims.core.dto.PageResult;
 import com.ims.core.dto.Result;
 import com.ims.finance.dto.FinanceStatDTO;
+import com.ims.finance.dto.FinanceTrendDTO;
+import com.ims.finance.dto.FinanceSummaryDTO;
+import com.ims.finance.dto.FinanceExportDTO;
 import com.ims.finance.entity.*;
 import com.ims.finance.service.FinanceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -160,5 +164,47 @@ public class FinanceController {
     @PostMapping("/account-trans")
     public Result<Void> saveAccountTrans(@RequestBody AccountTransaction trans) {
         return Result.success(financeService.saveAccountTrans(trans));
+    }
+
+    // ========== 财务报表(带日期范围) ==========
+    @GetMapping("/stat/range")
+    public Result<FinanceStatDTO> getStatByRange(
+            @RequestParam(required = false) LocalDate startDate,
+            @RequestParam(required = false) LocalDate endDate) {
+        return Result.success(financeService.getStatByDateRange(startDate, endDate));
+    }
+
+    // ========== 趋势分析 ==========
+    @GetMapping("/trend")
+    public Result<FinanceTrendDTO> getTrend(@RequestParam(defaultValue = "6") Integer months) {
+        return Result.success(financeService.getTrend(months));
+    }
+
+    // ========== 客户收款汇总 ==========
+    @GetMapping("/summary/customer")
+    public Result<List<FinanceSummaryDTO>> getCustomerSummary() {
+        return Result.success(financeService.getCustomerSummary());
+    }
+
+    // ========== 供应商付款汇总 ==========
+    @GetMapping("/summary/supplier")
+    public Result<List<FinanceSummaryDTO>> getSupplierSummary() {
+        return Result.success(financeService.getSupplierSummary());
+    }
+
+    // ========== 导出收款数据 ==========
+    @GetMapping("/export/in")
+    public Result<List<FinanceExportDTO>> exportIn(
+            @RequestParam(required = false) LocalDate startDate,
+            @RequestParam(required = false) LocalDate endDate) {
+        return Result.success(financeService.exportIn(startDate, endDate));
+    }
+
+    // ========== 导出付款数据 ==========
+    @GetMapping("/export/out")
+    public Result<List<FinanceExportDTO>> exportOut(
+            @RequestParam(required = false) LocalDate startDate,
+            @RequestParam(required = false) LocalDate endDate) {
+        return Result.success(financeService.exportOut(startDate, endDate));
     }
 }

@@ -5,14 +5,22 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.ims.core.dto.PageResult;
 import com.ims.core.dto.PageResult;
 import com.ims.finance.dto.FinanceStatDTO;
+import com.ims.finance.dto.FinanceTrendDTO;
+import com.ims.finance.dto.FinanceSummaryDTO;
+import com.ims.finance.dto.FinanceExportDTO;
 import com.ims.finance.entity.AccountTransaction;
 import com.ims.finance.mapper.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class FinanceService {
@@ -303,5 +311,234 @@ public class FinanceService {
             return accountTransactionMapper.insert(trans) > 0;
         }
         return false;
+    }
+
+    // ========== 财务报表(带日期范围) ==========
+    public FinanceStatDTO getStatByDateRange(LocalDate startDate, LocalDate endDate) {
+        // 收款统计
+        LambdaQueryWrapper<FinanceIn> wrapperIn = new LambdaQueryWrapper<>();
+        wrapperIn.ge(startDate != null, FinanceIn::getPayDate, startDate.atStartOfDay())
+              .le(endDate != null, FinanceIn::getPayDate, endDate.plusDays(1).atStartOfDay());
+        List<FinanceIn> inList = financeInMapper.selectList(wrapperIn);
+        BigDecimal totalIn = inList.stream()
+            .map(FinanceIn::getAmount)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+        
+        LambdaQueryWrapper<FinanceIn> wrapperPendingIn = new LambdaQueryWrapper<>();
+        wrapperPendingIn.eq(FinanceIn::getStatus, 1)
+              .ge(startDate != null, FinanceIn::getPayDate, startDate.atStartOfDay())
+              .le(endDate != null, FinanceIn::getPayDate, endDate.plusDays(1).atStartOfDay());
+        int pendingInCount = financeInMapper.selectCount(wrapperPendingIn).intValue();
+        
+        // 付款统计
+        LambdaQueryWrapper<FinanceOut> wrapperOut = new LambdaQueryWrapper<>();
+        wrapperOut.ge(startDate != null, FinanceOut::getPayDate, startDate.atStartOfDay())
+              .le(endDate != null, FinanceOut::getPayDate, endDate.plusDays(1).atStartOfDay());
+        List<FinanceOut> outList = financeOutMapper.selectList(wrapperOut);
+        BigDecimal totalOut = outList.stream()
+            .map(FinanceOut::getAmount)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+        
+        LambdaQueryWrapper<FinanceOut> wrapperPendingOut = new LambdaQueryWrapper<>();
+        wrapperPendingOut.eq(FinanceOut::getStatus, 1)
+              .ge(startDate != null, FinanceOut::getPayDate, startDate.atStartOfDay())
+              .le(endDate != null, FinanceOut::getPayDate, endDate.plusDays(1).atStartOfDay());
+        int pendingOutCount = financeOutMapper.selectCount(wrapperPendingOut).intValue();
+        
+        // Build stat result
+        FinanceStatDTO stat = new FinanceStatDTO();
+        stat.setTotalInAmount(totalIn);
+        stat.setTotalOutAmount(totalOut);
+        stat.setNetAmount(totalIn.subtract(totalOut));
+        stat.setPendingInCount(pendingInCount);
+        stat.setPendingOutCount(pendingOutCount);
+        stat.setTotalInCount(inList.size());
+        stat.setTotalOutCount(outList.size());
+        return stat;
+    }
+
+    // ========== 趋势分析 ==========
+    public FinanceTrendDTO getTrend(Integer months) {
+        if (months == null || months <= 0) {
+            months = 6; // 默认6个月
+        }
+        
+        LocalDate now = LocalDate.now();
+        List<FinanceTrendDTO.MonthlyStat> monthlyStats = new ArrayList<>();
+        
+        for (int i = 0; i < months; i++) {
+            LocalDate monthStart = now.minusMonths(i).withDayOfMonth(1);
+            LocalDate monthEnd = monthStart.plusMonths(1).minusDays(1);
+            
+            // 收款统计
+            LambdaQueryWrapper<FinanceIn> wrapperIn = new LambdaQueryWrapper<>();
+            wrapperIn.ge(FinanceIn::getPayDate, monthStart.atStartOfDay())
+                  .lt(FinanceIn::getPayDate, monthStart.plusMonths(1).atStartOfDay());
+            List<FinanceIn> inList = financeInMapper.selectList(wrapperIn);
+            BigDecimal inAmount = inList.stream()
+                .map(FinanceIn::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+            
+            // 付款统计
+            LambdaQueryWrapper<FinanceOut> wrapperOut = new LambdaQueryWrapper<>();
+            wrapperOut.ge(FinanceOut::getPayDate, monthStart.atStartOfDay())
+                  .lt(FinanceOut::getPayDate, monthStart.plusMonths(1).atStartOfDay());
+            List<FinanceOut> outList = financeOutMapper.selectList(wrapperOut);
+            BigDecimal outAmount = outList.stream()
+                .map(FinanceOut::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+            
+            FinanceTrendDTO.MonthlyStat stat = new FinanceTrendDTO.MonthlyStat();
+            stat.setMonth(monthStart.format(DateTimeFormatter.ofPattern("yyyy-MM")));
+            stat.setInAmount(inAmount);
+            stat.setOutAmount(outAmount);
+            stat.setNetAmount(inAmount.subtract(outAmount));
+            stat.setInCount(inList.size());
+            stat.setOutCount(outList.size());
+            monthlyStats.add(stat);
+        }
+        
+        // 计算增长率 (与上期比较)
+        BigDecimal growthRate = BigDecimal.ZERO;
+        if (monthlyStats.size() >= 2) {
+            FinanceTrendDTO.MonthlyStat current = monthlyStats.get(0);
+            FinanceTrendDTO.MonthlyStat previous = monthlyStats.get(1);
+            if (previous.getNetAmount().compareTo(BigDecimal.ZERO) != 0) {
+                growthRate = current.getNetAmount()
+                    .subtract(previous.getNetAmount())
+                    .divide(previous.getNetAmount(), 4, BigDecimal.ROUND_HALF_UP)
+                    .multiply(new BigDecimal("100"));
+            }
+        }
+        
+        FinanceTrendDTO trend = new FinanceTrendDTO();
+        trend.setMonthlyStats(monthlyStats);
+        trend.setGrowthRate(growthRate);
+        trend.setTotalMonths(months);
+        return trend;
+    }
+
+    // ========== 客户收款汇总 ==========
+    public List<FinanceSummaryDTO> getCustomerSummary() {
+        List<FinanceSummaryDTO> result = new ArrayList<>();
+        
+        // 获取所有收款记录并按客户分组
+        LambdaQueryWrapper<FinanceIn> wrapper = new LambdaQueryWrapper<>();
+        wrapper.select(FinanceIn::getCustomerId, FinanceIn::getAmount, FinanceIn::getStatus);
+        List<FinanceIn> inList = financeInMapper.selectList(wrapper);
+        
+        // 按客户ID分组汇总
+        List<Long> customerIds = inList.stream()
+            .map(FinanceIn::getCustomerId)
+            .distinct()
+            .collect(Collectors.toList());
+        
+        for (Long customerId : customerIds) {
+            if (customerId == null) continue;
+            
+            List<FinanceIn> customerInList = inList.stream()
+                .filter(in -> customerId.equals(in.getCustomerId()))
+                .collect(Collectors.toList());
+            
+            BigDecimal totalAmount = customerInList.stream()
+                .map(FinanceIn::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+            
+            int pendingCount = (int) customerInList.stream()
+                .filter(in -> in.getStatus() == 1)
+                .count();
+            
+            FinanceSummaryDTO summary = new FinanceSummaryDTO();
+            summary.setId(customerId);
+            summary.setTotalInAmount(totalAmount);
+            summary.setNetAmount(totalAmount);
+            summary.setCount(customerInList.size());
+            summary.setPendingCount(pendingCount);
+            result.add(summary);
+        }
+        
+        return result;
+    }
+
+    // ========== 供应商付款汇总 ==========
+    public List<FinanceSummaryDTO> getSupplierSummary() {
+        List<FinanceSummaryDTO> result = new ArrayList<>();
+        
+        // 获取所有付款记录并按供应商分组
+        LambdaQueryWrapper<FinanceOut> wrapper = new LambdaQueryWrapper<>();
+        wrapper.select(FinanceOut::getSupplierId, FinanceOut::getAmount, FinanceOut::getStatus);
+        List<FinanceOut> outList = financeOutMapper.selectList(wrapper);
+        
+        // 按供应商ID分组汇总
+        List<Long> supplierIds = outList.stream()
+            .map(FinanceOut::getSupplierId)
+            .distinct()
+            .collect(Collectors.toList());
+        
+        for (Long supplierId : supplierIds) {
+            if (supplierId == null) continue;
+            
+            List<FinanceOut> supplierOutList = outList.stream()
+                .filter(out -> supplierId.equals(out.getSupplierId()))
+                .collect(Collectors.toList());
+            
+            BigDecimal totalAmount = supplierOutList.stream()
+                .map(FinanceOut::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+            
+            int pendingCount = (int) supplierOutList.stream()
+                .filter(out -> out.getStatus() == 1)
+                .count();
+            
+            FinanceSummaryDTO summary = new FinanceSummaryDTO();
+            summary.setId(supplierId);
+            summary.setTotalOutAmount(totalAmount);
+            summary.setNetAmount(totalAmount);
+            summary.setCount(supplierOutList.size());
+            summary.setPendingCount(pendingCount);
+            result.add(summary);
+        }
+        
+        return result;
+    }
+
+    // ========== 导出收款数据 ==========
+    public List<FinanceExportDTO> exportIn(LocalDate startDate, LocalDate endDate) {
+        LambdaQueryWrapper<FinanceIn> wrapper = new LambdaQueryWrapper<>();
+        wrapper.ge(startDate != null, FinanceIn::getPayDate, startDate.atStartOfDay())
+              .le(endDate != null, FinanceIn::getPayDate, endDate.plusDays(1).atStartOfDay())
+              .orderByDesc(FinanceIn::getId);
+        List<FinanceIn> list = financeInMapper.selectList(wrapper);
+        
+        return list.stream().map(in -> {
+            FinanceExportDTO dto = new FinanceExportDTO();
+            dto.setNo(in.getInNo());
+            dto.setType(1);
+            dto.setStatus(in.getStatus());
+            dto.setAmount(in.getAmount());
+            dto.setPayDate(in.getPayDate());
+            dto.setRemark(in.getRemark());
+            return dto;
+        }).collect(Collectors.toList());
+    }
+
+    // ========== 导出付款数据 ==========
+    public List<FinanceExportDTO> exportOut(LocalDate startDate, LocalDate endDate) {
+        LambdaQueryWrapper<FinanceOut> wrapper = new LambdaQueryWrapper<>();
+        wrapper.ge(startDate != null, FinanceOut::getPayDate, startDate.atStartOfDay())
+              .le(endDate != null, FinanceOut::getPayDate, endDate.plusDays(1).atStartOfDay())
+              .orderByDesc(FinanceOut::getId);
+        List<FinanceOut> list = financeOutMapper.selectList(wrapper);
+        
+        return list.stream().map(out -> {
+            FinanceExportDTO dto = new FinanceExportDTO();
+            dto.setNo(out.getOutNo());
+            dto.setType(2);
+            dto.setStatus(out.getStatus());
+            dto.setAmount(out.getAmount());
+            dto.setPayDate(out.getPayDate());
+            dto.setRemark(out.getRemark());
+            return dto;
+        }).collect(Collectors.toList());
     }
 }
