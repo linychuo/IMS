@@ -46,6 +46,16 @@ public class FinanceController {
         return Result.success(financeService.cancelIn(id));
     }
 
+    @DeleteMapping("/in/{id}")
+    public Result<Void> deleteIn(@PathVariable Long id) {
+        return Result.success(financeService.deleteIn(id));
+    }
+
+    @PutMapping("/in/batch-audit")
+    public Result<Integer> batchAuditIn(@RequestBody List<Long> ids, @RequestParam Long auditorId) {
+        return Result.success(financeService.batchAuditIn(ids, auditorId));
+    }
+
     // ========== 付款管理 ==========
     @GetMapping("/out/page")
     public Result<PageResult<FinanceOut>> pageOut(
@@ -74,6 +84,16 @@ public class FinanceController {
     @PutMapping("/out/cancel/{id}")
     public Result<Void> cancelOut(@PathVariable Long id) {
         return Result.success(financeService.cancelOut(id));
+    }
+
+    @DeleteMapping("/out/{id}")
+    public Result<Void> deleteOut(@PathVariable Long id) {
+        return Result.success(financeService.deleteOut(id));
+    }
+
+    @PutMapping("/out/batch-audit")
+    public Result<Integer> batchAuditOut(@RequestBody List<Long> ids, @RequestParam Long auditorId) {
+        return Result.success(financeService.batchAuditOut(ids, auditorId));
     }
 
     // ========== 账户管理 ==========
@@ -109,5 +129,10 @@ public class FinanceController {
     @PutMapping("/account/disable/{id}")
     public Result<Void> disableAccount(@PathVariable Long id) {
         return Result.success(financeService.disableAccount(id));
+    }
+
+    @DeleteMapping("/account/{id}")
+    public Result<Void> deleteAccount(@PathVariable Long id) {
+        return Result.success(financeService.deleteAccount(id));
     }
 }

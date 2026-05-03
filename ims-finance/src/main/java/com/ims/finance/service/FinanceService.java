@@ -69,6 +69,26 @@ public class FinanceService {
         return false;
     }
 
+    @Transactional
+    public boolean deleteIn(Long id) {
+        FinanceIn in = financeInMapper.selectById(id);
+        if (in != null && in.getStatus() == 1) {
+            return financeInMapper.deleteById(id) > 0;
+        }
+        return false;
+    }
+
+    @Transactional
+    public int batchAuditIn(List<Long> ids, Long auditorId) {
+        int count = 0;
+        for (Long id : ids) {
+            if (auditIn(id, auditorId)) {
+                count++;
+            }
+        }
+        return count;
+    }
+
     // ========== 付款管理 ==========
     public PageResult<FinanceOut> pageOut(Long page, Long pageSize, Long supplierId, Integer status) {
         LambdaQueryWrapper<FinanceOut> wrapper = new LambdaQueryWrapper<>();
@@ -116,6 +136,26 @@ public class FinanceService {
         return false;
     }
 
+    @Transactional
+    public boolean deleteOut(Long id) {
+        FinanceOut out = financeOutMapper.selectById(id);
+        if (out != null && out.getStatus() == 1) {
+            return financeOutMapper.deleteById(id) > 0;
+        }
+        return false;
+    }
+
+    @Transactional
+    public int batchAuditOut(List<Long> ids, Long auditorId) {
+        int count = 0;
+        for (Long id : ids) {
+            if (auditOut(id, auditorId)) {
+                count++;
+            }
+        }
+        return count;
+    }
+
     // ========== 账户管理 ==========
     public PageResult<Account> pageAccount(Long page, Long pageSize, Integer accountType, Integer status) {
         LambdaQueryWrapper<Account> wrapper = new LambdaQueryWrapper<>();
@@ -160,6 +200,15 @@ public class FinanceService {
         if (account != null) {
             account.setStatus(2);
             return accountMapper.updateById(account) > 0;
+        }
+        return false;
+    }
+
+    @Transactional
+    public boolean deleteAccount(Long id) {
+        Account account = accountMapper.selectById(id);
+        if (account != null && account.getStatus() == 1) {
+            return accountMapper.deleteById(id) > 0;
         }
         return false;
     }
