@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ims.sales.mapper.SalesReturnDetailMapper">
+
+    <resultMap id="BaseResultMap" type="com.ims.sales.entity.SalesReturnDetail">
+        <id column="id" property="id"/>
+        <result column="return_id" property="returnId"/>
+        <result column="return_no" property="returnNo"/>
+        <result column="out_detail_id" property="outDetailId"/>
+        <result column="product_id" property="productId"/>
+        <result column="product_name" property="productName"/>
+        <result column="spec" property="spec"/>
+        <result column="unit" property="unit"/>
+        <result column="quantity" property="quantity"/>
+        <result column="price" property="price"/>
+        <result column="amount" property="amount"/>
+        <result column="in_quantity" property="inQuantity"/>
+        <result column="created_at" property="createdAt"/>
+    </resultMap>
+
+    <sql id="baseColumns">
+        id, return_id, return_no, out_detail_id, product_id, product_name,
+        spec, unit, quantity, price, amount, in_quantity, created_at
+    </sql>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="baseColumns"/>
+        FROM sales_return_detail
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectByReturnId" resultMap="BaseResultMap">
+        SELECT <include refid="baseColumns"/>
+        FROM sales_return_detail
+        WHERE return_id = #{returnId}
+        ORDER BY created_at
+    </select>
+
+    <insert id="batchInsert" parameterType="java.util.List">
+        INSERT INTO sales_return_detail (
+            id, return_id, return_no, out_detail_id, product_id, product_name,
+            spec, unit, quantity, price, amount, in_quantity, created_at
+        ) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (
+                #{item.id}, #{item.returnId}, #{item.returnNo}, #{item.outDetailId},
+                #{item.productId}, #{item.productName}, #{item.spec}, #{item.unit},
+                #{item.quantity}, #{item.price}, #{item.amount}, #{item.inQuantity}, #{item.createdAt}
+            )
+        </foreach>
+    </insert>
+
+    <delete id="deleteByReturnId">
+        DELETE FROM sales_return_detail WHERE return_id = #{returnId}
+    </delete>
+
+</mapper>

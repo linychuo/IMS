@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ims.inventory.mapper.InventoryOutDetailMapper">
+
+    <resultMap id="BaseResultMap" type="com.ims.inventory.entity.InventoryOutDetail">
+        <id column="id" property="id"/>
+        <result column="out_id" property="outId"/>
+        <result column="product_id" property="productId"/>
+        <result column="inventory_id" property="inventoryId"/>
+        <result column="quantity" property="quantity"/>
+        <result column="unit" property="unit"/>
+        <result column="unit_price" property="unitPrice"/>
+        <result column="amount" property="amount"/>
+        <result column="remark" property="remark"/>
+        <result column="created_by" property="createdBy"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_by" property="updatedBy"/>
+        <result column="updated_at" property="updatedAt"/>
+        <result column="deleted" property="deleted"/>
+    </resultMap>
+
+    <sql id="baseColumns">
+        id, out_id, product_id, inventory_id, quantity, unit, unit_price, amount, remark,
+        created_by, created_at, updated_by, updated_at, deleted
+    </sql>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="baseColumns"/>
+        FROM inventory_out_detail
+        WHERE id = #{id} AND deleted = 0
+    </select>
+
+    <select id="selectByOutId" resultMap="BaseResultMap">
+        SELECT <include refid="baseColumns"/>
+        FROM inventory_out_detail
+        WHERE out_id = #{outId} AND deleted = 0
+    </select>
+
+    <insert id="insert" parameterType="com.ims.inventory.entity.InventoryOutDetail">
+        INSERT INTO inventory_out_detail (
+            id, out_id, product_id, inventory_id, quantity, unit, unit_price, amount, remark,
+            created_by, created_at, deleted
+        ) VALUES (
+            #{id}, #{outId}, #{productId}, #{inventoryId}, #{quantity}, #{unit}, #{unitPrice}, #{amount}, #{remark},
+            #{createdBy}, #{createdAt}, 0
+        )
+    </insert>
+
+    <insert id="insertBatch">
+        INSERT INTO inventory_out_detail (
+            id, out_id, product_id, inventory_id, quantity, unit, unit_price, amount, remark,
+            created_by, created_at, deleted
+        ) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.id}, #{item.outId}, #{item.productId}, #{item.inventoryId}, #{item.quantity}, 
+             #{item.unit}, #{item.unitPrice}, #{item.amount}, #{item.remark}, 
+             #{item.createdBy}, #{item.createdAt}, 0)
+        </foreach>
+    </insert>
+
+    <update id="update" parameterType="com.ims.inventory.entity.InventoryOutDetail">
+        UPDATE inventory_out_detail
+        <set>
+            <if test="quantity != null">quantity = #{quantity},</if>
+            <if test="unitPrice != null">unit_price = #{unitPrice},</if>
+            <if test="amount != null">amount = #{amount},</if>
+            <if test="updatedBy != null">updated_by = #{updatedBy},</if>
+            <if test="updatedAt != null">updated_at = #{updatedAt},</if>
+        </set>
+        WHERE id = #{id} AND deleted = 0
+    </update>
+
+    <update id="deleteById">
+        UPDATE inventory_out_detail SET deleted = 1 WHERE id = #{id}
+    </update>
+
+    <update id="deleteByOutId">
+        UPDATE inventory_out_detail SET deleted = 1 WHERE out_id = #{outId}
+    </update>
+
+</mapper>

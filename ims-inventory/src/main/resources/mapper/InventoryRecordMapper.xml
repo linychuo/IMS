@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ims.inventory.mapper.InventoryRecordMapper">
+
+    <resultMap id="BaseResultMap" type="com.ims.inventory.entity.InventoryRecord">
+        <id column="id" property="id"/>
+        <result column="inventory_id" property="inventoryId"/>
+        <result column="product_id" property="productId"/>
+        <result column="warehouse_id" property="warehouseId"/>
+        <result column="record_type" property="recordType"/>
+        <result column="ref_id" property="refId"/>
+        <result column="ref_no" property="refNo"/>
+        <result column="before_quantity" property="beforeQuantity"/>
+        <result column="change_quantity" property="changeQuantity"/>
+        <result column="after_quantity" property="afterQuantity"/>
+        <result column="record_date" property="recordDate"/>
+        <result column="operator_id" property="operatorId"/>
+        <result column="remark" property="remark"/>
+        <result column="created_by" property="createdBy"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_by" property="updatedBy"/>
+        <result column="updated_at" property="updatedAt"/>
+        <result column="deleted" property="deleted"/>
+    </resultMap>
+
+    <sql id="baseColumns">
+        id, inventory_id, product_id, warehouse_id, record_type, ref_id, ref_no,
+        before_quantity, change_quantity, after_quantity, record_date, operator_id, remark,
+        created_by, created_at, updated_by, updated_at, deleted
+    </sql>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="baseColumns"/>
+        FROM inventory_record
+        WHERE id = #{id} AND deleted = 0
+    </select>
+
+    <select id="selectList" resultMap="BaseResultMap">
+        SELECT <include refid="baseColumns"/>
+        FROM inventory_record
+        WHERE deleted = 0
+        <if test="inventoryId != null">
+            AND inventory_id = #{inventoryId}
+        </if>
+        <if test="productId != null">
+            AND product_id = #{productId}
+        </if>
+        <if test="warehouseId != null">
+            AND warehouse_id = #{warehouseId}
+        </if>
+        <if test="recordType != null">
+            AND record_type = #{recordType}
+        </if>
+        ORDER BY created_at DESC
+    </select>
+
+    <select id="selectByInventoryId" resultMap="BaseResultMap">
+        SELECT <include refid="baseColumns"/>
+        FROM inventory_record
+        WHERE inventory_id = #{inventoryId} AND deleted = 0
+        ORDER BY created_at DESC
+    </select>
+
+    <select id="selectByProductId" resultMap="BaseResultMap">
+        SELECT <include refid="baseColumns"/>
+        FROM inventory_record
+        WHERE product_id = #{productId} AND deleted = 0
+        ORDER BY created_at DESC
+    </select>
+
+    <insert id="insert" parameterType="com.ims.inventory.entity.InventoryRecord">
+        INSERT INTO inventory_record (
+            id, inventory_id, product_id, warehouse_id, record_type, ref_id, ref_no,
+            before_quantity, change_quantity, after_quantity, record_date, operator_id, remark,
+            created_by, created_at, deleted
+        ) VALUES (
+            #{id}, #{inventoryId}, #{productId}, #{warehouseId}, #{recordType}, #{refId}, #{refNo},
+            #{beforeQuantity}, #{changeQuantity}, #{afterQuantity}, #{recordDate}, #{operatorId}, #{remark},
+            #{createdBy}, #{createdAt}, 0
+        )
+    </insert>
+
+    <update id="deleteById">
+        UPDATE inventory_record SET deleted = 1 WHERE id = #{id}
+    </update>
+
+</mapper>
