@@ -90,6 +90,8 @@ CREATE TABLE IF NOT EXISTS sales_out_detail (
     out_no VARCHAR(32) NOT NULL COMMENT '出库单编号',
     order_detail_id VARCHAR(32) COMMENT '关联订单明细ID',
     product_id VARCHAR(32) NOT NULL COMMENT '商品ID',
+    warehouse_id VARCHAR(32) COMMENT '仓库ID',
+    location_id VARCHAR(32) COMMENT '库位ID',
     product_name VARCHAR(100) COMMENT '商品名称',
     spec VARCHAR(100) COMMENT '商品规格',
     unit VARCHAR(20) COMMENT '单位',

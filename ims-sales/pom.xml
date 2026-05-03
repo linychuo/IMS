@@ -20,6 +20,11 @@
             <artifactId>ims-common</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.ims</groupId>
+            <artifactId>ims-inventory</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>

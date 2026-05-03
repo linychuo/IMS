@@ -2,6 +2,7 @@ package com.ims.sales.service.impl;
 
 import com.ims.common.enums.CommonStatus;
 import com.ims.common.util.OrderNoGenerator;
+import com.ims.inventory.service.InventoryService;
 import com.ims.sales.entity.SalesOut;
 import com.ims.sales.entity.SalesOutDetail;
 import com.ims.sales.mapper.SalesOutDetailMapper;
@@ -12,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -26,6 +28,7 @@ public class SalesOutServiceImpl implements SalesOutService {
     private final SalesOutMapper salesOutMapper;
     private final SalesOutDetailMapper salesOutDetailMapper;
     private final OrderNoGenerator orderNoGenerator;
+    private final InventoryService inventoryService;
 
     @Override
     @Transactional
@@ -57,6 +60,30 @@ public class SalesOutServiceImpl implements SalesOutService {
         if (salesOut.getStatus() != CommonStatus.PENDING.getCode()) {
             throw new RuntimeException("只有待出库状态可审核");
         }
+        
+        // 审核时扣减库存
+        List<SalesOutDetail> details = salesOutDetailMapper.selectByOutId(id);
+        for (SalesOutDetail detail : details) {
+            Long productId = Long.parseLong(detail.getProductId());
+            Long warehouseId = Long.parseLong(salesOut.getWarehouseId());
+            Long locationId = detail.getLocationId() != null ? Long.parseLong(detail.getLocationId()) : null;
+            BigDecimal quantity = detail.getQuantity();
+            
+            boolean reduced = inventoryService.reduceStock(
+                productId, 
+                warehouseId, 
+                locationId, 
+                quantity, 
+                salesOut.getOutNo(),
+                "SALES_OUT",
+                Long.parseLong(id)
+            );
+            if (!reduced) {
+                throw new RuntimeException("库存扣减失败: " + detail.getProductName() + " 库存不足");
+            }
+            log.info("审核扣减库存: 商品{} 数量{}", detail.getProductName(), quantity);
+        }
+        
         salesOut.setAuditedBy(userId);
         salesOut.setAuditedAt(LocalDateTime.now());
         salesOut.setStatus(CommonStatus.APPROVED.getCode());
@@ -74,6 +101,31 @@ public class SalesOutServiceImpl implements SalesOutService {
         if (salesOut.getStatus() == CommonStatus.COMPLETED.getCode()) {
             throw new RuntimeException("已完成不能取消");
         }
+        
+        // 如果已审核，需要恢复库存
+        if (salesOut.getStatus() == CommonStatus.APPROVED.getCode()) {
+            List<SalesOutDetail> details = salesOutDetailMapper.selectByOutId(id);
+            for (SalesOutDetail detail : details) {
+                Long productId = Long.parseLong(detail.getProductId());
+                Long warehouseId = Long.parseLong(salesOut.getWarehouseId());
+                Long locationId = detail.getLocationId() != null ? Long.parseLong(detail.getLocationId()) : null;
+                BigDecimal quantity = detail.getQuantity();
+                
+                // 恢复库存 (使用 addStock 退回)
+                inventoryService.addStock(
+                    productId, 
+                    warehouseId, 
+                    locationId, 
+                    quantity, 
+                    detail.getPrice(),
+                    salesOut.getOutNo(),
+                    "SALES_OUT_CANCEL",
+                    Long.parseLong(id)
+                );
+                log.info("取消恢复库存: 商品{} 数量{}", detail.getProductName(), quantity);
+            }
+        }
+        
         salesOut.setStatus(CommonStatus.CANCELLED.getCode());
         salesOut.setRemark(reason);
         salesOutMapper.update(salesOut);
@@ -90,6 +142,30 @@ public class SalesOutServiceImpl implements SalesOutService {
         if (salesOut.getStatus() == CommonStatus.COMPLETED.getCode()) {
             throw new RuntimeException("已完成");
         }
+        
+        // 扣减库存
+        List<SalesOutDetail> details = salesOutDetailMapper.selectByOutId(id);
+        for (SalesOutDetail detail : details) {
+            Long productId = Long.parseLong(detail.getProductId());
+            Long warehouseId = Long.parseLong(salesOut.getWarehouseId());
+            Long locationId = detail.getLocationId() != null ? Long.parseLong(detail.getLocationId()) : null;
+            BigDecimal quantity = detail.getQuantity();
+            
+            boolean reduced = inventoryService.reduceStock(
+                productId, 
+                warehouseId, 
+                locationId, 
+                quantity, 
+                salesOut.getOutNo(),
+                "SALES_OUT",
+                Long.parseLong(id)
+            );
+            if (!reduced) {
+                throw new RuntimeException("库存扣减失败: " + detail.getProductName() + " 库存不足");
+            }
+            log.info("扣减库存: 商品{} 数量{}", detail.getProductName(), quantity);
+        }
+        
         salesOut.setStatus(CommonStatus.COMPLETED.getCode());
         salesOutMapper.update(salesOut);
         log.info("完成销售出库: {}", id);

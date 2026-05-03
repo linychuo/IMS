@@ -37,6 +37,16 @@ public class SalesReturnDetail {
     private String productId;
 
     /**
+     * 仓库ID
+     */
+    private String warehouseId;
+
+    /**
+     * 库位ID
+     */
+    private String locationId;
+
+    /**
      * 商品名称
      */
     private String productName;

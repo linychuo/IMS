@@ -2,6 +2,7 @@ package com.ims.sales.service.impl;
 
 import com.ims.common.enums.CommonStatus;
 import com.ims.common.util.OrderNoGenerator;
+import com.ims.inventory.service.InventoryService;
 import com.ims.sales.entity.SalesReturn;
 import com.ims.sales.entity.SalesReturnDetail;
 import com.ims.sales.mapper.SalesReturnDetailMapper;
@@ -12,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -26,6 +28,7 @@ public class SalesReturnServiceImpl implements SalesReturnService {
     private final SalesReturnMapper salesReturnMapper;
     private final SalesReturnDetailMapper salesReturnDetailMapper;
     private final OrderNoGenerator orderNoGenerator;
+    private final InventoryService inventoryService;
 
     @Override
     @Transactional
@@ -133,7 +136,32 @@ public class SalesReturnServiceImpl implements SalesReturnService {
         if (salesReturn.getStatus() != CommonStatus.APPROVED.getCode()) {
             throw new RuntimeException("只有已审核状态可入库");
         }
-        // TODO: 调用库存服务增加库存
+        
+        // 入库时增加库存
+        List<SalesReturnDetail> details = salesReturnDetailMapper.selectByReturnId(id);
+        for (SalesReturnDetail detail : details) {
+            Long productId = Long.parseLong(detail.getProductId());
+            Long warehouseId = Long.parseLong(salesReturn.getWarehouseId());
+            Long locationId = detail.getLocationId() != null ? Long.parseLong(detail.getLocationId()) : null;
+            BigDecimal quantity = detail.getQuantity();
+            BigDecimal price = detail.getPrice() != null ? detail.getPrice() : BigDecimal.ZERO;
+            
+            boolean added = inventoryService.addStock(
+                productId, 
+                warehouseId, 
+                locationId, 
+                quantity, 
+                price,
+                salesReturn.getReturnNo(),
+                "SALES_RETURN",
+                Long.parseLong(id)
+            );
+            if (!added) {
+                throw new RuntimeException("库存增加失败: " + detail.getProductName());
+            }
+            log.info("退货入库增加库存: 商品{} 数量{}", detail.getProductName(), quantity);
+        }
+        
         salesReturn.setStatus(CommonStatus.COMPLETED.getCode());
         salesReturnMapper.update(salesReturn);
         log.info("销售退货单入库完成: {} by {}", id, userId);

@@ -8,6 +8,8 @@
         <result column="out_no" property="outNo"/>
         <result column="order_detail_id" property="orderDetailId"/>
         <result column="product_id" property="productId"/>
+        <result column="warehouse_id" property="warehouseId"/>
+        <result column="location_id" property="locationId"/>
         <result column="product_name" property="productName"/>
         <result column="spec" property="spec"/>
         <result column="unit" property="unit"/>
@@ -18,7 +20,7 @@
     </resultMap>
 
     <sql id="baseColumns">
-        id, out_id, out_no, order_detail_id, product_id, product_name, spec, unit, quantity, price, amount, created_at
+        id, out_id, out_no, order_detail_id, product_id, warehouse_id, location_id, product_name, spec, unit, quantity, price, amount, created_at
     </sql>
 
     <select id="selectById" resultMap="BaseResultMap">
@@ -41,18 +43,18 @@
 
     <insert id="insert" parameterType="com.ims.sales.entity.SalesOutDetail">
         INSERT INTO sales_out_detail (
-            id, out_id, out_no, order_detail_id, product_id, product_name, spec, unit, quantity, price, amount, created_at
+            id, out_id, out_no, order_detail_id, product_id, warehouse_id, location_id, product_name, spec, unit, quantity, price, amount, created_at
         ) VALUES (
-            #{id}, #{outId}, #{outNo}, #{orderDetailId}, #{productId}, #{productName}, #{spec}, #{unit}, #{quantity}, #{price}, #{amount}, #{createdAt}
+            #{id}, #{outId}, #{outNo}, #{orderDetailId}, #{productId}, #{warehouseId}, #{locationId}, #{productName}, #{spec}, #{unit}, #{quantity}, #{price}, #{amount}, #{createdAt}
         )
     </insert>
 
     <insert id="batchInsert" parameterType="list">
         INSERT INTO sales_out_detail (
-            id, out_id, out_no, order_detail_id, product_id, product_name, spec, unit, quantity, price, amount, created_at
+            id, out_id, out_no, order_detail_id, product_id, warehouse_id, location_id, product_name, spec, unit, quantity, price, amount, created_at
         ) VALUES
         <foreach collection="list" item="item" separator=",">
-            (#{item.id}, #{item.outId}, #{item.outNo}, #{item.orderDetailId}, #{item.productId}, #{item.productName}, #{item.spec}, #{item.unit}, #{item.quantity}, #{item.price}, #{item.amount}, #{item.createdAt})
+            (#{item.id}, #{item.outId}, #{item.outNo}, #{item.orderDetailId}, #{item.productId}, #{item.warehouseId}, #{item.locationId}, #{item.productName}, #{item.spec}, #{item.unit}, #{item.quantity}, #{item.price}, #{item.amount}, #{item.createdAt})
         </foreach>
     </insert>
 
