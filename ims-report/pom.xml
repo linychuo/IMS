@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.ims</groupId>
+        <artifactId>ims-parent</artifactId>
+        <version>1.0.0</version>
+    </parent>
+
+    <artifactId>ims-report</artifactId>
+    <packaging>jar</packaging>
+    <name>IMS Report Module</name>
+    <description>报表模块 - 提供销售、采购、库存、财务等报表功能</description>
+
+    <dependencies>
+        <!-- Spring Boot -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        
+        <!-- MyBatis -->
+        <dependency>
+            <groupId>org.mybatis.spring.boot</groupId>
+            <artifactId>mybatis-spring-boot-starter</artifactId>
+        </dependency>
+        
+        <!-- IMS Common -->
+        <dependency>
+            <groupId>com.ims</groupId>
+            <artifactId>ims-common</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        
+        <!-- IMS Product -->
+        <dependency>
+            <groupId>com.ims</groupId>
+            <artifactId>ims-product</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        
+        <!-- IMS Warehouse -->
+        <dependency>
+            <groupId>com.ims</groupId>
+            <artifactId>ims-warehouse</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        
+        <!-- IMS Sales -->
+        <dependency>
+            <groupId>com.ims</groupId>
+            <artifactId>ims-sales</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        
+        <!-- IMS Purchase -->
+        <dependency>
+            <groupId>com.ims</groupId>
+            <artifactId>ims-purchase</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        
+        <!-- IMS Finance -->
+        <dependency>
+            <groupId>com.ims</groupId>
+            <artifactId>ims-finance</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        
+        <!-- Hutool -->
+        <dependency>
+            <groupId>cn.hutool</groupId>
+            <artifactId>hutool-all</artifactId>
+        </dependency>
+        
+        <!-- Lombok -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+        
+        <!-- Test -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+</project>

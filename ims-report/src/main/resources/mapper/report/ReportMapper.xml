@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ims.report.mapper.ReportMapper">
+
+    <!-- 获取仪表盘数据 -->
+    <select id="getDashboardData" resultType="com.ims.report.dto.DashboardDTO">
+        SELECT 
+            (SELECT COALESCE(SUM(total_amount), 0) FROM sales_out WHERE DATE(create_time) = CURDATE() AND status = 'approved') as todaySalesAmount,
+            (SELECT COALESCE(SUM(total_amount), 0) FROM purchase_in WHERE DATE(create_time) = CURDATE() AND status = 'approved') as todayPurchaseAmount,
+            (SELECT COALESCE(SUM(amount), 0) FROM finance_income WHERE DATE(create_time) = CURDATE() AND status = 'approved') as todayReceiveAmount,
+            (SELECT COALESCE(SUM(amount), 0) FROM finance_expense WHERE DATE(create_time) = CURDATE() AND status = 'approved') as todayPaymentAmount,
+            (SELECT COALESCE(SUM(total_amount), 0) FROM sales_out WHERE DATE(create_time) >= DATE_SUB(CURDATE(), INTERVAL DAY(CURDATE()) DAY) AND status = 'approved') as monthSalesAmount,
+            (SELECT COALESCE(SUM(total_amount), 0) FROM purchase_in WHERE DATE(create_time) >= DATE_SUB(CURDATE(), INTERVAL DAY(CURDATE()) DAY) AND status = 'approved') as monthPurchaseAmount,
+            (SELECT COALESCE(SUM(quantity), 0) FROM inventory) as totalInventoryCount,
+            (SELECT COUNT(*) FROM inventory WHERE quantity &lt;= min_quantity) as warningInventoryCount,
+            (SELECT COUNT(*) FROM purchase_order WHERE status = 'pending') as pendingPurchaseCount,
+            (SELECT COUNT(*) FROM sales_order WHERE status = 'pending') as pendingSalesCount
+    </select>
+
+    <!-- 获取今日销售数据 -->
+    <select id="getTodaySalesData" resultType="com.ims.report.dto.SalesReportDTO">
+        SELECT 
+            CURDATE() as reportDate,
+            'daily' as reportType,
+            COALESCE(SUM(total_amount), 0) as totalSalesAmount,
+            COUNT(*) as totalOrderCount,
+            COALESCE(AVG(total_amount), 0) as avgOrderAmount,
+            COALESCE(SUM(discount_amount), 0) as discountAmount,
+            COALESCE(SUM(return_amount), 0) as returnAmount
+        FROM sales_out 
+        WHERE DATE(create_time) = CURDATE() AND status = 'approved'
+    </select>
+
+    <!-- 获取今日采购数据 -->
+    <select id="getTodayPurchaseData" resultType="com.ims.report.dto.PurchaseReportDTO">
+        SELECT 
+            CURDATE() as reportDate,
+            'daily' as reportType,
+            COALESCE(SUM(total_amount), 0) as totalPurchaseAmount,
+            COUNT(*) as totalOrderCount,
+            COALESCE(AVG(total_amount), 0) as avgOrderAmount,
+            COALESCE(SUM(return_amount), 0) as returnAmount
+        FROM purchase_in 
+        WHERE DATE(create_time) = CURDATE() AND status = 'approved'
+    </select>
+
+    <!-- 获取销售汇总列表 -->
+    <select id="getSalesSummaryList" resultType="com.ims.report.dto.SalesReportDTO">
+        SELECT 
+            DATE(create_time) as reportDate,
+            'summary' as reportType,
+            COALESCE(SUM(total_amount), 0) as totalSalesAmount,
+            COUNT(*) as totalOrderCount,
+            COALESCE(AVG(total_amount), 0) as avgOrderAmount
+        FROM sales_out 
+        WHERE status = 'approved'
+        <if test="startDate != null and endDate != null">
+            AND DATE(create_time) BETWEEN #{startDate} AND #{endDate}
+        </if>
+        GROUP BY DATE(create_time)
+        ORDER BY reportDate DESC
+    </select>
+
+    <!-- 获取采购汇总列表 -->
+    <select id="getPurchaseSummaryList" resultType="com.ims.report.dto.PurchaseReportDTO">
+        SELECT 
+            DATE(create_time) as reportDate,
+            'summary' as reportType,
+            COALESCE(SUM(total_amount), 0) as totalPurchaseAmount,
+            COUNT(*) as totalOrderCount,
+            COALESCE(AVG(total_amount), 0) as avgOrderAmount
+        FROM purchase_in 
+        WHERE status = 'approved'
+        <if test="startDate != null and endDate != null">
+            AND DATE(create_time) BETWEEN #{startDate} AND #{endDate}
+        </if>
+        GROUP BY DATE(create_time)
+        ORDER BY reportDate DESC
+    </select>
+
+    <!-- 获取库存报表 -->
+    <select id="getInventoryList" resultType="com.ims.report.dto.InventoryReportDTO">
+        SELECT 
+            i.id,
+            i.product_id as productId,
+            p.product_name as productName,
+            p.product_code as productCode,
+            w.warehouse_name as warehouseName,
+            l.location_name as locationName,
+            i.quantity,
+            i.min_quantity as minQuantity,
+            i.max_quantity as maxQuantity,
+            i.unit_price as unitPrice,
+            i.quantity * i.unit_price as totalAmount,
+            i.last_in_time as lastInTime,
+            i.last_out_time as lastOutTime
+        FROM inventory i
+        LEFT JOIN product p ON i.product_id = p.id
+        LEFT JOIN warehouse w ON i.warehouse_id = w.id
+        LEFT JOIN location l ON i.location_id = l.id
+        <where>
+            <if test="warehouseId != null">
+                AND i.warehouse_id = #{warehouseId}
+            </if>
+            <if test="productId != null">
+                AND i.product_id = #{productId}
+            </if>
+        </where>
+    </select>
+
+    <!-- 获取低库存预警 -->
+    <select id="getLowStockList" resultType="com.ims.report.dto.InventoryReportDTO">
+        SELECT 
+            i.id,
+            i.product_id as productId,
+            p.product_name as productName,
+            p.product_code as productCode,
+            w.warehouse_name as warehouseName,
+            i.quantity,
+            i.min_quantity as minQuantity,
+            i.unit_price as unitPrice
+        FROM inventory i
+        LEFT JOIN product p ON i.product_id = p.id
+        LEFT JOIN warehouse w ON i.warehouse_id = w.id
+        WHERE i.quantity &lt;= i.min_quantity
+        ORDER BY i.quantity ASC
+    </select>
+
+    <!-- 获取呆滞库存 -->
+    <select id="getIdleStockList" resultType="com.ims.report.dto.InventoryReportDTO">
+        SELECT 
+            i.id,
+            i.product_id as productId,
+            p.product_name as productName,
+            p.product_code as productCode,
+            w.warehouse_name as warehouseName,
+            i.quantity,
+            i.unit_price as unitPrice,
+            DATEDIFF(CURDATE(), COALESCE(i.last_out_time, i.create_time)) as idleDays
+        FROM inventory i
+        LEFT JOIN product p ON i.product_id = p.id
+        LEFT JOIN warehouse w ON i.warehouse_id = w.id
+        WHERE i.quantity > 0 
+        AND DATEDIFF(CURDATE(), COALESCE(i.last_out_time, i.create_time)) &gt;= #{days}
+        ORDER BY idleDays DESC
+    </select>
+
+    <!-- 获取销售趋势 -->
+    <select id="getSalesTrendList" resultType="com.ims.report.dto.TrendDTO$TrendPointDTO">
+        SELECT 
+            DATE(create_time) as date,
+            COALESCE(SUM(total_amount), 0) as amount,
+            COUNT(*) as count
+        FROM sales_out
+        WHERE status = 'approved'
+        <if test="startDate != null and endDate != null">
+            AND DATE(create_time) BETWEEN #{startDate} AND #{endDate}
+        </if>
+        GROUP BY DATE(create_time)
+        ORDER BY date ASC
+    </select>
+
+    <!-- 获取采购趋势 -->
+    <select id="getPurchaseTrendList" resultType="com.ims.report.dto.TrendDTO$TrendPointDTO">
+        SELECT 
+            DATE(create_time) as date,
+            COALESCE(SUM(total_amount), 0) as amount,
+            COUNT(*) as count
+        FROM purchase_in
+        WHERE status = 'approved'
+        <if test="startDate != null and endDate != null">
+            AND DATE(create_time) BETWEEN #{startDate} AND #{endDate}
+        </if>
+        GROUP BY DATE(create_time)
+        ORDER BY date ASC
+    </select>
+
+    <!-- 获取财务报表 -->
+    <select id="getFinanceSummary" resultType="com.ims.report.dto.FinanceReportDTO">
+        SELECT 
+            CURDATE() as reportDate,
+            'summary' as reportType,
+            (SELECT COALESCE(SUM(amount), 0) FROM finance_income WHERE status = 'approved') as totalIncome,
+            (SELECT COALESCE(SUM(amount), 0) FROM finance_expense WHERE status = 'approved') as totalExpense,
+            (SELECT COALESCE(SUM(balance), 0) FROM finance_account WHERE status = 'active') as accountCount
+    </select>
+
+</mapper>

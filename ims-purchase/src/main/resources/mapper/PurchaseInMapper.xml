@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ims.purchase.mapper.PurchaseInMapper">
+
+    <resultMap id="BaseResultMap" type="com.ims.purchase.entity.PurchaseIn">
+        <id column="id" property="id"/>
+        <result column="in_no" property="inNo"/>
+        <result column="order_id" property="orderId"/>
+        <result column="order_no" property="orderNo"/>
+        <result column="supplier_id" property="supplierId"/>
+        <result column="supplier_name" property="supplierName"/>
+        <result column="total_amount" property="totalAmount"/>
+        <result column="status" property="status"/>
+        <result column="in_time" property="inTime"/>
+        <result column="remark" property="remark"/>
+        <result column="create_by" property="createBy"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, in_no, order_id, order_no, supplier_id, supplier_name, total_amount, status, in_time, remark, create_by, create_time, update_time
+    </sql>
+
+    <select id="selectByInNo" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/> FROM purchase_in WHERE in_no = #{inNo}
+    </select>
+
+    <select id="selectByOrderId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/> FROM purchase_in WHERE order_id = #{orderId} ORDER BY create_time DESC
+    </select>
+
+    <select id="selectPendingList" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/> FROM purchase_in WHERE status = 0 ORDER BY create_time ASC
+    </select>
+
+</mapper>
