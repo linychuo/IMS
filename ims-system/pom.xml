@@ -7,7 +7,7 @@
     <parent>
         <groupId>com.ims</groupId>
         <artifactId>ims-parent</artifactId>
-        <version>1.0.0</version>
+        <version>1.0.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>ims-system</artifactId>
@@ -20,7 +20,7 @@
         <dependency>
             <groupId>com.ims</groupId>
             <artifactId>ims-core</artifactId>
-            <version>1.0.0</version>
+            <version>1.0.0-SNAPSHOT</version>
         </dependency>
 
         <!-- Spring Boot Starter -->
