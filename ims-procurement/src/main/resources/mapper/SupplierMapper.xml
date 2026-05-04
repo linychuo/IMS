@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ims.procurement.mapper.SupplierMapper">
+
+    <resultMap id="BaseResultMap" type="com.ims.procurement.entity.Supplier">
+        <id column="id" property="id"/>
+        <result column="supplier_code" property="supplierCode"/>
+        <result column="supplier_name" property="supplierName"/>
+        <result column="contact" property="contact"/>
+        <result column="phone" property="phone"/>
+        <result column="mobile" property="mobile"/>
+        <result column="email" property="email"/>
+        <result column="address" property="address"/>
+        <result column="level" property="level"/>
+        <result column="credit_limit" property="creditLimit"/>
+        <result column="payable_amount" property="payableAmount"/>
+        <result column="bank_name" property="bankName"/>
+        <result column="bank_account" property="bankAccount"/>
+        <result column="tax_no" property="taxNo"/>
+        <result column="status" property="status"/>
+        <result column="remark" property="remark"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="create_by" property="createBy"/>
+        <result column="update_by" property="updateBy"/>
+        <result column="deleted" property="deleted"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, supplier_code, supplier_name, contact, phone, mobile, email, address,
+        level, credit_limit, payable_amount, bank_name, bank_account, tax_no,
+        status, remark, create_time, update_time, create_by, update_by, deleted
+    </sql>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM ims_supplier
+        WHERE id = #{id} AND deleted = 0
+    </select>
+
+    <select id="selectByCode" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM ims_supplier
+        WHERE supplier_code = #{code} AND deleted = 0
+    </select>
+
+    <select id="selectList" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM ims_supplier
+        WHERE deleted = 0
+        <if test="query.supplierCode != null and query.supplierCode != ''">
+            AND supplier_code LIKE CONCAT('%', #{query.supplierCode}, '%')
+        </if>
+        <if test="query.supplierName != null and query.supplierName != ''">
+            AND supplier_name LIKE CONCAT('%', #{query.supplierName}, '%')
+        </if>
+        <if test="query.status != null">
+            AND status = #{query.status}
+        </if>
+        ORDER BY id DESC
+    </select>
+
+    <insert id="insert" parameterType="com.ims.procurement.entity.Supplier">
+        INSERT INTO ims_supplier (
+            supplier_code, supplier_name, contact, phone, mobile, email, address,
+            level, credit_limit, payable_amount, bank_name, bank_account, tax_no,
+            status, remark, create_time, create_by, deleted
+        ) VALUES (
+            #{entity.supplierCode}, #{entity.supplierName}, #{entity.contact}, #{entity.phone},
+            #{entity.mobile}, #{entity.email}, #{entity.address}, #{entity.level},
+            #{entity.creditLimit}, #{entity.payableAmount}, #{entity.bankName}, #{entity.bankAccount},
+            #{entity.taxNo}, #{entity.status}, #{entity.remark}, NOW(), #{entity.createBy}, 0
+        )
+    </insert>
+
+    <update id="update" parameterType="com.ims.procurement.entity.Supplier">
+        UPDATE ims_supplier
+        SET supplier_name = #{entity.supplierName},
+            contact = #{entity.contact},
+            phone = #{entity.phone},
+            mobile = #{entity.mobile},
+            email = #{entity.email},
+            address = #{entity.address},
+            level = #{entity.level},
+            credit_limit = #{entity.creditLimit},
+            bank_name = #{entity.bankName},
+            bank_account = #{entity.bankAccount},
+            tax_no = #{entity.taxNo},
+            status = #{entity.status},
+            remark = #{entity.remark},
+            update_time = NOW(),
+            update_by = #{entity.updateBy}
+        WHERE id = #{entity.id} AND deleted = 0
+    </update>
+
+    <delete id="deleteById">
+        UPDATE ims_supplier
+        SET deleted = 1, update_time = NOW()
+        WHERE id = #{id}
+    </delete>
+
+</mapper>

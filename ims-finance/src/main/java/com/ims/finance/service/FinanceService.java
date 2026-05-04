@@ -1,544 +1,88 @@
 package com.ims.finance.service;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.ims.core.dto.PageResult;
-import com.ims.core.dto.PageResult;
-import com.ims.finance.dto.FinanceStatDTO;
-import com.ims.finance.dto.FinanceTrendDTO;
-import com.ims.finance.dto.FinanceSummaryDTO;
-import com.ims.finance.dto.FinanceExportDTO;
+import com.baomidou.mybatisplus.extension.service.IService;
+import com.ims.finance.entity.FinanceIn;
+import com.ims.finance.entity.FinanceOut;
+import com.ims.finance.entity.Account;
 import com.ims.finance.entity.AccountTransaction;
-import com.ims.finance.mapper.*;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import com.ims.finance.dto.*;
+import com.ims.core.dto.PageResult;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
-@Service
-public class FinanceService {
-    
-    @Autowired
-    private FinanceInMapper financeInMapper;
-    @Autowired
-    private FinanceOutMapper financeOutMapper;
-    @Autowired
-    private AccountMapper accountMapper;
-    @Autowired
-    private AccountTransactionMapper accountTransactionMapper;
+/**
+ * 财务Service接口
+ */
+public interface FinanceService extends IService<FinanceIn>, IService<FinanceOut> {
 
     // ========== 收款管理 ==========
-    public PageResult<FinanceIn> pageIn(Long page, Long pageSize, Long customerId, Integer status) {
-        LambdaQueryWrapper<FinanceIn> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(customerId != null, FinanceIn::getCustomerId, customerId)
-              .eq(status != null, FinanceIn::getStatus, status)
-              .orderByDesc(FinanceIn::getId);
-        Page<FinanceIn> result = financeInMapper.selectPage(new Page<>(page, pageSize), wrapper);
-        return PageResult.of(result);
-    }
-
-    public FinanceIn getInById(Long id) {
-        return financeInMapper.selectById(id);
-    }
-
-    @Transactional
-    public boolean saveIn(FinanceIn in) {
-        if (in.getId() == null) {
-            in.setInNo(generateInNo());
-            in.setPayDate(LocalDateTime.now());
-            in.setStatus(1);
-            return financeInMapper.insert(in) > 0;
-        }
-        return financeInMapper.updateById(in) > 0;
-    }
-
-    @Transactional
-    public boolean auditIn(Long id, Long auditorId) {
-        FinanceIn in = financeInMapper.selectById(id);
-        if (in != null && in.getStatus() == 1) {
-            in.setStatus(2);
-            in.setAuditorId(auditorId);
-            in.setAuditTime(LocalDateTime.now());
-            return financeInMapper.updateById(in) > 0;
-        }
-        return false;
-    }
-
-    @Transactional
-    public boolean cancelIn(Long id) {
-        FinanceIn in = financeInMapper.selectById(id);
-        if (in != null && in.getStatus() == 1) {
-            in.setStatus(3);
-            return financeInMapper.updateById(in) > 0;
-        }
-        return false;
-    }
-
-    @Transactional
-    public boolean deleteIn(Long id) {
-        FinanceIn in = financeInMapper.selectById(id);
-        if (in != null && in.getStatus() == 1) {
-            return financeInMapper.deleteById(id) > 0;
-        }
-        return false;
-    }
-
-    @Transactional
-    public int batchAuditIn(List<Long> ids, Long auditorId) {
-        int count = 0;
-        for (Long id : ids) {
-            if (auditIn(id, auditorId)) {
-                count++;
-            }
-        }
-        return count;
-    }
+    PageResult<FinanceIn> pageIn(Long page, Long pageSize, Long customerId, Integer status);
+    
+    FinanceIn getInById(Long id);
+    
+    boolean saveIn(FinanceIn in);
+    
+    boolean auditIn(Long id, Long auditorId);
+    
+    boolean cancelIn(Long id);
+    
+    boolean deleteIn(Long id);
+    
+    int batchAuditIn(List<Long> ids, Long auditorId);
 
     // ========== 付款管理 ==========
-    public PageResult<FinanceOut> pageOut(Long page, Long pageSize, Long supplierId, Integer status) {
-        LambdaQueryWrapper<FinanceOut> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(supplierId != null, FinanceOut::getSupplierId, supplierId)
-              .eq(status != null, FinanceOut::getStatus, status)
-              .orderByDesc(FinanceOut::getId);
-        Page<FinanceOut> result = financeOutMapper.selectPage(new Page<>(page, pageSize), wrapper);
-        return PageResult.of(result);
-    }
-
-    public FinanceOut getOutById(Long id) {
-        return financeOutMapper.selectById(id);
-    }
-
-    @Transactional
-    public boolean saveOut(FinanceOut out) {
-        if (out.getId() == null) {
-            out.setOutNo(generateOutNo());
-            out.setPayDate(LocalDateTime.now());
-            out.setStatus(1);
-            return financeOutMapper.insert(out) > 0;
-        }
-        return financeOutMapper.updateById(out) > 0;
-    }
-
-    @Transactional
-    public boolean auditOut(Long id, Long auditorId) {
-        FinanceOut out = financeOutMapper.selectById(id);
-        if (out != null && out.getStatus() == 1) {
-            out.setStatus(2);
-            out.setAuditorId(auditorId);
-            out.setAuditTime(LocalDateTime.now());
-            return financeOutMapper.updateById(out) > 0;
-        }
-        return false;
-    }
-
-    @Transactional
-    public boolean cancelOut(Long id) {
-        FinanceOut out = financeOutMapper.selectById(id);
-        if (out != null && out.getStatus() == 1) {
-            out.setStatus(3);
-            return financeOutMapper.updateById(out) > 0;
-        }
-        return false;
-    }
-
-    @Transactional
-    public boolean deleteOut(Long id) {
-        FinanceOut out = financeOutMapper.selectById(id);
-        if (out != null && out.getStatus() == 1) {
-            return financeOutMapper.deleteById(id) > 0;
-        }
-        return false;
-    }
-
-    @Transactional
-    public int batchAuditOut(List<Long> ids, Long auditorId) {
-        int count = 0;
-        for (Long id : ids) {
-            if (auditOut(id, auditorId)) {
-                count++;
-            }
-        }
-        return count;
-    }
+    PageResult<FinanceOut> pageOut(Long page, Long pageSize, Long supplierId, Integer status);
+    
+    FinanceOut getOutById(Long id);
+    
+    boolean saveOut(FinanceOut out);
+    
+    boolean auditOut(Long id, Long auditorId);
+    
+    boolean cancelOut(Long id);
+    
+    boolean deleteOut(Long id);
+    
+    int batchAuditOut(List<Long> ids, Long auditorId);
 
     // ========== 账户管理 ==========
-    public PageResult<Account> pageAccount(Long page, Long pageSize, Integer accountType, Integer status) {
-        LambdaQueryWrapper<Account> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(accountType != null, Account::getAccountType, accountType)
-              .eq(status != null, Account::getStatus, status)
-              .orderByDesc(Account::getId);
-        Page<Account> result = accountMapper.selectPage(new Page<>(page, pageSize), wrapper);
-        return PageResult.of(result);
-    }
-
-    public Account getAccountById(Long id) {
-        return accountMapper.selectById(id);
-    }
-
-    public List<Account> listAccount() {
-        return accountMapper.selectList(new LambdaQueryWrapper<Account>().eq(Account::getStatus, 1));
-    }
-
-    @Transactional
-    public boolean saveAccount(Account account) {
-        if (account.getId() == null) {
-            account.setAccountNo(generateAccountNo());
-            account.setStatus(1);
-            return accountMapper.insert(account) > 0;
-        }
-        return accountMapper.updateById(account) > 0;
-    }
-
-    @Transactional
-    public boolean enableAccount(Long id) {
-        Account account = accountMapper.selectById(id);
-        if (account != null) {
-            account.setStatus(1);
-            return accountMapper.updateById(account) > 0;
-        }
-        return false;
-    }
-
-    @Transactional
-    public boolean disableAccount(Long id) {
-        Account account = accountMapper.selectById(id);
-        if (account != null) {
-            account.setStatus(2);
-            return accountMapper.updateById(account) > 0;
-        }
-        return false;
-    }
-
-    @Transactional
-    public boolean deleteAccount(Long id) {
-        Account account = accountMapper.selectById(id);
-        if (account != null && account.getStatus() == 1) {
-            return accountMapper.deleteById(id) > 0;
-        }
-        return false;
-    }
-
-    private String generateInNo() {
-        return "FIN" + System.currentTimeMillis();
-    }
-
-    private String generateOutNo() {
-        return "FOUT" + System.currentTimeMillis();
-    }
-
-    private String generateAccountNo() {
-        return "ACC" + System.currentTimeMillis();
-    }
+    PageResult<Account> pageAccount(Long page, Long pageSize, Integer accountType, Integer status);
+    
+    Account getAccountById(Long id);
+    
+    List<Account> listAccount();
+    
+    boolean saveAccount(Account account);
+    
+    boolean enableAccount(Long id);
+    
+    boolean disableAccount(Long id);
+    
+    boolean deleteAccount(Long id);
 
     // ========== 财务报表 ==========
-    public FinanceStatDTO getStat() {
-        // 收款统计
-        LambdaQueryWrapper<FinanceIn> wrapperIn = new LambdaQueryWrapper<>();
-        wrapperIn.select(FinanceIn::getAmount);
-        List<FinanceIn> inList = financeInMapper.selectList(wrapperIn);
-        BigDecimal totalIn = inList.stream()
-            .map(FinanceIn::getAmount)
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
-        
-        LambdaQueryWrapper<FinanceIn> wrapperPendingIn = new LambdaQueryWrapper<>();
-        wrapperPendingIn.eq(FinanceIn::getStatus, 1);
-        int pendingInCount = financeInMapper.selectCount(wrapperPendingIn).intValue();
-        
-        // 付款统计
-        LambdaQueryWrapper<FinanceOut> wrapperOut = new LambdaQueryWrapper<>();
-        wrapperOut.select(FinanceOut::getAmount);
-        List<FinanceOut> outList = financeOutMapper.selectList(wrapperOut);
-        BigDecimal totalOut = outList.stream()
-            .map(FinanceOut::getAmount)
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
-        
-        LambdaQueryWrapper<FinanceOut> wrapperPendingOut = new LambdaQueryWrapper<>();
-        wrapperPendingOut.eq(FinanceOut::getStatus, 1);
-        int pendingOutCount = financeOutMapper.selectCount(wrapperPendingOut).intValue();
-        
-        // Build stat result
-        FinanceStatDTO stat = new FinanceStatDTO();
-        stat.setTotalInAmount(totalIn);
-        stat.setTotalOutAmount(totalOut);
-        stat.setNetAmount(totalIn.subtract(totalOut));
-        stat.setPendingInCount(pendingInCount);
-        stat.setPendingOutCount(pendingOutCount);
-        stat.setTotalInCount(inList.size());
-        stat.setTotalOutCount(outList.size());
-        return stat;
-    }
+    FinanceStatDTO getStat();
+    
+    FinanceStatDTO getStatByDateRange(LocalDate startDate, LocalDate endDate);
 
     // ========== 账户交易历史 ==========
-    public PageResult<AccountTransaction> pageAccountTrans(Long page, Long pageSize, Long accountId) {
-        LambdaQueryWrapper<AccountTransaction> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(accountId != null, AccountTransaction::getAccountId, accountId)
-              .orderByDesc(AccountTransaction::getId);
-        Page<AccountTransaction> result = accountTransactionMapper.selectPage(new Page<>(page, pageSize), wrapper);
-        return PageResult.of(result);
-    }
-
-    public List<AccountTransaction> listAccountTrans(Long accountId) {
-        LambdaQueryWrapper<AccountTransaction> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(AccountTransaction::getAccountId, accountId)
-              .orderByDesc(AccountTransaction::getId);
-        return accountTransactionMapper.selectList(wrapper);
-    }
-
-    @Transactional
-    public boolean saveAccountTrans(AccountTransaction trans) {
-        if (trans.getId() == null) {
-            // 更新账户余额
-            Account account = accountMapper.selectById(trans.getAccountId());
-            if (account != null) {
-                BigDecimal balance = account.getBalance();
-                if (trans.getTransType() == 1 || trans.getTransType() == 3) {
-                    // 收款入账/调整增加
-                    balance = balance.add(trans.getAmount());
-                } else {
-                    // 付款出账/调整减少
-                    balance = balance.subtract(trans.getAmount());
-                }
-                account.setBalance(balance);
-                accountMapper.updateById(account);
-            }
-            return accountTransactionMapper.insert(trans) > 0;
-        }
-        return false;
-    }
-
-    // ========== 财务报表(带日期范围) ==========
-    public FinanceStatDTO getStatByDateRange(LocalDate startDate, LocalDate endDate) {
-        // 收款统计
-        LambdaQueryWrapper<FinanceIn> wrapperIn = new LambdaQueryWrapper<>();
-        wrapperIn.ge(startDate != null, FinanceIn::getPayDate, startDate.atStartOfDay())
-              .le(endDate != null, FinanceIn::getPayDate, endDate.plusDays(1).atStartOfDay());
-        List<FinanceIn> inList = financeInMapper.selectList(wrapperIn);
-        BigDecimal totalIn = inList.stream()
-            .map(FinanceIn::getAmount)
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
-        
-        LambdaQueryWrapper<FinanceIn> wrapperPendingIn = new LambdaQueryWrapper<>();
-        wrapperPendingIn.eq(FinanceIn::getStatus, 1)
-              .ge(startDate != null, FinanceIn::getPayDate, startDate.atStartOfDay())
-              .le(endDate != null, FinanceIn::getPayDate, endDate.plusDays(1).atStartOfDay());
-        int pendingInCount = financeInMapper.selectCount(wrapperPendingIn).intValue();
-        
-        // 付款统计
-        LambdaQueryWrapper<FinanceOut> wrapperOut = new LambdaQueryWrapper<>();
-        wrapperOut.ge(startDate != null, FinanceOut::getPayDate, startDate.atStartOfDay())
-              .le(endDate != null, FinanceOut::getPayDate, endDate.plusDays(1).atStartOfDay());
-        List<FinanceOut> outList = financeOutMapper.selectList(wrapperOut);
-        BigDecimal totalOut = outList.stream()
-            .map(FinanceOut::getAmount)
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
-        
-        LambdaQueryWrapper<FinanceOut> wrapperPendingOut = new LambdaQueryWrapper<>();
-        wrapperPendingOut.eq(FinanceOut::getStatus, 1)
-              .ge(startDate != null, FinanceOut::getPayDate, startDate.atStartOfDay())
-              .le(endDate != null, FinanceOut::getPayDate, endDate.plusDays(1).atStartOfDay());
-        int pendingOutCount = financeOutMapper.selectCount(wrapperPendingOut).intValue();
-        
-        // Build stat result
-        FinanceStatDTO stat = new FinanceStatDTO();
-        stat.setTotalInAmount(totalIn);
-        stat.setTotalOutAmount(totalOut);
-        stat.setNetAmount(totalIn.subtract(totalOut));
-        stat.setPendingInCount(pendingInCount);
-        stat.setPendingOutCount(pendingOutCount);
-        stat.setTotalInCount(inList.size());
-        stat.setTotalOutCount(outList.size());
-        return stat;
-    }
+    PageResult<AccountTransaction> pageAccountTrans(Long page, Long pageSize, Long accountId);
+    
+    List<AccountTransaction> listAccountTrans(Long accountId);
+    
+    boolean saveAccountTrans(AccountTransaction trans);
 
     // ========== 趋势分析 ==========
-    public FinanceTrendDTO getTrend(Integer months) {
-        if (months == null || months <= 0) {
-            months = 6; // 默认6个月
-        }
-        
-        LocalDate now = LocalDate.now();
-        List<FinanceTrendDTO.MonthlyStat> monthlyStats = new ArrayList<>();
-        
-        for (int i = 0; i < months; i++) {
-            LocalDate monthStart = now.minusMonths(i).withDayOfMonth(1);
-            LocalDate monthEnd = monthStart.plusMonths(1).minusDays(1);
-            
-            // 收款统计
-            LambdaQueryWrapper<FinanceIn> wrapperIn = new LambdaQueryWrapper<>();
-            wrapperIn.ge(FinanceIn::getPayDate, monthStart.atStartOfDay())
-                  .lt(FinanceIn::getPayDate, monthStart.plusMonths(1).atStartOfDay());
-            List<FinanceIn> inList = financeInMapper.selectList(wrapperIn);
-            BigDecimal inAmount = inList.stream()
-                .map(FinanceIn::getAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-            
-            // 付款统计
-            LambdaQueryWrapper<FinanceOut> wrapperOut = new LambdaQueryWrapper<>();
-            wrapperOut.ge(FinanceOut::getPayDate, monthStart.atStartOfDay())
-                  .lt(FinanceOut::getPayDate, monthStart.plusMonths(1).atStartOfDay());
-            List<FinanceOut> outList = financeOutMapper.selectList(wrapperOut);
-            BigDecimal outAmount = outList.stream()
-                .map(FinanceOut::getAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-            
-            FinanceTrendDTO.MonthlyStat stat = new FinanceTrendDTO.MonthlyStat();
-            stat.setMonth(monthStart.format(DateTimeFormatter.ofPattern("yyyy-MM")));
-            stat.setInAmount(inAmount);
-            stat.setOutAmount(outAmount);
-            stat.setNetAmount(inAmount.subtract(outAmount));
-            stat.setInCount(inList.size());
-            stat.setOutCount(outList.size());
-            monthlyStats.add(stat);
-        }
-        
-        // 计算增长率 (与上期比较)
-        BigDecimal growthRate = BigDecimal.ZERO;
-        if (monthlyStats.size() >= 2) {
-            FinanceTrendDTO.MonthlyStat current = monthlyStats.get(0);
-            FinanceTrendDTO.MonthlyStat previous = monthlyStats.get(1);
-            if (previous.getNetAmount().compareTo(BigDecimal.ZERO) != 0) {
-                growthRate = current.getNetAmount()
-                    .subtract(previous.getNetAmount())
-                    .divide(previous.getNetAmount(), 4, BigDecimal.ROUND_HALF_UP)
-                    .multiply(new BigDecimal("100"));
-            }
-        }
-        
-        FinanceTrendDTO trend = new FinanceTrendDTO();
-        trend.setMonthlyStats(monthlyStats);
-        trend.setGrowthRate(growthRate);
-        trend.setTotalMonths(months);
-        return trend;
-    }
+    FinanceTrendDTO getTrend(Integer months);
 
-    // ========== 客户收款汇总 ==========
-    public List<FinanceSummaryDTO> getCustomerSummary() {
-        List<FinanceSummaryDTO> result = new ArrayList<>();
-        
-        // 获取所有收款记录并按客户分组
-        LambdaQueryWrapper<FinanceIn> wrapper = new LambdaQueryWrapper<>();
-        wrapper.select(FinanceIn::getCustomerId, FinanceIn::getAmount, FinanceIn::getStatus);
-        List<FinanceIn> inList = financeInMapper.selectList(wrapper);
-        
-        // 按客户ID分组汇总
-        List<Long> customerIds = inList.stream()
-            .map(FinanceIn::getCustomerId)
-            .distinct()
-            .collect(Collectors.toList());
-        
-        for (Long customerId : customerIds) {
-            if (customerId == null) continue;
-            
-            List<FinanceIn> customerInList = inList.stream()
-                .filter(in -> customerId.equals(in.getCustomerId()))
-                .collect(Collectors.toList());
-            
-            BigDecimal totalAmount = customerInList.stream()
-                .map(FinanceIn::getAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-            
-            int pendingCount = (int) customerInList.stream()
-                .filter(in -> in.getStatus() == 1)
-                .count();
-            
-            FinanceSummaryDTO summary = new FinanceSummaryDTO();
-            summary.setId(customerId);
-            summary.setTotalInAmount(totalAmount);
-            summary.setNetAmount(totalAmount);
-            summary.setCount(customerInList.size());
-            summary.setPendingCount(pendingCount);
-            result.add(summary);
-        }
-        
-        return result;
-    }
+    // ========== 汇总数据 ==========
+    List<FinanceSummaryDTO> getCustomerSummary();
+    
+    List<FinanceSummaryDTO> getSupplierSummary();
 
-    // ========== 供应商付款汇总 ==========
-    public List<FinanceSummaryDTO> getSupplierSummary() {
-        List<FinanceSummaryDTO> result = new ArrayList<>();
-        
-        // 获取所有付款记录并按供应商分组
-        LambdaQueryWrapper<FinanceOut> wrapper = new LambdaQueryWrapper<>();
-        wrapper.select(FinanceOut::getSupplierId, FinanceOut::getAmount, FinanceOut::getStatus);
-        List<FinanceOut> outList = financeOutMapper.selectList(wrapper);
-        
-        // 按供应商ID分组汇总
-        List<Long> supplierIds = outList.stream()
-            .map(FinanceOut::getSupplierId)
-            .distinct()
-            .collect(Collectors.toList());
-        
-        for (Long supplierId : supplierIds) {
-            if (supplierId == null) continue;
-            
-            List<FinanceOut> supplierOutList = outList.stream()
-                .filter(out -> supplierId.equals(out.getSupplierId()))
-                .collect(Collectors.toList());
-            
-            BigDecimal totalAmount = supplierOutList.stream()
-                .map(FinanceOut::getAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-            
-            int pendingCount = (int) supplierOutList.stream()
-                .filter(out -> out.getStatus() == 1)
-                .count();
-            
-            FinanceSummaryDTO summary = new FinanceSummaryDTO();
-            summary.setId(supplierId);
-            summary.setTotalOutAmount(totalAmount);
-            summary.setNetAmount(totalAmount);
-            summary.setCount(supplierOutList.size());
-            summary.setPendingCount(pendingCount);
-            result.add(summary);
-        }
-        
-        return result;
-    }
-
-    // ========== 导出收款数据 ==========
-    public List<FinanceExportDTO> exportIn(LocalDate startDate, LocalDate endDate) {
-        LambdaQueryWrapper<FinanceIn> wrapper = new LambdaQueryWrapper<>();
-        wrapper.ge(startDate != null, FinanceIn::getPayDate, startDate.atStartOfDay())
-              .le(endDate != null, FinanceIn::getPayDate, endDate.plusDays(1).atStartOfDay())
-              .orderByDesc(FinanceIn::getId);
-        List<FinanceIn> list = financeInMapper.selectList(wrapper);
-        
-        return list.stream().map(in -> {
-            FinanceExportDTO dto = new FinanceExportDTO();
-            dto.setNo(in.getInNo());
-            dto.setType(1);
-            dto.setStatus(in.getStatus());
-            dto.setAmount(in.getAmount());
-            dto.setPayDate(in.getPayDate());
-            dto.setRemark(in.getRemark());
-            return dto;
-        }).collect(Collectors.toList());
-    }
-
-    // ========== 导出付款数据 ==========
-    public List<FinanceExportDTO> exportOut(LocalDate startDate, LocalDate endDate) {
-        LambdaQueryWrapper<FinanceOut> wrapper = new LambdaQueryWrapper<>();
-        wrapper.ge(startDate != null, FinanceOut::getPayDate, startDate.atStartOfDay())
-              .le(endDate != null, FinanceOut::getPayDate, endDate.plusDays(1).atStartOfDay())
-              .orderByDesc(FinanceOut::getId);
-        List<FinanceOut> list = financeOutMapper.selectList(wrapper);
-        
-        return list.stream().map(out -> {
-            FinanceExportDTO dto = new FinanceExportDTO();
-            dto.setNo(out.getOutNo());
-            dto.setType(2);
-            dto.setStatus(out.getStatus());
-            dto.setAmount(out.getAmount());
-            dto.setPayDate(out.getPayDate());
-            dto.setRemark(out.getRemark());
-            return dto;
-        }).collect(Collectors.toList());
-    }
+    // ========== 导出数据 ==========
+    List<FinanceExportDTO> exportIn(LocalDate startDate, LocalDate endDate);
+    
+    List<FinanceExportDTO> exportOut(LocalDate startDate, LocalDate endDate);
 }
