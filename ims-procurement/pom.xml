@@ -20,6 +20,11 @@
             <groupId>com.ims</groupId>
             <artifactId>ims-common</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.ims</groupId>
+            <artifactId>ims-finance</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <!-- Spring Boot -->
         <dependency>

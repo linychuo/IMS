@@ -98,6 +98,13 @@ public final class OrderNoGenerator {
     }
 
     /**
+     * 生成财务支出单编号 FO + 年月日 + 6位序号 (退款/付款)
+     */
+    public static String generateFinanceOutNo() {
+        return generateOrderNo("FO");
+    }
+
+    /**
      * 生成通用单据编号
      * @param prefix 前缀 (如 PO, SO 等)
      */

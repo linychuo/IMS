@@ -1,6 +1,9 @@
 package com.ims.procurement.service.impl;
 
+import com.ims.common.enums.CommonStatus;
 import com.ims.common.util.OrderNoGenerator;
+import com.ims.finance.entity.Payable;
+import com.ims.finance.service.PayableService;
 import com.ims.procurement.entity.PurchaseIn;
 import com.ims.procurement.mapper.PurchaseInMapper;
 import com.ims.procurement.service.PurchaseInService;
@@ -9,6 +12,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -22,10 +27,14 @@ public class PurchaseInServiceImpl implements PurchaseInService {
 
     private final PurchaseInMapper purchaseInMapper;
     private final OrderNoGenerator orderNoGenerator;
+    private final PayableService payableService;
 
-    public PurchaseInServiceImpl(PurchaseInMapper purchaseInMapper, OrderNoGenerator orderNoGenerator) {
+    public PurchaseInServiceImpl(PurchaseInMapper purchaseInMapper,
+                                  OrderNoGenerator orderNoGenerator,
+                                  PayableService payableService) {
         this.purchaseInMapper = purchaseInMapper;
         this.orderNoGenerator = orderNoGenerator;
+        this.payableService = payableService;
     }
 
     @Override
@@ -33,7 +42,7 @@ public class PurchaseInServiceImpl implements PurchaseInService {
     public PurchaseIn create(PurchaseIn purchaseIn) {
         // 生成入库单号
         purchaseIn.setInNo(orderNoGenerator.generatePurchaseInNo());
-        purchaseIn.setStatus(com.ims.common.enums.CommonStatus.PENDING.getCode());
+        purchaseIn.setStatus(CommonStatus.PENDING.getCode());
         purchaseInMapper.insert(purchaseIn);
         log.info("创建采购入库单: {}", purchaseIn.getInNo());
         return purchaseIn;
@@ -62,14 +71,26 @@ public class PurchaseInServiceImpl implements PurchaseInService {
         if (purchaseIn == null) {
             throw new RuntimeException("入库单不存在: " + id);
         }
-        if (purchaseIn.getStatus() != com.ims.common.enums.CommonStatus.PENDING.getCode()) {
+        if (purchaseIn.getStatus() != CommonStatus.PENDING.getCode()) {
             throw new RuntimeException("只有待入库状态可审核");
         }
         purchaseIn.setAuditedBy(userId);
         purchaseIn.setAuditedAt(LocalDateTime.now());
-        purchaseIn.setStatus(com.ims.common.enums.CommonStatus.APPROVED.getCode());
+        purchaseIn.setStatus(CommonStatus.APPROVED.getCode());
         purchaseInMapper.update(purchaseIn);
-        log.info("审核采购入库单: {} by {}", id, userId);
+
+        // 自动生成应付账款
+        Payable payable = new Payable();
+        payable.setSupplierId(Long.parseLong(purchaseIn.getSupplierId()));
+        payable.setSupplierName(purchaseIn.getSupplierName());
+        payable.setOrderType("PURCHASE_IN");
+        payable.setOrderId(Long.parseLong(id));
+        payable.setOrderNo(purchaseIn.getInNo());
+        payable.setTotalAmount(purchaseIn.getTotalAmount());
+        payable.setDueDate(LocalDate.now().plusDays(30)); // 默认30天账期
+        payableService.create(payable);
+
+        log.info("审核采购入库单: {} by {}, 自动生成应付账款", id, userId);
     }
 
     @Override

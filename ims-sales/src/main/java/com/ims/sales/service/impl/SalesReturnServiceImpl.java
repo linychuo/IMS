@@ -2,6 +2,8 @@ package com.ims.sales.service.impl;
 
 import com.ims.common.enums.CommonStatus;
 import com.ims.common.util.OrderNoGenerator;
+import com.ims.finance.entity.FinanceOut;
+import com.ims.finance.mapper.FinanceOutMapper;
 import com.ims.inventory.service.InventoryService;
 import com.ims.sales.entity.SalesReturn;
 import com.ims.sales.entity.SalesReturnDetail;
@@ -14,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -29,15 +32,18 @@ public class SalesReturnServiceImpl implements SalesReturnService {
     private final SalesReturnDetailMapper salesReturnDetailMapper;
     private final OrderNoGenerator orderNoGenerator;
     private final InventoryService inventoryService;
+    private final FinanceOutMapper financeOutMapper;
 
     public SalesReturnServiceImpl(SalesReturnMapper salesReturnMapper,
                                    SalesReturnDetailMapper salesReturnDetailMapper,
                                    OrderNoGenerator orderNoGenerator,
-                                   InventoryService inventoryService) {
+                                   InventoryService inventoryService,
+                                   FinanceOutMapper financeOutMapper) {
         this.salesReturnMapper = salesReturnMapper;
         this.salesReturnDetailMapper = salesReturnDetailMapper;
         this.orderNoGenerator = orderNoGenerator;
         this.inventoryService = inventoryService;
+        this.financeOutMapper = financeOutMapper;
     }
 
     @Override
@@ -146,7 +152,7 @@ public class SalesReturnServiceImpl implements SalesReturnService {
         if (salesReturn.getStatus() != CommonStatus.APPROVED.getCode()) {
             throw new RuntimeException("只有已审核状态可入库");
         }
-        
+
         // 入库时增加库存
         List<SalesReturnDetail> details = salesReturnDetailMapper.selectByReturnId(id);
         for (SalesReturnDetail detail : details) {
@@ -155,12 +161,12 @@ public class SalesReturnServiceImpl implements SalesReturnService {
             Long locationId = detail.getLocationId() != null ? Long.parseLong(detail.getLocationId()) : null;
             BigDecimal quantity = detail.getQuantity();
             BigDecimal price = detail.getPrice() != null ? detail.getPrice() : BigDecimal.ZERO;
-            
+
             boolean added = inventoryService.addStock(
-                productId, 
-                warehouseId, 
-                locationId, 
-                quantity, 
+                productId,
+                warehouseId,
+                locationId,
+                quantity,
                 price,
                 salesReturn.getReturnNo(),
                 "SALES_RETURN",
@@ -171,7 +177,20 @@ public class SalesReturnServiceImpl implements SalesReturnService {
             }
             log.info("退货入库增加库存: 商品{} 数量{}", detail.getProductName(), quantity);
         }
-        
+
+        // 自动生成退款记录
+        if (salesReturn.getRefundAmount() != null && salesReturn.getRefundAmount().compareTo(BigDecimal.ZERO) > 0) {
+            FinanceOut refund = new FinanceOut();
+            refund.setOutNo(orderNoGenerator.generateFinanceOutNo());
+            refund.setOrderId(Long.parseLong(salesReturn.getOrderId()));
+            refund.setSupplierId(Long.parseLong(salesReturn.getCustomerId())); // 客户ID
+            refund.setAmount(salesReturn.getRefundAmount());
+            refund.setPayDate(LocalDateTime.now());
+            refund.setStatus(1); // 待审核
+            financeOutMapper.insert(refund);
+            log.info("销售退货自动生成退款记录: 退款单号{} 金额{}", refund.getOutNo(), salesReturn.getRefundAmount());
+        }
+
         salesReturn.setStatus(CommonStatus.COMPLETED.getCode());
         salesReturnMapper.update(salesReturn);
         log.info("销售退货单入库完成: {} by {}", id, userId);
