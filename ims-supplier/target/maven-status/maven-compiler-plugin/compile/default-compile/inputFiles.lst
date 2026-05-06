@@ -1,7 +1,0 @@
-/home/ivan/IMS/ims-supplier/src/main/java/com/ims/supplier/controller/SupplierController.java
-/home/ivan/IMS/ims-supplier/src/main/java/com/ims/supplier/dto/SupplierDTO.java
-/home/ivan/IMS/ims-supplier/src/main/java/com/ims/supplier/dto/SupplierQueryRequest.java
-/home/ivan/IMS/ims-supplier/src/main/java/com/ims/supplier/entity/Supplier.java
-/home/ivan/IMS/ims-supplier/src/main/java/com/ims/supplier/mapper/SupplierMapper.java
-/home/ivan/IMS/ims-supplier/src/main/java/com/ims/supplier/service/SupplierService.java
-/home/ivan/IMS/ims-supplier/src/main/java/com/ims/supplier/service/impl/SupplierServiceImpl.java

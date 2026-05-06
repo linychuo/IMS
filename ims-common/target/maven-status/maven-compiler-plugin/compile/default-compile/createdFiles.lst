@@ -1,9 +1,0 @@
-com/ims/common/util/OrderNoGenerator.class
-com/ims/common/enums/CommonStatus.class
-com/ims/common/result/PageResult.class
-com/ims/common/config/MyBatisConfig.class
-com/ims/common/dto/BaseDTO.class
-com/ims/common/entity/BaseEntity.class
-com/ims/common/result/Result.class
-com/ims/common/enums/BaseEnum.class
-com/ims/common/mapper/BaseMapper.class

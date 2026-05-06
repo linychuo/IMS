@@ -1,7 +1,0 @@
-/home/ivan/IMS/ims-customer/src/main/java/com/ims/customer/controller/CustomerController.java
-/home/ivan/IMS/ims-customer/src/main/java/com/ims/customer/dto/CustomerDTO.java
-/home/ivan/IMS/ims-customer/src/main/java/com/ims/customer/dto/CustomerQueryRequest.java
-/home/ivan/IMS/ims-customer/src/main/java/com/ims/customer/entity/Customer.java
-/home/ivan/IMS/ims-customer/src/main/java/com/ims/customer/mapper/CustomerMapper.java
-/home/ivan/IMS/ims-customer/src/main/java/com/ims/customer/service/CustomerService.java
-/home/ivan/IMS/ims-customer/src/main/java/com/ims/customer/service/impl/CustomerServiceImpl.java

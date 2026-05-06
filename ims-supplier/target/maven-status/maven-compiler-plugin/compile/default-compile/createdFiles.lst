@@ -1,7 +1,0 @@
-com/ims/supplier/dto/SupplierDTO.class
-com/ims/supplier/service/SupplierService.class
-com/ims/supplier/service/impl/SupplierServiceImpl.class
-com/ims/supplier/mapper/SupplierMapper.class
-com/ims/supplier/dto/SupplierQueryRequest.class
-com/ims/supplier/entity/Supplier.class
-com/ims/supplier/controller/SupplierController.class

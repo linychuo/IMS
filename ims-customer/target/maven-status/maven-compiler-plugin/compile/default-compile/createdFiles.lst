@@ -1,7 +1,0 @@
-com/ims/customer/service/CustomerService.class
-com/ims/customer/dto/CustomerQueryRequest.class
-com/ims/customer/service/impl/CustomerServiceImpl.class
-com/ims/customer/dto/CustomerDTO.class
-com/ims/customer/controller/CustomerController.class
-com/ims/customer/entity/Customer.class
-com/ims/customer/mapper/CustomerMapper.class

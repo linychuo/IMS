@@ -1,7 +1,0 @@
-/home/ivan/IMS/ims-product/src/main/java/com/ims/product/controller/ProductController.java
-/home/ivan/IMS/ims-product/src/main/java/com/ims/product/dto/ProductDTO.java
-/home/ivan/IMS/ims-product/src/main/java/com/ims/product/dto/ProductQueryRequest.java
-/home/ivan/IMS/ims-product/src/main/java/com/ims/product/entity/Product.java
-/home/ivan/IMS/ims-product/src/main/java/com/ims/product/mapper/ProductMapper.java
-/home/ivan/IMS/ims-product/src/main/java/com/ims/product/service/ProductService.java
-/home/ivan/IMS/ims-product/src/main/java/com/ims/product/service/impl/ProductServiceImpl.java
