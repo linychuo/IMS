@@ -1,7 +1,6 @@
 package com.ims.sales.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
-import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -9,7 +8,6 @@ import java.time.LocalDate;
 /**
  * 销售价格策略保存请求
  */
-@Data
 public class SalesPriceStrategySaveRequest {
 
     /**
@@ -81,4 +79,31 @@ public class SalesPriceStrategySaveRequest {
      * 备注
      */
     private String remark;
+
+    public String getId() { return id; }
+    public void setId(String id) { this.id = id; }
+    public String getStrategyNo() { return strategyNo; }
+    public void setStrategyNo(String strategyNo) { this.strategyNo = strategyNo; }
+    public String getStrategyName() { return strategyName; }
+    public void setStrategyName(String strategyName) { this.strategyName = strategyName; }
+    public String getCustomerId() { return customerId; }
+    public void setCustomerId(String customerId) { this.customerId = customerId; }
+    public String getProductId() { return productId; }
+    public void setProductId(String productId) { this.productId = productId; }
+    public String getProductCategoryId() { return productCategoryId; }
+    public void setProductCategoryId(String productCategoryId) { this.productCategoryId = productCategoryId; }
+    public LocalDate getStartDate() { return startDate; }
+    public void setStartDate(LocalDate startDate) { this.startDate = startDate; }
+    public LocalDate getEndDate() { return endDate; }
+    public void setEndDate(LocalDate endDate) { this.endDate = endDate; }
+    public Integer getPriceType() { return priceType; }
+    public void setPriceType(Integer priceType) { this.priceType = priceType; }
+    public BigDecimal getPrice() { return price; }
+    public void setPrice(BigDecimal price) { this.price = price; }
+    public BigDecimal getDiscountRate() { return discountRate; }
+    public void setDiscountRate(BigDecimal discountRate) { this.discountRate = discountRate; }
+    public Integer getStatus() { return status; }
+    public void setStatus(Integer status) { this.status = status; }
+    public String getRemark() { return remark; }
+    public void setRemark(String remark) { this.remark = remark; }
 }

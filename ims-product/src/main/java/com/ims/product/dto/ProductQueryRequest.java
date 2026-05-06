@@ -1,45 +1,30 @@
 package com.ims.product.dto;
 
-import lombok.Data;
-
 /**
  * 商品查询请求
  */
-@Data
 public class ProductQueryRequest {
 
-    /**
-     * 商品编码
-     */
     private String code;
-
-    /**
-     * 商品名称（模糊查询）
-     */
     private String name;
-
-    /**
-     * 商品分类ID
-     */
     private Long categoryId;
-
-    /**
-     * 条码
-     */
     private String barcode;
-
-    /**
-     * 商品状态 (0-启用, 1-停用)
-     */
     private Integer status;
-
-    /**
-     * 页码
-     */
     private Integer page = 1;
-
-    /**
-     * 每页数量
-     */
     private Integer pageSize = 10;
+
+    public String getCode() { return code; }
+    public void setCode(String code) { this.code = code; }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+    public Long getCategoryId() { return categoryId; }
+    public void setCategoryId(Long categoryId) { this.categoryId = categoryId; }
+    public String getBarcode() { return barcode; }
+    public void setBarcode(String barcode) { this.barcode = barcode; }
+    public Integer getStatus() { return status; }
+    public void setStatus(Integer status) { this.status = status; }
+    public Integer getPage() { return page; }
+    public void setPage(Integer page) { this.page = page; }
+    public Integer getPageSize() { return pageSize; }
+    public void setPageSize(Integer pageSize) { this.pageSize = pageSize; }
 }

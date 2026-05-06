@@ -4,7 +4,8 @@ import com.ims.sales.entity.SalesReturn;
 import com.ims.sales.entity.SalesReturnDetail;
 import com.ims.sales.service.SalesReturnService;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,10 +16,15 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/sales/return")
-@RequiredArgsConstructor
 public class SalesReturnController {
 
+    private static final Logger log = LoggerFactory.getLogger(SalesReturnController.class);
+
     private final SalesReturnService salesReturnService;
+
+    public SalesReturnController(SalesReturnService salesReturnService) {
+        this.salesReturnService = salesReturnService;
+    }
 
     /**
      * 创建退货单
@@ -43,7 +49,7 @@ public class SalesReturnController {
      * 审核通过
      */
     @PostMapping("/{id}/approve")
-    public ResponseEntity<Void> approve(@PathVariable String id, 
+    public ResponseEntity<Void> approve(@PathVariable String id,
                                         @RequestParam String userId) {
         salesReturnService.approve(id, userId);
         return ResponseEntity.ok().build();
@@ -53,7 +59,7 @@ public class SalesReturnController {
      * 拒绝
      */
     @PostMapping("/{id}/reject")
-    public ResponseEntity<Void> reject(@PathVariable String id, 
+    public ResponseEntity<Void> reject(@PathVariable String id,
                                        @RequestParam String reason) {
         salesReturnService.reject(id, reason);
         return ResponseEntity.ok().build();
@@ -63,7 +69,7 @@ public class SalesReturnController {
      * 取消
      */
     @PostMapping("/{id}/cancel")
-    public ResponseEntity<Void> cancel(@PathVariable String id, 
+    public ResponseEntity<Void> cancel(@PathVariable String id,
                                       @RequestParam String reason) {
         salesReturnService.cancel(id, reason);
         return ResponseEntity.ok().build();
@@ -73,7 +79,7 @@ public class SalesReturnController {
      * 退货入库
      */
     @PostMapping("/{id}/inbound")
-    public ResponseEntity<Void> inbound(@PathVariable String id, 
+    public ResponseEntity<Void> inbound(@PathVariable String id,
                                          @RequestParam String userId) {
         salesReturnService.inbound(id, userId);
         return ResponseEntity.ok().build();

@@ -2,7 +2,6 @@ package com.ims.sales.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
-import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -11,7 +10,6 @@ import java.util.List;
 /**
  * 销售订单保存请求
  */
-@Data
 public class SalesOrderSaveRequest {
 
     /**
@@ -54,7 +52,6 @@ public class SalesOrderSaveRequest {
     /**
      * 订单明细
      */
-    @Data
     public static class SalesOrderDetailRequest {
         /**
          * 明细ID (更新时必填)
@@ -83,5 +80,31 @@ public class SalesOrderSaveRequest {
          * 备注
          */
         private String remark;
+
+        public String getId() { return id; }
+        public void setId(String id) { this.id = id; }
+        public String getProductId() { return productId; }
+        public void setProductId(String productId) { this.productId = productId; }
+        public BigDecimal getQuantity() { return quantity; }
+        public void setQuantity(BigDecimal quantity) { this.quantity = quantity; }
+        public BigDecimal getPrice() { return price; }
+        public void setPrice(BigDecimal price) { this.price = price; }
+        public String getRemark() { return remark; }
+        public void setRemark(String remark) { this.remark = remark; }
     }
+
+    public String getId() { return id; }
+    public void setId(String id) { this.id = id; }
+    public String getCustomerId() { return customerId; }
+    public void setCustomerId(String customerId) { this.customerId = customerId; }
+    public LocalDate getOrderDate() { return orderDate; }
+    public void setOrderDate(LocalDate orderDate) { this.orderDate = orderDate; }
+    public LocalDate getExpectedDate() { return expectedDate; }
+    public void setExpectedDate(LocalDate expectedDate) { this.expectedDate = expectedDate; }
+    public BigDecimal getDiscountAmount() { return discountAmount; }
+    public void setDiscountAmount(BigDecimal discountAmount) { this.discountAmount = discountAmount; }
+    public String getRemark() { return remark; }
+    public void setRemark(String remark) { this.remark = remark; }
+    public List<SalesOrderDetailRequest> getDetails() { return details; }
+    public void setDetails(List<SalesOrderDetailRequest> details) { this.details = details; }
 }

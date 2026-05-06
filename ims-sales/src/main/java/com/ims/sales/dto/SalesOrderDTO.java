@@ -1,7 +1,5 @@
 package com.ims.sales.dto;
 
-import lombok.Data;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -10,7 +8,6 @@ import java.util.List;
 /**
  * 销售订单DTO
  */
-@Data
 public class SalesOrderDTO {
 
     /**
@@ -92,4 +89,37 @@ public class SalesOrderDTO {
      * 订单明细列表
      */
     private List<SalesOrderDetailDTO> details;
+
+    public String getId() { return id; }
+    public void setId(String id) { this.id = id; }
+    public String getOrderNo() { return orderNo; }
+    public void setOrderNo(String orderNo) { this.orderNo = orderNo; }
+    public String getCustomerId() { return customerId; }
+    public void setCustomerId(String customerId) { this.customerId = customerId; }
+    public String getCustomerName() { return customerName; }
+    public void setCustomerName(String customerName) { this.customerName = customerName; }
+    public LocalDate getOrderDate() { return orderDate; }
+    public void setOrderDate(LocalDate orderDate) { this.orderDate = orderDate; }
+    public LocalDate getExpectedDate() { return expectedDate; }
+    public void setExpectedDate(LocalDate expectedDate) { this.expectedDate = expectedDate; }
+    public Integer getStatus() { return status; }
+    public void setStatus(Integer status) { this.status = status; }
+    public BigDecimal getTotalAmount() { return totalAmount; }
+    public void setTotalAmount(BigDecimal totalAmount) { this.totalAmount = totalAmount; }
+    public BigDecimal getDiscountAmount() { return discountAmount; }
+    public void setDiscountAmount(BigDecimal discountAmount) { this.discountAmount = discountAmount; }
+    public BigDecimal getNetAmount() { return netAmount; }
+    public void setNetAmount(BigDecimal netAmount) { this.netAmount = netAmount; }
+    public String getRemark() { return remark; }
+    public void setRemark(String remark) { this.remark = remark; }
+    public String getAuditedBy() { return auditedBy; }
+    public void setAuditedBy(String auditedBy) { this.auditedBy = auditedBy; }
+    public LocalDateTime getAuditedAt() { return auditedAt; }
+    public void setAuditedAt(LocalDateTime auditedAt) { this.auditedAt = auditedAt; }
+    public String getCreatedAt() { return createdAt; }
+    public void setCreatedAt(String createdAt) { this.createdAt = createdAt; }
+    public String getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(String updatedAt) { this.updatedAt = updatedAt; }
+    public List<SalesOrderDetailDTO> getDetails() { return details; }
+    public void setDetails(List<SalesOrderDetailDTO> details) { this.details = details; }
 }

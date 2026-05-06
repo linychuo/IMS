@@ -49,6 +49,20 @@ public final class OrderNoGenerator {
     }
 
     /**
+     * 生成销售退货单编号 SR + 年月日 + 6位序号
+     */
+    public static String generateSalesReturnNo() {
+        return generateOrderNo("SR");
+    }
+
+    /**
+     * 生成销售价格策略编号 SP + 年月日 + 6位序号
+     */
+    public static String generateSalesPriceStrategyNo() {
+        return generateOrderNo("SP");
+    }
+
+    /**
      * 生成调拨单编号 TR + 年月日 + 6位序号
      */
     public static String generateTransferNo() {
@@ -74,6 +88,13 @@ public final class OrderNoGenerator {
      */
     public static String generatePaymentNo() {
         return generateOrderNo("PA");
+    }
+
+    /**
+     * 生成核销单编号 WO + 年月日 + 6位序号
+     */
+    public static String generateWriteoffNo() {
+        return generateOrderNo("WO");
     }
 
     /**

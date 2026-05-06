@@ -1,40 +1,79 @@
 package com.ims.sales.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.ims.common.enums.CommonStatus;
 import com.ims.common.util.OrderNoGenerator;
+import com.ims.customer.entity.Customer;
+import com.ims.customer.mapper.CustomerMapper;
+import com.ims.inventory.service.InventoryService;
 import com.ims.sales.entity.SalesOrder;
 import com.ims.sales.entity.SalesOrderDetail;
 import com.ims.sales.mapper.SalesOrderDetailMapper;
 import com.ims.sales.mapper.SalesOrderMapper;
 import com.ims.sales.service.SalesOrderService;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
 /**
  * 销售订单服务实现
  */
-@Slf4j
 @Service
-@RequiredArgsConstructor
 public class SalesOrderServiceImpl implements SalesOrderService {
+
+    private static final Logger log = LoggerFactory.getLogger(SalesOrderServiceImpl.class);
 
     private final SalesOrderMapper salesOrderMapper;
     private final SalesOrderDetailMapper salesOrderDetailMapper;
     private final OrderNoGenerator orderNoGenerator;
+    private final CustomerMapper customerMapper;
+    private final InventoryService inventoryService;
+
+    public SalesOrderServiceImpl(SalesOrderMapper salesOrderMapper,
+                                  SalesOrderDetailMapper salesOrderDetailMapper,
+                                  OrderNoGenerator orderNoGenerator,
+                                  CustomerMapper customerMapper,
+                                  InventoryService inventoryService) {
+        this.salesOrderMapper = salesOrderMapper;
+        this.salesOrderDetailMapper = salesOrderDetailMapper;
+        this.orderNoGenerator = orderNoGenerator;
+        this.customerMapper = customerMapper;
+        this.inventoryService = inventoryService;
+    }
 
     @Override
     @Transactional
     public SalesOrder create(SalesOrder salesOrder, List<SalesOrderDetail> details) {
+        // 获取客户信息检查信用额度
+        Long customerId = Long.parseLong(salesOrder.getCustomerId());
+        Customer customer = customerMapper.selectById(customerId);
+        if (customer == null) {
+            throw new RuntimeException("客户不存在");
+        }
+
+        // 计算订单总金额
+        BigDecimal orderAmount = details.stream()
+            .map(d -> d.getPrice().multiply(d.getQuantity()))
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        // 检查客户信用额度 (信用额度 - 已用信用 >= 订单金额)
+        if (customer.getCreditLimit() != null && customer.getReceivableAmount() != null) {
+            BigDecimal availableCredit = customer.getCreditLimit().subtract(customer.getReceivableAmount());
+            if (orderAmount.compareTo(availableCredit) > 0) {
+                throw new RuntimeException("客户信用额度不足，可用额度: " + availableCredit + "，订单金额: " + orderAmount);
+            }
+        }
+
         // 生成订单号
-        salesOrder.setOrderNo(orderNoGenerator.generate("SO"));
+        salesOrder.setOrderNo(orderNoGenerator.generateSalesOrderNo());
         salesOrder.setStatus(CommonStatus.PENDING.getCode());
         salesOrderMapper.insert(salesOrder);
-        
+
         // 保存明细
         for (SalesOrderDetail detail : details) {
             detail.setOrderId(salesOrder.getId());
@@ -42,8 +81,8 @@ public class SalesOrderServiceImpl implements SalesOrderService {
             detail.setCreatedAt(LocalDateTime.now());
         }
         salesOrderDetailMapper.batchInsert(details);
-        
-        log.info("创建销售订单: {}", salesOrder.getOrderNo());
+
+        log.info("创建销售订单: {}，金额: {}，信用检查通过", salesOrder.getOrderNo(), orderAmount);
         return salesOrder;
     }
 
@@ -84,6 +123,8 @@ public class SalesOrderServiceImpl implements SalesOrderService {
         if (salesOrder.getStatus() != CommonStatus.PENDING.getCode()) {
             throw new RuntimeException("只有待审核状态可审核");
         }
+
+        // 审核时确认预占，不再需要解冻（已冻结）
         salesOrder.setAuditedBy(userId);
         salesOrder.setAuditedAt(LocalDateTime.now());
         salesOrder.setStatus(CommonStatus.APPROVED.getCode());
@@ -101,6 +142,7 @@ public class SalesOrderServiceImpl implements SalesOrderService {
         if (salesOrder.getStatus() == CommonStatus.COMPLETED.getCode()) {
             throw new RuntimeException("已完成不能取消");
         }
+
         salesOrder.setStatus(CommonStatus.CANCELLED.getCode());
         salesOrder.setRemark(reason);
         salesOrderMapper.update(salesOrder);

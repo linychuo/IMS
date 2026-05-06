@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ims.purchase.mapper.PurchaseInItemMapper">
+
+    <resultMap id="BaseResultMap" type="com.ims.purchase.entity.PurchaseInItem">
+        <id column="id" property="id"/>
+        <result column="in_id" property="inId"/>
+        <result column="product_id" property="productId"/>
+        <result column="product_name" property="productName"/>
+        <result column="product_code" property="productCode"/>
+        <result column="quantity" property="quantity"/>
+        <result column="price" property="price"/>
+        <result column="amount" property="amount"/>
+        <result column="location_id" property="locationId"/>
+        <result column="create_time" property="createTime"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, in_id, product_id, product_name, product_code, quantity, price, amount, location_id, create_time
+    </sql>
+
+    <select id="selectByInId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/> FROM purchase_in_item WHERE in_id = #{inId}
+    </select>
+
+</mapper>

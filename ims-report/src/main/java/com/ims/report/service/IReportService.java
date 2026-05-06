@@ -1,6 +1,7 @@
 package com.ims.report.service;
 
 import com.ims.report.dto.*;
+import java.util.List;
 
 /**
  * 报表服务接口
@@ -61,4 +62,29 @@ public interface IReportService {
      * 获取财务报表
      */
     FinanceReportDTO getFinanceSummary(ReportQueryRequest request);
+
+    /**
+     * 获取客户分析汇总
+     */
+    List<CustomerAnalysisDTO> getCustomerAnalysis(java.time.LocalDate startDate, java.time.LocalDate endDate);
+
+    /**
+     * 获取单个客户分析
+     */
+    CustomerAnalysisDTO getCustomerAnalysisById(Long customerId);
+
+    /**
+     * 获取商品分析
+     */
+    List<ProductAnalysisDTO> getProductAnalysis(java.time.LocalDate startDate, java.time.LocalDate endDate);
+
+    /**
+     * 获取供应商分析汇总
+     */
+    List<SupplierAnalysisDTO> getSupplierAnalysis(java.time.LocalDate startDate, java.time.LocalDate endDate);
+
+    /**
+     * 获取单个供应商分析
+     */
+    SupplierAnalysisDTO getSupplierAnalysisById(Long supplierId);
 }

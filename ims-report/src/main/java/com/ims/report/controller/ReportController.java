@@ -4,6 +4,8 @@ import com.ims.report.dto.*;
 import com.ims.report.service.IReportService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDate;
 import java.util.List;
 
 /**
@@ -133,5 +135,51 @@ public class ReportController {
         request.setStartDate(startDate);
         request.setEndDate(endDate);
         return reportService.getFinanceSummary(request);
+    }
+
+    /**
+     * 客户分析 - 汇总
+     */
+    @GetMapping("/analysis/customer")
+    public List<CustomerAnalysisDTO> getCustomerAnalysis(
+            @RequestParam(required = false) LocalDate startDate,
+            @RequestParam(required = false) LocalDate endDate) {
+        return reportService.getCustomerAnalysis(startDate, endDate);
+    }
+
+    /**
+     * 客户分析 - 单个客户
+     */
+    @GetMapping("/analysis/customer/{customerId}")
+    public CustomerAnalysisDTO getCustomerAnalysisById(@PathVariable Long customerId) {
+        return reportService.getCustomerAnalysisById(customerId);
+    }
+
+    /**
+     * 商品分析
+     */
+    @GetMapping("/analysis/product")
+    public List<ProductAnalysisDTO> getProductAnalysis(
+            @RequestParam(required = false) LocalDate startDate,
+            @RequestParam(required = false) LocalDate endDate) {
+        return reportService.getProductAnalysis(startDate, endDate);
+    }
+
+    /**
+     * 供应商分析 - 汇总
+     */
+    @GetMapping("/analysis/supplier")
+    public List<SupplierAnalysisDTO> getSupplierAnalysis(
+            @RequestParam(required = false) LocalDate startDate,
+            @RequestParam(required = false) LocalDate endDate) {
+        return reportService.getSupplierAnalysis(startDate, endDate);
+    }
+
+    /**
+     * 供应商分析 - 单个供应商
+     */
+    @GetMapping("/analysis/supplier/{supplierId}")
+    public SupplierAnalysisDTO getSupplierAnalysisById(@PathVariable Long supplierId) {
+        return reportService.getSupplierAnalysisById(supplierId);
     }
 }

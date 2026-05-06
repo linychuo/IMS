@@ -3,7 +3,8 @@ package com.ims.procurement.controller;
 import com.ims.procurement.entity.PurchaseIn;
 import com.ims.procurement.service.PurchaseInService;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,10 +15,15 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/procurement/purchase-in")
-@RequiredArgsConstructor
 public class PurchaseInController {
 
+    private static final Logger log = LoggerFactory.getLogger(PurchaseInController.class);
+
     private final PurchaseInService purchaseInService;
+
+    public PurchaseInController(PurchaseInService purchaseInService) {
+        this.purchaseInService = purchaseInService;
+    }
 
     /**
      * 创建入库单
@@ -31,7 +37,7 @@ public class PurchaseInController {
      * 更新入库单
      */
     @PutMapping("/{id}")
-    public ResponseEntity<PurchaseIn> update(@PathVariable String id, 
+    public ResponseEntity<PurchaseIn> update(@PathVariable String id,
                                               @Valid @RequestBody PurchaseIn purchaseIn) {
         return ResponseEntity.ok(purchaseInService.update(id, purchaseIn));
     }
@@ -40,7 +46,7 @@ public class PurchaseInController {
      * 审核入库单
      */
     @PostMapping("/{id}/approve")
-    public ResponseEntity<Void> approve(@PathVariable String id, 
+    public ResponseEntity<Void> approve(@PathVariable String id,
                                          @RequestParam String userId) {
         purchaseInService.approve(id, userId);
         return ResponseEntity.ok().build();
@@ -50,7 +56,7 @@ public class PurchaseInController {
      * 取消入库单
      */
     @PostMapping("/{id}/cancel")
-    public ResponseEntity<Void> cancel(@PathVariable String id, 
+    public ResponseEntity<Void> cancel(@PathVariable String id,
                                        @RequestParam String reason) {
         purchaseInService.cancel(id, reason);
         return ResponseEntity.ok().build();

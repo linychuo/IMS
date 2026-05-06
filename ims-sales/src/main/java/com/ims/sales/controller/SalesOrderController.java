@@ -4,7 +4,8 @@ import com.ims.sales.entity.SalesOrder;
 import com.ims.sales.entity.SalesOrderDetail;
 import com.ims.sales.service.SalesOrderService;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,10 +16,15 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/sales/order")
-@RequiredArgsConstructor
 public class SalesOrderController {
 
+    private static final Logger log = LoggerFactory.getLogger(SalesOrderController.class);
+
     private final SalesOrderService salesOrderService;
+
+    public SalesOrderController(SalesOrderService salesOrderService) {
+        this.salesOrderService = salesOrderService;
+    }
 
     /**
      * 创建订单
@@ -43,7 +49,7 @@ public class SalesOrderController {
      * 审核订单
      */
     @PostMapping("/{id}/approve")
-    public ResponseEntity<Void> approve(@PathVariable String id, 
+    public ResponseEntity<Void> approve(@PathVariable String id,
                                          @RequestParam String userId) {
         salesOrderService.approve(id, userId);
         return ResponseEntity.ok().build();
@@ -53,7 +59,7 @@ public class SalesOrderController {
      * 取消订单
      */
     @PostMapping("/{id}/cancel")
-    public ResponseEntity<Void> cancel(@PathVariable String id, 
+    public ResponseEntity<Void> cancel(@PathVariable String id,
                                        @RequestParam String reason) {
         salesOrderService.cancel(id, reason);
         return ResponseEntity.ok().build();

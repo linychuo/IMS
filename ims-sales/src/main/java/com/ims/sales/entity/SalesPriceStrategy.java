@@ -1,8 +1,6 @@
 package com.ims.sales.entity;
 
 import com.ims.common.entity.BaseEntity;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -11,8 +9,6 @@ import java.time.LocalDateTime;
 /**
  * 销售价格策略实体
  */
-@Data
-@EqualsAndHashCode(callSuper = true)
 public class SalesPriceStrategy extends BaseEntity {
 
     /**
@@ -89,4 +85,35 @@ public class SalesPriceStrategy extends BaseEntity {
      * 备注
      */
     private String remark;
+
+    public String getStrategyNo() { return strategyNo; }
+    public void setStrategyNo(String strategyNo) { this.strategyNo = strategyNo; }
+    public String getStrategyName() { return strategyName; }
+    public void setStrategyName(String strategyName) { this.strategyName = strategyName; }
+    public String getCustomerId() { return customerId; }
+    public void setCustomerId(String customerId) { this.customerId = customerId; }
+    public String getCustomerName() { return customerName; }
+    public void setCustomerName(String customerName) { this.customerName = customerName; }
+    public String getProductId() { return productId; }
+    public void setProductId(String productId) { this.productId = productId; }
+    public String getProductName() { return productName; }
+    public void setProductName(String productName) { this.productName = productName; }
+    public String getProductCategoryId() { return productCategoryId; }
+    public void setProductCategoryId(String productCategoryId) { this.productCategoryId = productCategoryId; }
+    public String getProductCategoryName() { return productCategoryName; }
+    public void setProductCategoryName(String productCategoryName) { this.productCategoryName = productCategoryName; }
+    public LocalDate getStartDate() { return startDate; }
+    public void setStartDate(LocalDate startDate) { this.startDate = startDate; }
+    public LocalDate getEndDate() { return endDate; }
+    public void setEndDate(LocalDate endDate) { this.endDate = endDate; }
+    public Integer getPriceType() { return priceType; }
+    public void setPriceType(Integer priceType) { this.priceType = priceType; }
+    public BigDecimal getPrice() { return price; }
+    public void setPrice(BigDecimal price) { this.price = price; }
+    public BigDecimal getDiscountRate() { return discountRate; }
+    public void setDiscountRate(BigDecimal discountRate) { this.discountRate = discountRate; }
+    public Integer getStatus() { return status; }
+    public void setStatus(Integer status) { this.status = status; }
+    public String getRemark() { return remark; }
+    public void setRemark(String remark) { this.remark = remark; }
 }

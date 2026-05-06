@@ -2,8 +2,8 @@ package com.ims.inventory.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.ims.core.dto.PageResult;
-import com.ims.core.dto.Result;
+import com.ims.core.result.PageResult;
+import com.ims.core.result.Result;
 import com.ims.inventory.entity.Inventory;
 import com.ims.inventory.service.InventoryService;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.ims</groupId>
-    <artifactId>ims-parent</artifactId>
+    <artifactId>ims</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
@@ -14,7 +14,13 @@
 
     <modules>
         <module>ims-common</module>
+        <module>ims-core</module>
         <module>ims-procurement</module>
+        <module>ims-product</module>
+        <module>ims-supplier</module>
+        <module>ims-customer</module>
+        <module>ims-warehouse</module>
+        <module>ims-purchase</module>
         <module>ims-sales</module>
         <module>ims-inventory</module>
         <module>ims-finance</module>
@@ -33,7 +39,7 @@
         <spring.version>6.2.0</spring.version>
         
         <!-- MyBatis -->
-        <mybatis.version>3.0.3</mybatis.version>
+        <mybatis.version>3.5.5</mybatis.version>
         <mybatis-spring.version>3.0.3</mybatis-spring.version>
         <mybatis-plus.version>3.5.7</mybatis-plus.version>
         

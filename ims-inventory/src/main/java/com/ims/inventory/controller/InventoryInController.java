@@ -1,7 +1,7 @@
 package com.ims.inventory.controller;
 
-import com.ims.core.dto.PageResult;
-import com.ims.core.dto.Result;
+import com.ims.core.result.PageResult;
+import com.ims.core.result.Result;
 import com.ims.inventory.entity.InventoryIn;
 import com.ims.inventory.entity.InventoryInDetail;
 import com.ims.inventory.service.InventoryInService;

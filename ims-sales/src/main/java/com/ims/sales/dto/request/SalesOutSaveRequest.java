@@ -2,7 +2,6 @@ package com.ims.sales.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
-import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -11,7 +10,6 @@ import java.util.List;
 /**
  * 销售出库单保存请求
  */
-@Data
 public class SalesOutSaveRequest {
 
     /**
@@ -55,7 +53,6 @@ public class SalesOutSaveRequest {
     /**
      * 出库明细
      */
-    @Data
     public static class SalesOutDetailRequest {
         /**
          * 明细ID (更新时必填)
@@ -89,5 +86,33 @@ public class SalesOutSaveRequest {
          * 备注
          */
         private String remark;
+
+        public String getId() { return id; }
+        public void setId(String id) { this.id = id; }
+        public String getOrderDetailId() { return orderDetailId; }
+        public void setOrderDetailId(String orderDetailId) { this.orderDetailId = orderDetailId; }
+        public String getProductId() { return productId; }
+        public void setProductId(String productId) { this.productId = productId; }
+        public BigDecimal getQuantity() { return quantity; }
+        public void setQuantity(BigDecimal quantity) { this.quantity = quantity; }
+        public BigDecimal getPrice() { return price; }
+        public void setPrice(BigDecimal price) { this.price = price; }
+        public String getRemark() { return remark; }
+        public void setRemark(String remark) { this.remark = remark; }
     }
+
+    public String getId() { return id; }
+    public void setId(String id) { this.id = id; }
+    public String getOrderId() { return orderId; }
+    public void setOrderId(String orderId) { this.orderId = orderId; }
+    public String getCustomerId() { return customerId; }
+    public void setCustomerId(String customerId) { this.customerId = customerId; }
+    public LocalDate getOutDate() { return outDate; }
+    public void setOutDate(LocalDate outDate) { this.outDate = outDate; }
+    public String getWarehouseId() { return warehouseId; }
+    public void setWarehouseId(String warehouseId) { this.warehouseId = warehouseId; }
+    public String getRemark() { return remark; }
+    public void setRemark(String remark) { this.remark = remark; }
+    public List<SalesOutDetailRequest> getDetails() { return details; }
+    public void setDetails(List<SalesOutDetailRequest> details) { this.details = details; }
 }

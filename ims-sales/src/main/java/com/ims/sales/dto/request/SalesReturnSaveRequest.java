@@ -2,7 +2,6 @@ package com.ims.sales.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
-import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -11,7 +10,6 @@ import java.util.List;
 /**
  * 销售退货单保存请求
  */
-@Data
 public class SalesReturnSaveRequest {
 
     /**
@@ -65,7 +63,6 @@ public class SalesReturnSaveRequest {
     /**
      * 退货明细
      */
-    @Data
     public static class SalesReturnDetailRequest {
         /**
          * 明细ID (更新时必填)
@@ -99,5 +96,37 @@ public class SalesReturnSaveRequest {
          * 备注
          */
         private String remark;
+
+        public String getId() { return id; }
+        public void setId(String id) { this.id = id; }
+        public String getOutDetailId() { return outDetailId; }
+        public void setOutDetailId(String outDetailId) { this.outDetailId = outDetailId; }
+        public String getProductId() { return productId; }
+        public void setProductId(String productId) { this.productId = productId; }
+        public BigDecimal getQuantity() { return quantity; }
+        public void setQuantity(BigDecimal quantity) { this.quantity = quantity; }
+        public BigDecimal getPrice() { return price; }
+        public void setPrice(BigDecimal price) { this.price = price; }
+        public String getRemark() { return remark; }
+        public void setRemark(String remark) { this.remark = remark; }
     }
+
+    public String getId() { return id; }
+    public void setId(String id) { this.id = id; }
+    public String getOrderId() { return orderId; }
+    public void setOrderId(String orderId) { this.orderId = orderId; }
+    public String getOutId() { return outId; }
+    public void setOutId(String outId) { this.outId = outId; }
+    public String getCustomerId() { return customerId; }
+    public void setCustomerId(String customerId) { this.customerId = customerId; }
+    public LocalDate getReturnDate() { return returnDate; }
+    public void setReturnDate(LocalDate returnDate) { this.returnDate = returnDate; }
+    public String getWarehouseId() { return warehouseId; }
+    public void setWarehouseId(String warehouseId) { this.warehouseId = warehouseId; }
+    public String getReason() { return reason; }
+    public void setReason(String reason) { this.reason = reason; }
+    public String getRemark() { return remark; }
+    public void setRemark(String remark) { this.remark = remark; }
+    public List<SalesReturnDetailRequest> getDetails() { return details; }
+    public void setDetails(List<SalesReturnDetailRequest> details) { this.details = details; }
 }

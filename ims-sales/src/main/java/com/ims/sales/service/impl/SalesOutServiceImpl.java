@@ -2,39 +2,55 @@ package com.ims.sales.service.impl;
 
 import com.ims.common.enums.CommonStatus;
 import com.ims.common.util.OrderNoGenerator;
+import com.ims.finance.entity.Receivable;
+import com.ims.finance.service.ReceivableService;
 import com.ims.inventory.service.InventoryService;
 import com.ims.sales.entity.SalesOut;
 import com.ims.sales.entity.SalesOutDetail;
 import com.ims.sales.mapper.SalesOutDetailMapper;
 import com.ims.sales.mapper.SalesOutMapper;
 import com.ims.sales.service.SalesOutService;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
 /**
  * 销售出库服务实现
  */
-@Slf4j
 @Service
-@RequiredArgsConstructor
 public class SalesOutServiceImpl implements SalesOutService {
+
+    private static final Logger log = LoggerFactory.getLogger(SalesOutServiceImpl.class);
 
     private final SalesOutMapper salesOutMapper;
     private final SalesOutDetailMapper salesOutDetailMapper;
     private final OrderNoGenerator orderNoGenerator;
     private final InventoryService inventoryService;
+    private final ReceivableService receivableService;
+
+    public SalesOutServiceImpl(SalesOutMapper salesOutMapper,
+                                SalesOutDetailMapper salesOutDetailMapper,
+                                OrderNoGenerator orderNoGenerator,
+                                InventoryService inventoryService,
+                                ReceivableService receivableService) {
+        this.salesOutMapper = salesOutMapper;
+        this.salesOutDetailMapper = salesOutDetailMapper;
+        this.orderNoGenerator = orderNoGenerator;
+        this.inventoryService = inventoryService;
+        this.receivableService = receivableService;
+    }
 
     @Override
     @Transactional
     public SalesOut create(SalesOut salesOut, List<SalesOutDetail> details) {
         // 生成出库单号
-        salesOut.setOutNo(orderNoGenerator.generate("SOUT"));
+        salesOut.setOutNo(orderNoGenerator.generateSalesOutNo());
         salesOut.setStatus(CommonStatus.PENDING.getCode());
         salesOutMapper.insert(salesOut);
         
@@ -60,20 +76,31 @@ public class SalesOutServiceImpl implements SalesOutService {
         if (salesOut.getStatus() != CommonStatus.PENDING.getCode()) {
             throw new RuntimeException("只有待出库状态可审核");
         }
-        
-        // 审核时扣减库存
+
+        // 审核时扣减库存 + 释放冻结
         List<SalesOutDetail> details = salesOutDetailMapper.selectByOutId(id);
+        Long warehouseId = Long.parseLong(salesOut.getWarehouseId());
+        BigDecimal totalAmount = BigDecimal.ZERO;
+
         for (SalesOutDetail detail : details) {
             Long productId = Long.parseLong(detail.getProductId());
-            Long warehouseId = Long.parseLong(salesOut.getWarehouseId());
             Long locationId = detail.getLocationId() != null ? Long.parseLong(detail.getLocationId()) : null;
             BigDecimal quantity = detail.getQuantity();
-            
+
+            // 解冻预占的库存
+            try {
+                inventoryService.unfreezeStock(productId, warehouseId, quantity);
+                log.info("解冻预占库存: 商品{} 仓库{} 数量{}", productId, warehouseId, quantity);
+            } catch (Exception e) {
+                log.warn("解冻库存失败，继续扣减实际库存: {}", e.getMessage());
+            }
+
+            // 扣减实际库存
             boolean reduced = inventoryService.reduceStock(
-                productId, 
-                warehouseId, 
-                locationId, 
-                quantity, 
+                productId,
+                warehouseId,
+                locationId,
+                quantity,
                 salesOut.getOutNo(),
                 "SALES_OUT",
                 Long.parseLong(id)
@@ -82,8 +109,23 @@ public class SalesOutServiceImpl implements SalesOutService {
                 throw new RuntimeException("库存扣减失败: " + detail.getProductName() + " 库存不足");
             }
             log.info("审核扣减库存: 商品{} 数量{}", detail.getProductName(), quantity);
+
+            // 计算总金额
+            totalAmount = totalAmount.add(detail.getPrice().multiply(quantity));
         }
-        
+
+        // 自动生成应收款
+        Receivable receivable = new Receivable();
+        receivable.setCustomerId(Long.parseLong(salesOut.getCustomerId()));
+        receivable.setCustomerName(salesOut.getCustomerName());
+        receivable.setOrderType("SALES_OUT");
+        receivable.setOrderId(Long.parseLong(id));
+        receivable.setOrderNo(salesOut.getOutNo());
+        receivable.setTotalAmount(totalAmount);
+        receivable.setDueDate(LocalDate.now().plusDays(30)); // 默认30天账期
+        receivableService.create(receivable);
+        log.info("自动生成应收款: 客户{} 金额{}", salesOut.getCustomerName(), totalAmount);
+
         salesOut.setAuditedBy(userId);
         salesOut.setAuditedAt(LocalDateTime.now());
         salesOut.setStatus(CommonStatus.APPROVED.getCode());
@@ -142,20 +184,29 @@ public class SalesOutServiceImpl implements SalesOutService {
         if (salesOut.getStatus() == CommonStatus.COMPLETED.getCode()) {
             throw new RuntimeException("已完成");
         }
-        
+
         // 扣减库存
         List<SalesOutDetail> details = salesOutDetailMapper.selectByOutId(id);
+        Long warehouseId = Long.parseLong(salesOut.getWarehouseId());
+        BigDecimal totalAmount = BigDecimal.ZERO;
+
         for (SalesOutDetail detail : details) {
             Long productId = Long.parseLong(detail.getProductId());
-            Long warehouseId = Long.parseLong(salesOut.getWarehouseId());
             Long locationId = detail.getLocationId() != null ? Long.parseLong(detail.getLocationId()) : null;
             BigDecimal quantity = detail.getQuantity();
-            
+
+            // 解冻预占的库存
+            try {
+                inventoryService.unfreezeStock(productId, warehouseId, quantity);
+            } catch (Exception e) {
+                log.warn("解冻库存失败: {}", e.getMessage());
+            }
+
             boolean reduced = inventoryService.reduceStock(
-                productId, 
-                warehouseId, 
-                locationId, 
-                quantity, 
+                productId,
+                warehouseId,
+                locationId,
+                quantity,
                 salesOut.getOutNo(),
                 "SALES_OUT",
                 Long.parseLong(id)
@@ -164,8 +215,24 @@ public class SalesOutServiceImpl implements SalesOutService {
                 throw new RuntimeException("库存扣减失败: " + detail.getProductName() + " 库存不足");
             }
             log.info("扣减库存: 商品{} 数量{}", detail.getProductName(), quantity);
+
+            totalAmount = totalAmount.add(detail.getPrice().multiply(quantity));
         }
-        
+
+        // 自动生成应收款
+        if (totalAmount.compareTo(BigDecimal.ZERO) > 0) {
+            Receivable receivable = new Receivable();
+            receivable.setCustomerId(Long.parseLong(salesOut.getCustomerId()));
+            receivable.setCustomerName(salesOut.getCustomerName());
+            receivable.setOrderType("SALES_OUT");
+            receivable.setOrderId(Long.parseLong(id));
+            receivable.setOrderNo(salesOut.getOutNo());
+            receivable.setTotalAmount(totalAmount);
+            receivable.setDueDate(LocalDate.now().plusDays(30));
+            receivableService.create(receivable);
+            log.info("完成出库自动生成应收款: 客户{} 金额{}", salesOut.getCustomerName(), totalAmount);
+        }
+
         salesOut.setStatus(CommonStatus.COMPLETED.getCode());
         salesOutMapper.update(salesOut);
         log.info("完成销售出库: {}", id);

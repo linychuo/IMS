@@ -1,12 +1,10 @@
 package com.ims.sales.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
-import lombok.Data;
 
 /**
  * 客户保存请求
  */
-@Data
 public class CustomerSaveRequest {
 
     /**
@@ -45,4 +43,19 @@ public class CustomerSaveRequest {
      * 状态: 0-正常/1-停用
      */
     private Integer status = 0;
+
+    public String getId() { return id; }
+    public void setId(String id) { this.id = id; }
+    public String getCustomerCode() { return customerCode; }
+    public void setCustomerCode(String customerCode) { this.customerCode = customerCode; }
+    public String getCustomerName() { return customerName; }
+    public void setCustomerName(String customerName) { this.customerName = customerName; }
+    public String getContact() { return contact; }
+    public void setContact(String contact) { this.contact = contact; }
+    public String getPhone() { return phone; }
+    public void setPhone(String phone) { this.phone = phone; }
+    public String getAddress() { return address; }
+    public void setAddress(String address) { this.address = address; }
+    public Integer getStatus() { return status; }
+    public void setStatus(Integer status) { this.status = status; }
 }

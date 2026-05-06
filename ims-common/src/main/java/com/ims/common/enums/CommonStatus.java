@@ -1,13 +1,8 @@
 package com.ims.common.enums;
 
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-
 /**
  * 通用状态枚举
  */
-@Getter
-@RequiredArgsConstructor
 public enum CommonStatus implements BaseEnum<Integer> {
 
     DRAFT(0, "新建"),
@@ -20,6 +15,11 @@ public enum CommonStatus implements BaseEnum<Integer> {
 
     private final Integer code;
     private final String desc;
+
+    CommonStatus(Integer code, String desc) {
+        this.code = code;
+        this.desc = desc;
+    }
 
     @Override
     public Integer getCode() {

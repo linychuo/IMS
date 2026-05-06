@@ -2,16 +2,12 @@ package com.ims.purchase.entity;
 
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.ims.core.entity.BaseEntity;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
 
 import java.math.BigDecimal;
 
 /**
  * 采购入库明细实体
  */
-@Data
-@EqualsAndHashCode(callSuper = true)
 @TableName("ims_purchase_in_item")
 public class PurchaseInItem extends BaseEntity {
 
@@ -79,4 +75,108 @@ public class PurchaseInItem extends BaseEntity {
      * 备注
      */
     private String remark;
+
+    public Long getInId() {
+        return inId;
+    }
+
+    public void setInId(Long inId) {
+        this.inId = inId;
+    }
+
+    public Long getOrderItemId() {
+        return orderItemId;
+    }
+
+    public void setOrderItemId(Long orderItemId) {
+        this.orderItemId = orderItemId;
+    }
+
+    public Long getProductId() {
+        return productId;
+    }
+
+    public void setProductId(Long productId) {
+        this.productId = productId;
+    }
+
+    public String getProductCode() {
+        return productCode;
+    }
+
+    public void setProductCode(String productCode) {
+        this.productCode = productCode;
+    }
+
+    public String getProductName() {
+        return productName;
+    }
+
+    public void setProductName(String productName) {
+        this.productName = productName;
+    }
+
+    public String getUnit() {
+        return unit;
+    }
+
+    public void setUnit(String unit) {
+        this.unit = unit;
+    }
+
+    public BigDecimal getQuantity() {
+        return quantity;
+    }
+
+    public void setQuantity(BigDecimal quantity) {
+        this.quantity = quantity;
+    }
+
+    public BigDecimal getPrice() {
+        return price;
+    }
+
+    public void setPrice(BigDecimal price) {
+        this.price = price;
+    }
+
+    public BigDecimal getAmount() {
+        return amount;
+    }
+
+    public void setAmount(BigDecimal amount) {
+        this.amount = amount;
+    }
+
+    public String getBatchNo() {
+        return batchNo;
+    }
+
+    public void setBatchNo(String batchNo) {
+        this.batchNo = batchNo;
+    }
+
+    public String getProductionDate() {
+        return productionDate;
+    }
+
+    public void setProductionDate(String productionDate) {
+        this.productionDate = productionDate;
+    }
+
+    public Long getLocationId() {
+        return locationId;
+    }
+
+    public void setLocationId(Long locationId) {
+        this.locationId = locationId;
+    }
+
+    public String getRemark() {
+        return remark;
+    }
+
+    public void setRemark(String remark) {
+        this.remark = remark;
+    }
 }

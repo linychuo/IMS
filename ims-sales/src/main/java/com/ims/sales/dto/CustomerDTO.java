@@ -1,11 +1,8 @@
 package com.ims.sales.dto;
 
-import lombok.Data;
-
 /**
  * 客户DTO
  */
-@Data
 public class CustomerDTO {
 
     /**
@@ -52,4 +49,23 @@ public class CustomerDTO {
      * 更新时间
      */
     private String updatedAt;
+
+    public String getId() { return id; }
+    public void setId(String id) { this.id = id; }
+    public String getCustomerCode() { return customerCode; }
+    public void setCustomerCode(String customerCode) { this.customerCode = customerCode; }
+    public String getCustomerName() { return customerName; }
+    public void setCustomerName(String customerName) { this.customerName = customerName; }
+    public String getContact() { return contact; }
+    public void setContact(String contact) { this.contact = contact; }
+    public String getPhone() { return phone; }
+    public void setPhone(String phone) { this.phone = phone; }
+    public String getAddress() { return address; }
+    public void setAddress(String address) { this.address = address; }
+    public Integer getStatus() { return status; }
+    public void setStatus(Integer status) { this.status = status; }
+    public String getCreatedAt() { return createdAt; }
+    public void setCreatedAt(String createdAt) { this.createdAt = createdAt; }
+    public String getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(String updatedAt) { this.updatedAt = updatedAt; }
 }

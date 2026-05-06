@@ -1,37 +1,17 @@
 package com.ims.common.result;
 
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-
 import java.util.List;
 
 /**
  * 分页结果
  */
-@Data
-@EqualsAndHashCode(callSuper = true)
 public class PageResult<T> extends Result<List<T>> {
 
     private static final long serialVersionUID = 1L;
 
-    /**
-     * 当前页码
-     */
     private Integer pageNum = 1;
-
-    /**
-     * 每页大小
-     */
     private Integer pageSize = 10;
-
-    /**
-     * 总记录数
-     */
     private Long total = 0L;
-
-    /**
-     * 总页数
-     */
     private Integer pages = 0;
 
     public PageResult() {
@@ -46,9 +26,6 @@ public class PageResult<T> extends Result<List<T>> {
         super(code, message, data);
     }
 
-    /**
-     * 成功（带分页数据）
-     */
     public static <T> PageResult<T> success(List<T> data, Long total, Integer pageNum, Integer pageSize) {
         PageResult<T> result = new PageResult<>(200, "操作成功", data);
         result.setPageNum(pageNum);
@@ -58,10 +35,16 @@ public class PageResult<T> extends Result<List<T>> {
         return result;
     }
 
-    /**
-     * 成功（带分页数据，默认从第1页开始）
-     */
     public static <T> PageResult<T> success(List<T> data, Long total) {
         return success(data, total, 1, 10);
     }
+
+    public Integer getPageNum() { return pageNum; }
+    public void setPageNum(Integer pageNum) { this.pageNum = pageNum; }
+    public Integer getPageSize() { return pageSize; }
+    public void setPageSize(Integer pageSize) { this.pageSize = pageSize; }
+    public Long getTotal() { return total; }
+    public void setTotal(Long total) { this.total = total; }
+    public Integer getPages() { return pages; }
+    public void setPages(Integer pages) { this.pages = pages; }
 }

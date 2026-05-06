@@ -1,30 +1,16 @@
 package com.ims.core.result;
 
-import lombok.Data;
-
 import java.io.Serializable;
 
 /**
  * 统一返回结果
  */
-@Data
 public class Result<T> implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    /**
-     * 状态码
-     */
     private Integer code;
-
-    /**
-     * 消息
-     */
     private String message;
-
-    /**
-     * 数据
-     */
     private T data;
 
     public Result() {
@@ -41,9 +27,6 @@ public class Result<T> implements Serializable {
         this.data = data;
     }
 
-    /**
-     * 成功
-     */
     public static <T> Result<T> ok() {
         return new Result<>(200, "操作成功");
     }
@@ -56,9 +39,18 @@ public class Result<T> implements Serializable {
         return new Result<>(200, message, data);
     }
 
-    /**
-     * 失败
-     */
+    public static <T> Result<T> success() {
+        return new Result<>(200, "操作成功");
+    }
+
+    public static <T> Result<T> success(T data) {
+        return new Result<>(200, "操作成功", data);
+    }
+
+    public static <T> Result<T> success(String message, T data) {
+        return new Result<>(200, message, data);
+    }
+
     public static <T> Result<T> error() {
         return new Result<>(500, "操作失败");
     }
@@ -71,10 +63,14 @@ public class Result<T> implements Serializable {
         return new Result<>(code, message);
     }
 
-    /**
-     * 判断是否成功
-     */
     public boolean isSuccess() {
         return this.code != null && this.code == 200;
     }
+
+    public Integer getCode() { return code; }
+    public void setCode(Integer code) { this.code = code; }
+    public String getMessage() { return message; }
+    public void setMessage(String message) { this.message = message; }
+    public T getData() { return data; }
+    public void setData(T data) { this.data = data; }
 }

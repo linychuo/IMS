@@ -3,7 +3,7 @@ package com.ims.inventory.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.ims.core.dto.PageResult;
+import com.ims.core.result.PageResult;
 import com.ims.inventory.entity.InventoryOut;
 import com.ims.inventory.entity.InventoryOutDetail;
 import com.ims.inventory.mapper.InventoryOutDetailMapper;
@@ -92,28 +92,28 @@ public class InventoryOutServiceImpl extends ServiceImpl<InventoryOutMapper, Inv
         if (out == null || out.getStatus() != 1) {
             return false;
         }
-        
+
         // 获取出库明细
         List<InventoryOutDetail> details = getOutDetails(id);
-        
-        // 扣减库存
+
+        // 扣减库存 - 使用FIFO自动选择批次
         for (InventoryOutDetail detail : details) {
-            inventoryService.reduceStock(
+            inventoryService.reduceStockByFifo(
                 detail.getProductId(),
                 out.getWarehouseId(),
                 detail.getLocationId(),
                 detail.getQuantity(),
-                detail.getBatchNo(),
+                detail.getBatchNo(), // 如果有批次号则用指定批次，否则FIFO
                 "INVENTORY_OUT",
                 id
             );
         }
-        
+
         // 更新状态
         out.setStatus(2);
         out.setAuditorId(auditorId);
         out.setAuditTime(LocalDateTime.now());
-        
+
         return this.updateById(out);
     }
 

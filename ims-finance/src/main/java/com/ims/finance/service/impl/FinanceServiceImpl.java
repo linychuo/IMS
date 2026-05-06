@@ -1,15 +1,19 @@
 package com.ims.finance.service.impl;
 
 import com.ims.finance.service.FinanceService;
+import com.ims.finance.service.ReceivableService;
+import com.ims.finance.service.PayableService;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.ims.core.dto.PageResult;
-import com.ims.core.dto.PageResult;
+import com.ims.core.result.PageResult;
 import com.ims.finance.dto.FinanceStatDTO;
 import com.ims.finance.dto.FinanceTrendDTO;
 import com.ims.finance.dto.FinanceSummaryDTO;
 import com.ims.finance.dto.FinanceExportDTO;
 import com.ims.finance.entity.AccountTransaction;
+import com.ims.finance.entity.FinanceIn;
+import com.ims.finance.entity.FinanceOut;
+import com.ims.finance.entity.Account;
 import com.ims.finance.mapper.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -25,7 +29,7 @@ import java.util.stream.Collectors;
 
 @Service
 public class FinanceServiceImpl implements FinanceService {
-    
+
     @Autowired
     private FinanceInMapper financeInMapper;
     @Autowired
@@ -34,6 +38,10 @@ public class FinanceServiceImpl implements FinanceService {
     private AccountMapper accountMapper;
     @Autowired
     private AccountTransactionMapper accountTransactionMapper;
+    @Autowired
+    private ReceivableService receivableService;
+    @Autowired
+    private PayableService payableService;
 
     // ========== 收款管理 ==========
     public PageResult<FinanceIn> pageIn(Long page, Long pageSize, Long customerId, Integer status) {
@@ -67,6 +75,12 @@ public class FinanceServiceImpl implements FinanceService {
             in.setStatus(2);
             in.setAuditorId(auditorId);
             in.setAuditTime(LocalDateTime.now());
+
+            // 审核通过后，自动按FIFO核销该客户的应收款
+            if (in.getCustomerId() != null && in.getAmount() != null) {
+                receivableService.autoWriteoff(in.getCustomerId(), id, in.getAmount());
+            }
+
             return financeInMapper.updateById(in) > 0;
         }
         return false;
@@ -134,6 +148,12 @@ public class FinanceServiceImpl implements FinanceService {
             out.setStatus(2);
             out.setAuditorId(auditorId);
             out.setAuditTime(LocalDateTime.now());
+
+            // 审核通过后，自动按FIFO核销该供应商的应付款
+            if (out.getSupplierId() != null && out.getAmount() != null) {
+                payableService.autoWriteoff(out.getSupplierId(), id, out.getAmount());
+            }
+
             return financeOutMapper.updateById(out) > 0;
         }
         return false;

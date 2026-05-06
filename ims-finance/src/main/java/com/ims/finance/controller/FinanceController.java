@@ -1,7 +1,7 @@
 package com.ims.finance.controller;
 
-import com.ims.core.dto.PageResult;
-import com.ims.core.dto.Result;
+import com.ims.core.result.PageResult;
+import com.ims.core.result.Result;
 import com.ims.finance.dto.FinanceStatDTO;
 import com.ims.finance.dto.FinanceTrendDTO;
 import com.ims.finance.dto.FinanceSummaryDTO;
@@ -37,22 +37,22 @@ public class FinanceController {
     }
 
     @PostMapping("/in")
-    public Result<Void> saveIn(@RequestBody FinanceIn in) {
+    public Result<Boolean> saveIn(@RequestBody FinanceIn in) {
         return Result.success(financeService.saveIn(in));
     }
 
     @PutMapping("/in/audit/{id}")
-    public Result<Void> auditIn(@PathVariable Long id, @RequestParam Long auditorId) {
+    public Result<Boolean> auditIn(@PathVariable Long id, @RequestParam Long auditorId) {
         return Result.success(financeService.auditIn(id, auditorId));
     }
 
     @PutMapping("/in/cancel/{id}")
-    public Result<Void> cancelIn(@PathVariable Long id) {
+    public Result<Boolean> cancelIn(@PathVariable Long id) {
         return Result.success(financeService.cancelIn(id));
     }
 
     @DeleteMapping("/in/{id}")
-    public Result<Void> deleteIn(@PathVariable Long id) {
+    public Result<Boolean> deleteIn(@PathVariable Long id) {
         return Result.success(financeService.deleteIn(id));
     }
 
@@ -77,22 +77,22 @@ public class FinanceController {
     }
 
     @PostMapping("/out")
-    public Result<Void> saveOut(@RequestBody FinanceOut out) {
+    public Result<Boolean> saveOut(@RequestBody FinanceOut out) {
         return Result.success(financeService.saveOut(out));
     }
 
     @PutMapping("/out/audit/{id}")
-    public Result<Void> auditOut(@PathVariable Long id, @RequestParam Long auditorId) {
+    public Result<Boolean> auditOut(@PathVariable Long id, @RequestParam Long auditorId) {
         return Result.success(financeService.auditOut(id, auditorId));
     }
 
     @PutMapping("/out/cancel/{id}")
-    public Result<Void> cancelOut(@PathVariable Long id) {
+    public Result<Boolean> cancelOut(@PathVariable Long id) {
         return Result.success(financeService.cancelOut(id));
     }
 
     @DeleteMapping("/out/{id}")
-    public Result<Void> deleteOut(@PathVariable Long id) {
+    public Result<Boolean> deleteOut(@PathVariable Long id) {
         return Result.success(financeService.deleteOut(id));
     }
 
@@ -122,22 +122,22 @@ public class FinanceController {
     }
 
     @PostMapping("/account")
-    public Result<Void> saveAccount(@RequestBody Account account) {
+    public Result<Boolean> saveAccount(@RequestBody Account account) {
         return Result.success(financeService.saveAccount(account));
     }
 
     @PutMapping("/account/enable/{id}")
-    public Result<Void> enableAccount(@PathVariable Long id) {
+    public Result<Boolean> enableAccount(@PathVariable Long id) {
         return Result.success(financeService.enableAccount(id));
     }
 
     @PutMapping("/account/disable/{id}")
-    public Result<Void> disableAccount(@PathVariable Long id) {
+    public Result<Boolean> disableAccount(@PathVariable Long id) {
         return Result.success(financeService.disableAccount(id));
     }
 
     @DeleteMapping("/account/{id}")
-    public Result<Void> deleteAccount(@PathVariable Long id) {
+    public Result<Boolean> deleteAccount(@PathVariable Long id) {
         return Result.success(financeService.deleteAccount(id));
     }
 
@@ -162,7 +162,7 @@ public class FinanceController {
     }
 
     @PostMapping("/account-trans")
-    public Result<Void> saveAccountTrans(@RequestBody AccountTransaction trans) {
+    public Result<Boolean> saveAccountTrans(@RequestBody AccountTransaction trans) {
         return Result.success(financeService.saveAccountTrans(trans));
     }
 

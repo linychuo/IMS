@@ -70,6 +70,34 @@ public interface ReportMapper {
     /**
      * 获取财务报表数据
      */
-    FinanceReportDTO getFinanceSummary(@Param("startDate") LocalDate startDate, 
+    FinanceReportDTO getFinanceSummary(@Param("startDate") LocalDate startDate,
                                      @Param("endDate") LocalDate endDate);
+
+    /**
+     * 获取客户分析汇总数据
+     */
+    List<CustomerAnalysisDTO> getCustomerAnalysisList(@Param("startDate") LocalDate startDate,
+                                                      @Param("endDate") LocalDate endDate);
+
+    /**
+     * 获取单个客户分析数据
+     */
+    CustomerAnalysisDTO getCustomerAnalysisById(@Param("customerId") Long customerId);
+
+    /**
+     * 获取商品分析数据
+     */
+    List<ProductAnalysisDTO> getProductAnalysisList(@Param("startDate") LocalDate startDate,
+                                                     @Param("endDate") LocalDate endDate);
+
+    /**
+     * 获取供应商分析汇总数据
+     */
+    List<SupplierAnalysisDTO> getSupplierAnalysisList(@Param("startDate") LocalDate startDate,
+                                                     @Param("endDate") LocalDate endDate);
+
+    /**
+     * 获取单个供应商分析数据
+     */
+    SupplierAnalysisDTO getSupplierAnalysisById(@Param("supplierId") Long supplierId);
 }

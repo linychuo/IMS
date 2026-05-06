@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ims.inventory.mapper.InventoryInMapper">
+
+    <resultMap id="BaseResultMap" type="com.ims.inventory.entity.InventoryIn">
+        <id column="id" property="id"/>
+        <result column="in_no" property="inNo"/>
+        <result column="in_type" property="inType"/>
+        <result column="ref_id" property="refId"/>
+        <result column="ref_no" property="refNo"/>
+        <result column="warehouse_id" property="warehouseId"/>
+        <result column="supplier_id" property="supplierId"/>
+        <result column="in_date" property="inDate"/>
+        <result column="status" property="status"/>
+        <result column="approver_id" property="approverId"/>
+        <result column="approve_time" property="approveTime"/>
+        <result column="in_user_id" property="inUserId"/>
+        <result column="remark" property="remark"/>
+        <result column="created_by" property="createdBy"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_by" property="updatedBy"/>
+        <result column="updated_at" property="updatedAt"/>
+        <result column="deleted" property="deleted"/>
+    </resultMap>
+
+    <sql id="baseColumns">
+        id, in_no, in_type, ref_id, ref_no, warehouse_id, supplier_id, in_date, status,
+        approver_id, approve_time, in_user_id, remark,
+        created_by, created_at, updated_by, updated_at, deleted
+    </sql>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="baseColumns"/>
+        FROM inventory_in
+        WHERE id = #{id} AND deleted = 0
+    </select>
+
+    <select id="selectByInNo" resultMap="BaseResultMap">
+        SELECT <include refid="baseColumns"/>
+        FROM inventory_in
+        WHERE in_no = #{inNo} AND deleted = 0
+    </select>
+
+    <select id="selectList" resultMap="BaseResultMap">
+        SELECT <include refid="baseColumns"/>
+        FROM inventory_in
+        WHERE deleted = 0
+        <if test="inType != null">
+            AND in_type = #{inType}
+        </if>
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+        <if test="warehouseId != null">
+            AND warehouse_id = #{warehouseId}
+        </if>
+        <if test="supplierId != null">
+            AND supplier_id = #{supplierId}
+        </if>
+        ORDER BY created_at DESC
+    </select>
+
+    <insert id="insert" parameterType="com.ims.inventory.entity.InventoryIn">
+        INSERT INTO inventory_in (
+            id, in_no, in_type, ref_id, ref_no, warehouse_id, supplier_id, in_date, status,
+            approver_id, approve_time, in_user_id, remark,
+            created_by, created_at, deleted
+        ) VALUES (
+            #{id}, #{inNo}, #{inType}, #{refId}, #{refNo}, #{warehouseId}, #{supplierId}, #{inDate}, #{status},
+            #{approverId}, #{approveTime}, #{inUserId}, #{remark},
+            #{createdBy}, #{createdAt}, 0
+        )
+    </insert>
+
+    <update id="update" parameterType="com.ims.inventory.entity.InventoryIn">
+        UPDATE inventory_in
+        <set>
+            <if test="status != null">status = #{status},</if>
+            <if test="approverId != null">approver_id = #{approverId},</if>
+            <if test="approveTime != null">approve_time = #{approveTime},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="updatedBy != null">updated_by = #{updatedBy},</if>
+            <if test="updatedAt != null">updated_at = #{updatedAt},</if>
+        </set>
+        WHERE id = #{id} AND deleted = 0
+    </update>
+
+    <update id="deleteById">
+        UPDATE inventory_in SET deleted = 1 WHERE id = #{id}
+    </update>
+
+</mapper>

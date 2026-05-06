@@ -1,16 +1,12 @@
 package com.ims.customer.dto;
 
 import com.ims.common.dto.BaseDTO;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
 
 import java.math.BigDecimal;
 
 /**
  * 客户DTO
  */
-@Data
-@EqualsAndHashCode(callSuper = true)
 public class CustomerDTO extends BaseDTO {
 
     /**
@@ -117,4 +113,172 @@ public class CustomerDTO extends BaseDTO {
      * 欠款金额
      */
     private BigDecimal debtAmount;
+
+    public String getCode() {
+        return code;
+    }
+
+    public void setCode(String code) {
+        this.code = code;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public Integer getType() {
+        return type;
+    }
+
+    public void setType(Integer type) {
+        this.type = type;
+    }
+
+    public String getTypeName() {
+        return typeName;
+    }
+
+    public void setTypeName(String typeName) {
+        this.typeName = typeName;
+    }
+
+    public String getContact() {
+        return contact;
+    }
+
+    public void setContact(String contact) {
+        this.contact = contact;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    public String getMobile() {
+        return mobile;
+    }
+
+    public void setMobile(String mobile) {
+        this.mobile = mobile;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    public Integer getLevel() {
+        return level;
+    }
+
+    public void setLevel(Integer level) {
+        this.level = level;
+    }
+
+    public String getLevelName() {
+        return levelName;
+    }
+
+    public void setLevelName(String levelName) {
+        this.levelName = levelName;
+    }
+
+    public BigDecimal getCreditLimit() {
+        return creditLimit;
+    }
+
+    public void setCreditLimit(BigDecimal creditLimit) {
+        this.creditLimit = creditLimit;
+    }
+
+    public BigDecimal getReceivableAmount() {
+        return receivableAmount;
+    }
+
+    public void setReceivableAmount(BigDecimal receivableAmount) {
+        this.receivableAmount = receivableAmount;
+    }
+
+    public Integer getSettlePeriod() {
+        return settlePeriod;
+    }
+
+    public void setSettlePeriod(Integer settlePeriod) {
+        this.settlePeriod = settlePeriod;
+    }
+
+    public String getBankName() {
+        return bankName;
+    }
+
+    public void setBankName(String bankName) {
+        this.bankName = bankName;
+    }
+
+    public String getBankAccount() {
+        return bankAccount;
+    }
+
+    public void setBankAccount(String bankAccount) {
+        this.bankAccount = bankAccount;
+    }
+
+    public String getTaxNo() {
+        return taxNo;
+    }
+
+    public void setTaxNo(String taxNo) {
+        this.taxNo = taxNo;
+    }
+
+    public Integer getStatus() {
+        return status;
+    }
+
+    public void setStatus(Integer status) {
+        this.status = status;
+    }
+
+    public String getRemark() {
+        return remark;
+    }
+
+    public void setRemark(String remark) {
+        this.remark = remark;
+    }
+
+    public BigDecimal getTotalReceivable() {
+        return totalReceivable;
+    }
+
+    public void setTotalReceivable(BigDecimal totalReceivable) {
+        this.totalReceivable = totalReceivable;
+    }
+
+    public BigDecimal getDebtAmount() {
+        return debtAmount;
+    }
+
+    public void setDebtAmount(BigDecimal debtAmount) {
+        this.debtAmount = debtAmount;
+    }
 }

@@ -1,7 +1,6 @@
 package com.ims.common.mapper;
 
 import com.ims.common.entity.BaseEntity;
-import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import java.util.List;
 
@@ -9,7 +8,6 @@ import java.util.List;
  * 基础Mapper，所有Mapper继承此类
  * @param <T> 实体类型
  */
-@Mapper
 public interface BaseMapper<T extends BaseEntity> {
     
     /**

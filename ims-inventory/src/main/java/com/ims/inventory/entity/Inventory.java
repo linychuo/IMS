@@ -1,94 +1,54 @@
 package com.ims.inventory.entity;
 
-<<<<<<< HEAD
-import com.ims.common.entity.BaseEntity;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import java.math.BigDecimal;
-import java.util.Date;
-=======
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.ims.core.entity.BaseEntity;
-import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDate;
->>>>>>> 21bd09fedd2f343af76a217bcc3b0e666ca0ac30
 
 /**
  * 库存台账实体
  */
-@Data
-<<<<<<< HEAD
-@EqualsAndHashCode(callSuper = true)
-public class Inventory extends BaseEntity {
-    
-    /**
-     * 商品ID
-     */
-    private Long productId;
-    
-    /**
-     * 仓库ID
-     */
-    private Long warehouseId;
-    
-    /**
-     * 库存数量
-     */
-    private BigDecimal quantity;
-    
-    /**
-     * 预留数量
-     */
-    private BigDecimal reservedQuantity;
-    
-    /**
-     * 可用数量 = 库存数量 - 预留数量
-     */
-    private BigDecimal availableQuantity;
-    
-    /**
-     * 库存批次号
-     */
-    private String batchNo;
-    
-    /**
-     * 生产日期
-     */
-    private Date productionDate;
-    
-    /**
-     * 过期日期
-     */
-    private Date expireDate;
-    
-    /**
-     * 单价
-     */
-    private BigDecimal unitPrice;
-    
-    /**
-     * 总金额
-     */
-    private BigDecimal totalAmount;
-=======
 @TableName("inventory")
 public class Inventory extends BaseEntity {
-    
-    private Long productId;           // 商品ID
-    private Long warehouseId;         // 仓库ID
-    private Long locationId;           // 库位ID
-    private BigDecimal quantity;       // 库存数量
-    private BigDecimal frozenQuantity;// 冻结数量
-    private BigDecimal cost;          // 成本单价
-    private String batchNo;           // 批次号
-    private LocalDate productionDate;  // 生产日期
-    private LocalDate expiryDate;      // 有效期
-    
-    // 临时字段，不存储
+
+    private Long productId;
+    private Long warehouseId;
+    private Long locationId;
+    private BigDecimal quantity;
+    private BigDecimal frozenQuantity;
+    private BigDecimal cost;
+    private String batchNo;
+    private LocalDate productionDate;
+    private LocalDate expiryDate;
     private String productName;
     private String productCode;
     private String warehouseName;
     private String locationName;
->>>>>>> 21bd09fedd2f343af76a217bcc3b0e666ca0ac30
+
+    public Long getProductId() { return productId; }
+    public void setProductId(Long productId) { this.productId = productId; }
+    public Long getWarehouseId() { return warehouseId; }
+    public void setWarehouseId(Long warehouseId) { this.warehouseId = warehouseId; }
+    public Long getLocationId() { return locationId; }
+    public void setLocationId(Long locationId) { this.locationId = locationId; }
+    public BigDecimal getQuantity() { return quantity; }
+    public void setQuantity(BigDecimal quantity) { this.quantity = quantity; }
+    public BigDecimal getFrozenQuantity() { return frozenQuantity; }
+    public void setFrozenQuantity(BigDecimal frozenQuantity) { this.frozenQuantity = frozenQuantity; }
+    public BigDecimal getCost() { return cost; }
+    public void setCost(BigDecimal cost) { this.cost = cost; }
+    public String getBatchNo() { return batchNo; }
+    public void setBatchNo(String batchNo) { this.batchNo = batchNo; }
+    public LocalDate getProductionDate() { return productionDate; }
+    public void setProductionDate(LocalDate productionDate) { this.productionDate = productionDate; }
+    public LocalDate getExpiryDate() { return expiryDate; }
+    public void setExpiryDate(LocalDate expiryDate) { this.expiryDate = expiryDate; }
+    public String getProductName() { return productName; }
+    public void setProductName(String productName) { this.productName = productName; }
+    public String getProductCode() { return productCode; }
+    public void setProductCode(String productCode) { this.productCode = productCode; }
+    public String getWarehouseName() { return warehouseName; }
+    public void setWarehouseName(String warehouseName) { this.warehouseName = warehouseName; }
+    public String getLocationName() { return locationName; }
+    public void setLocationName(String locationName) { this.locationName = locationName; }
 }

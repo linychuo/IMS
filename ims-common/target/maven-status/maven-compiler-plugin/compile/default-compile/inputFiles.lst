@@ -1,0 +1,9 @@
+/home/ivan/IMS/ims-common/src/main/java/com/ims/common/config/MyBatisConfig.java
+/home/ivan/IMS/ims-common/src/main/java/com/ims/common/dto/BaseDTO.java
+/home/ivan/IMS/ims-common/src/main/java/com/ims/common/entity/BaseEntity.java
+/home/ivan/IMS/ims-common/src/main/java/com/ims/common/enums/BaseEnum.java
+/home/ivan/IMS/ims-common/src/main/java/com/ims/common/enums/CommonStatus.java
+/home/ivan/IMS/ims-common/src/main/java/com/ims/common/mapper/BaseMapper.java
+/home/ivan/IMS/ims-common/src/main/java/com/ims/common/result/PageResult.java
+/home/ivan/IMS/ims-common/src/main/java/com/ims/common/result/Result.java
+/home/ivan/IMS/ims-common/src/main/java/com/ims/common/util/OrderNoGenerator.java

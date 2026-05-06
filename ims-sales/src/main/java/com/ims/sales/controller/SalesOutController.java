@@ -4,7 +4,8 @@ import com.ims.sales.entity.SalesOut;
 import com.ims.sales.entity.SalesOutDetail;
 import com.ims.sales.service.SalesOutService;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,10 +16,15 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/sales/out")
-@RequiredArgsConstructor
 public class SalesOutController {
 
+    private static final Logger log = LoggerFactory.getLogger(SalesOutController.class);
+
     private final SalesOutService salesOutService;
+
+    public SalesOutController(SalesOutService salesOutService) {
+        this.salesOutService = salesOutService;
+    }
 
     /**
      * 创建出库单
@@ -33,7 +39,7 @@ public class SalesOutController {
      * 审核出库单
      */
     @PostMapping("/{id}/approve")
-    public ResponseEntity<Void> approve(@PathVariable String id, 
+    public ResponseEntity<Void> approve(@PathVariable String id,
                                          @RequestParam String userId) {
         salesOutService.approve(id, userId);
         return ResponseEntity.ok().build();
@@ -43,7 +49,7 @@ public class SalesOutController {
      * 取消出库单
      */
     @PostMapping("/{id}/cancel")
-    public ResponseEntity<Void> cancel(@PathVariable String id, 
+    public ResponseEntity<Void> cancel(@PathVariable String id,
                                        @RequestParam String reason) {
         salesOutService.cancel(id, reason);
         return ResponseEntity.ok().build();

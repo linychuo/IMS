@@ -2,11 +2,9 @@ package com.ims.finance.entity;
 
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.ims.core.entity.BaseEntity;
-import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-@Data
 @TableName("account_transaction")
 public class AccountTransaction extends BaseEntity {
     private Long accountId;           // 账户ID
@@ -17,4 +15,68 @@ public class AccountTransaction extends BaseEntity {
     private String refNo;            // 相关单据号
     private String remark;          // 备注
     private Long creatorId;         // 经手人ID
+
+    public Long getAccountId() {
+        return accountId;
+    }
+
+    public void setAccountId(Long accountId) {
+        this.accountId = accountId;
+    }
+
+    public String getAccountNo() {
+        return accountNo;
+    }
+
+    public void setAccountNo(String accountNo) {
+        this.accountNo = accountNo;
+    }
+
+    public Integer getTransType() {
+        return transType;
+    }
+
+    public void setTransType(Integer transType) {
+        this.transType = transType;
+    }
+
+    public BigDecimal getAmount() {
+        return amount;
+    }
+
+    public void setAmount(BigDecimal amount) {
+        this.amount = amount;
+    }
+
+    public Long getRefId() {
+        return refId;
+    }
+
+    public void setRefId(Long refId) {
+        this.refId = refId;
+    }
+
+    public String getRefNo() {
+        return refNo;
+    }
+
+    public void setRefNo(String refNo) {
+        this.refNo = refNo;
+    }
+
+    public String getRemark() {
+        return remark;
+    }
+
+    public void setRemark(String remark) {
+        this.remark = remark;
+    }
+
+    public Long getCreatorId() {
+        return creatorId;
+    }
+
+    public void setCreatorId(Long creatorId) {
+        this.creatorId = creatorId;
+    }
 }

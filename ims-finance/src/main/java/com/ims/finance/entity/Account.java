@@ -2,10 +2,9 @@ package com.ims.finance.entity;
 
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.ims.core.entity.BaseEntity;
-import lombok.Data;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
-@Data
 @TableName("account")
 public class Account extends BaseEntity {
     private String accountNo;        // 账户编号
@@ -16,4 +15,68 @@ public class Account extends BaseEntity {
     private BigDecimal balance;     // 当前余额
     private Integer status;         // 状态: 1-启用 2-停用
     private String remark;          // 备注
+
+    public String getAccountNo() {
+        return accountNo;
+    }
+
+    public void setAccountNo(String accountNo) {
+        this.accountNo = accountNo;
+    }
+
+    public String getAccountName() {
+        return accountName;
+    }
+
+    public void setAccountName(String accountName) {
+        this.accountName = accountName;
+    }
+
+    public Integer getAccountType() {
+        return accountType;
+    }
+
+    public void setAccountType(Integer accountType) {
+        this.accountType = accountType;
+    }
+
+    public String getBankName() {
+        return bankName;
+    }
+
+    public void setBankName(String bankName) {
+        this.bankName = bankName;
+    }
+
+    public String getBankAccount() {
+        return bankAccount;
+    }
+
+    public void setBankAccount(String bankAccount) {
+        this.bankAccount = bankAccount;
+    }
+
+    public BigDecimal getBalance() {
+        return balance;
+    }
+
+    public void setBalance(BigDecimal balance) {
+        this.balance = balance;
+    }
+
+    public Integer getStatus() {
+        return status;
+    }
+
+    public void setStatus(Integer status) {
+        this.status = status;
+    }
+
+    public String getRemark() {
+        return remark;
+    }
+
+    public void setRemark(String remark) {
+        this.remark = remark;
+    }
 }

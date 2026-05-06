@@ -3,7 +3,8 @@ package com.ims.sales.controller;
 import com.ims.sales.entity.SalesPriceStrategy;
 import com.ims.sales.service.SalesPriceStrategyService;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,10 +16,15 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/sales/price-strategy")
-@RequiredArgsConstructor
 public class SalesPriceStrategyController {
 
+    private static final Logger log = LoggerFactory.getLogger(SalesPriceStrategyController.class);
+
     private final SalesPriceStrategyService salesPriceStrategyService;
+
+    public SalesPriceStrategyController(SalesPriceStrategyService salesPriceStrategyService) {
+        this.salesPriceStrategyService = salesPriceStrategyService;
+    }
 
     /**
      * 创建策略
@@ -41,7 +47,7 @@ public class SalesPriceStrategyController {
      * 启用/禁用
      */
     @PostMapping("/{id}/status")
-    public ResponseEntity<Void> updateStatus(@PathVariable String id, 
+    public ResponseEntity<Void> updateStatus(@PathVariable String id,
                                            @RequestParam Integer status) {
         salesPriceStrategyService.updateStatus(id, status);
         return ResponseEntity.ok().build();

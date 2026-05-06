@@ -1,0 +1,7 @@
+com/ims/product/service/ProductService.class
+com/ims/product/service/impl/ProductServiceImpl.class
+com/ims/product/dto/ProductQueryRequest.class
+com/ims/product/mapper/ProductMapper.class
+com/ims/product/entity/Product.class
+com/ims/product/dto/ProductDTO.class
+com/ims/product/controller/ProductController.class

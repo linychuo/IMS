@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ims.sales.mapper.CustomerMapper">
+
+    <resultMap id="BaseResultMap" type="com.ims.sales.entity.Customer">
+        <id column="id" property="id"/>
+        <result column="customer_code" property="customerCode"/>
+        <result column="customer_name" property="customerName"/>
+        <result column="contact" property="contact"/>
+        <result column="phone" property="phone"/>
+        <result column="address" property="address"/>
+        <result column="status" property="status"/>
+        <result column="created_by" property="createdBy"/>
+        <result column="created_at" property="createdAt"/>
+        <result column="updated_by" property="updatedBy"/>
+        <result column="updated_at" property="updatedAt"/>
+        <result column="deleted" property="deleted"/>
+    </resultMap>
+
+    <sql id="baseColumns">
+        id, customer_code, customer_name, contact, phone, address, status,
+        created_by, created_at, updated_by, updated_at, deleted
+    </sql>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="baseColumns"/>
+        FROM customer
+        WHERE id = #{id} AND deleted = 0
+    </select>
+
+    <select id="selectByCode" resultMap="BaseResultMap">
+        SELECT <include refid="baseColumns"/>
+        FROM customer
+        WHERE customer_code = #{customerCode} AND deleted = 0
+    </select>
+
+    <select id="selectList" resultMap="BaseResultMap">
+        SELECT <include refid="baseColumns"/>
+        FROM customer
+        WHERE deleted = 0
+        <if test="query.customerCode != null">
+            AND customer_code LIKE CONCAT('%', #{query.customerCode}, '%')
+        </if>
+        <if test="query.customerName != null">
+            AND customer_name LIKE CONCAT('%', #{query.customerName}, '%')
+        </if>
+        <if test="query.status != null">
+            AND status = #{query.status}
+        </if>
+        ORDER BY created_at DESC
+    </select>
+
+    <insert id="insert" parameterType="com.ims.sales.entity.Customer">
+        INSERT INTO customer (
+            id, customer_code, customer_name, contact, phone, address, status,
+            created_by, created_at, deleted
+        ) VALUES (
+            #{id}, #{customerCode}, #{customerName}, #{contact}, #{phone}, #{address}, #{status},
+            #{createdBy}, #{createdAt}, 0
+        )
+    </insert>
+
+    <update id="update" parameterType="com.ims.sales.entity.Customer">
+        UPDATE customer
+        <set>
+            <if test="customerName != null">customer_name = #{customerName},</if>
+            <if test="contact != null">contact = #{contact},</if>
+            <if test="phone != null">phone = #{phone},</if>
+            <if test="address != null">address = #{address},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="updatedBy != null">updated_by = #{updatedBy},</if>
+            <if test="updatedAt != null">updated_at = #{updatedAt},</if>
+        </set>
+        WHERE id = #{id} AND deleted = 0
+    </update>
+
+    <update id="deleteById">
+        UPDATE customer SET deleted = 1 WHERE id = #{id}
+    </update>
+
+</mapper>

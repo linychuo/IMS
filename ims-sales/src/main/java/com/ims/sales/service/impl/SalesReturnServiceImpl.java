@@ -8,8 +8,8 @@ import com.ims.sales.entity.SalesReturnDetail;
 import com.ims.sales.mapper.SalesReturnDetailMapper;
 import com.ims.sales.mapper.SalesReturnMapper;
 import com.ims.sales.service.SalesReturnService;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,21 +20,31 @@ import java.util.List;
 /**
  * 销售退货服务实现
  */
-@Slf4j
 @Service
-@RequiredArgsConstructor
 public class SalesReturnServiceImpl implements SalesReturnService {
+
+    private static final Logger log = LoggerFactory.getLogger(SalesReturnServiceImpl.class);
 
     private final SalesReturnMapper salesReturnMapper;
     private final SalesReturnDetailMapper salesReturnDetailMapper;
     private final OrderNoGenerator orderNoGenerator;
     private final InventoryService inventoryService;
 
+    public SalesReturnServiceImpl(SalesReturnMapper salesReturnMapper,
+                                   SalesReturnDetailMapper salesReturnDetailMapper,
+                                   OrderNoGenerator orderNoGenerator,
+                                   InventoryService inventoryService) {
+        this.salesReturnMapper = salesReturnMapper;
+        this.salesReturnDetailMapper = salesReturnDetailMapper;
+        this.orderNoGenerator = orderNoGenerator;
+        this.inventoryService = inventoryService;
+    }
+
     @Override
     @Transactional
     public SalesReturn create(SalesReturn salesReturn, List<SalesReturnDetail> details) {
         // 生成退货单号
-        salesReturn.setReturnNo(orderNoGenerator.generate("SR"));
+        salesReturn.setReturnNo(orderNoGenerator.generateSalesReturnNo());
         salesReturn.setStatus(CommonStatus.PENDING.getCode());
         salesReturnMapper.insert(salesReturn);
         

@@ -3,7 +3,8 @@ package com.ims.sales.controller;
 import com.ims.sales.entity.Customer;
 import com.ims.sales.service.CustomerService;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,10 +15,15 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/sales/customer")
-@RequiredArgsConstructor
 public class CustomerController {
 
+    private static final Logger log = LoggerFactory.getLogger(CustomerController.class);
+
     private final CustomerService customerService;
+
+    public CustomerController(CustomerService customerService) {
+        this.customerService = customerService;
+    }
 
     /**
      * 创建客户
@@ -31,7 +37,7 @@ public class CustomerController {
      * 更新客户
      */
     @PutMapping("/{id}")
-    public ResponseEntity<Customer> update(@PathVariable String id, 
+    public ResponseEntity<Customer> update(@PathVariable String id,
                                       @Valid @RequestBody Customer customer) {
         return ResponseEntity.ok(customerService.update(id, customer));
     }

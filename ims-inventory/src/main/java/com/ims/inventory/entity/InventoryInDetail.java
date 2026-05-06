@@ -1,99 +1,54 @@
 package com.ims.inventory.entity;
 
-<<<<<<< HEAD
-import com.ims.common.entity.BaseEntity;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import java.math.BigDecimal;
-
-/**
- * 入库单明细实体
- */
-@Data
-@EqualsAndHashCode(callSuper = true)
-public class InventoryInDetail extends BaseEntity {
-    
-    /**
-     * 入库单ID
-     */
-    private Long inId;
-    
-    /**
-     * 商品ID
-     */
-    private Long productId;
-    
-    /**
-     * 库存台账ID (如果已存在)
-     */
-    private Long inventoryId;
-    
-    /**
-     * 入库数量
-     */
-    private BigDecimal quantity;
-    
-    /**
-     * 单位
-     */
-    private String unit;
-    
-    /**
-     * 单价
-     */
-    private BigDecimal unitPrice;
-    
-    /**
-     * 金额
-     */
-    private BigDecimal amount;
-    
-    /**
-     * 库存批次号
-     */
-    private String batchNo;
-    
-    /**
-     * 生产日期
-     */
-    private String productionDate;
-    
-    /**
-     * 过期日期
-     */
-    private String expireDate;
-    
-    /**
-     * 备注
-     */
-    private String remark;
-=======
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.ims.core.entity.BaseEntity;
-import lombok.Data;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 /**
  * 入库明细实体
  */
-@Data
 @TableName("inventory_in_detail")
 public class InventoryInDetail extends BaseEntity {
-    
-    private Long inId;                // 入库单ID
-    private Long productId;           // 商品ID
-    private Long locationId;          // 库位ID
-    private BigDecimal quantity;     // 数量
-    private BigDecimal price;         // 单价
-    private BigDecimal amount;        // 金额
-    private String batchNo;           // 批次号
-    private String productionDate;   // 生产日期
-    private String expiryDate;       // 有效期
-    private String remark;           // 备注
-    
-    // 临时字段
+
+    private Long inId;
+    private Long productId;
+    private Long locationId;
+    private BigDecimal quantity;
+    private BigDecimal price;
+    private BigDecimal amount;
+    private String batchNo;
+    private LocalDateTime productionDate;
+    private LocalDateTime expiryDate;
+    private String remark;
     private String productName;
     private String productCode;
     private String locationName;
->>>>>>> 21bd09fedd2f343af76a217bcc3b0e666ca0ac30
+
+    public Long getInId() { return inId; }
+    public void setInId(Long inId) { this.inId = inId; }
+    public Long getProductId() { return productId; }
+    public void setProductId(Long productId) { this.productId = productId; }
+    public Long getLocationId() { return locationId; }
+    public void setLocationId(Long locationId) { this.locationId = locationId; }
+    public BigDecimal getQuantity() { return quantity; }
+    public void setQuantity(BigDecimal quantity) { this.quantity = quantity; }
+    public BigDecimal getPrice() { return price; }
+    public void setPrice(BigDecimal price) { this.price = price; }
+    public BigDecimal getAmount() { return amount; }
+    public void setAmount(BigDecimal amount) { this.amount = amount; }
+    public String getBatchNo() { return batchNo; }
+    public void setBatchNo(String batchNo) { this.batchNo = batchNo; }
+    public LocalDateTime getProductionDate() { return productionDate; }
+    public void setProductionDate(LocalDateTime productionDate) { this.productionDate = productionDate; }
+    public LocalDateTime getExpiryDate() { return expiryDate; }
+    public void setExpiryDate(LocalDateTime expiryDate) { this.expiryDate = expiryDate; }
+    public String getRemark() { return remark; }
+    public void setRemark(String remark) { this.remark = remark; }
+    public String getProductName() { return productName; }
+    public void setProductName(String productName) { this.productName = productName; }
+    public String getProductCode() { return productCode; }
+    public void setProductCode(String productCode) { this.productCode = productCode; }
+    public String getLocationName() { return locationName; }
+    public void setLocationName(String locationName) { this.locationName = locationName; }
 }

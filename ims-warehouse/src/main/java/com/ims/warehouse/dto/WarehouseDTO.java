@@ -1,14 +1,10 @@
 package com.ims.warehouse.dto;
 
 import com.ims.common.dto.BaseDTO;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
 
 /**
  * 仓库DTO
  */
-@Data
-@EqualsAndHashCode(callSuper = true)
 public class WarehouseDTO extends BaseDTO {
 
     /**
@@ -70,4 +66,100 @@ public class WarehouseDTO extends BaseDTO {
      * 库存商品种类数
      */
     private Integer skuCount;
+
+    public String getCode() {
+        return code;
+    }
+
+    public void setCode(String code) {
+        this.code = code;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public Integer getType() {
+        return type;
+    }
+
+    public void setType(Integer type) {
+        this.type = type;
+    }
+
+    public String getTypeName() {
+        return typeName;
+    }
+
+    public void setTypeName(String typeName) {
+        this.typeName = typeName;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    public String getManager() {
+        return manager;
+    }
+
+    public void setManager(String manager) {
+        this.manager = manager;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    public Integer getLocationCount() {
+        return locationCount;
+    }
+
+    public void setLocationCount(Integer locationCount) {
+        this.locationCount = locationCount;
+    }
+
+    public Integer getStatus() {
+        return status;
+    }
+
+    public void setStatus(Integer status) {
+        this.status = status;
+    }
+
+    public String getRemark() {
+        return remark;
+    }
+
+    public void setRemark(String remark) {
+        this.remark = remark;
+    }
+
+    public Integer getUsedLocationCount() {
+        return usedLocationCount;
+    }
+
+    public void setUsedLocationCount(Integer usedLocationCount) {
+        this.usedLocationCount = usedLocationCount;
+    }
+
+    public Integer getSkuCount() {
+        return skuCount;
+    }
+
+    public void setSkuCount(Integer skuCount) {
+        this.skuCount = skuCount;
+    }
 }

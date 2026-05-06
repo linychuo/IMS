@@ -1,4 +1,4 @@
-package com.ims.procurement.service;
+package com.ims.procurement.service.impl;
 
 import com.ims.procurement.dto.request.CreatePurchaseOrderRequest;
 import com.ims.procurement.dto.request.UpdatePurchaseOrderRequest;
@@ -7,9 +7,10 @@ import com.ims.procurement.entity.PurchaseOrderDetail;
 import com.ims.procurement.mapper.PurchaseOrderDetailMapper;
 import com.ims.procurement.mapper.PurchaseOrderMapper;
 import com.ims.procurement.mapper.SupplierMapper;
+import com.ims.procurement.service.PurchaseOrderService;
 import com.ims.common.util.OrderNoGenerator;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,14 +21,22 @@ import java.util.List;
 /**
  * 采购订单服务实现
  */
-@Slf4j
 @Service
-@RequiredArgsConstructor
 public class PurchaseOrderServiceImpl implements PurchaseOrderService {
+
+    private static final Logger log = LoggerFactory.getLogger(PurchaseOrderServiceImpl.class);
 
     private final PurchaseOrderMapper purchaseOrderMapper;
     private final PurchaseOrderDetailMapper detailMapper;
     private final SupplierMapper supplierMapper;
+
+    public PurchaseOrderServiceImpl(PurchaseOrderMapper purchaseOrderMapper,
+                                   PurchaseOrderDetailMapper detailMapper,
+                                   SupplierMapper supplierMapper) {
+        this.purchaseOrderMapper = purchaseOrderMapper;
+        this.detailMapper = detailMapper;
+        this.supplierMapper = supplierMapper;
+    }
 
     @Override
     @Transactional(rollbackFor = Exception.class)

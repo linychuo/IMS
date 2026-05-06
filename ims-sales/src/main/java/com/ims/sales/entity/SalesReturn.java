@@ -2,8 +2,6 @@ package com.ims.sales.entity;
 
 import com.ims.common.entity.BaseEntity;
 import jakarta.validation.constraints.NotNull;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -12,8 +10,6 @@ import java.time.LocalDateTime;
 /**
  * 销售退货单实体
  */
-@Data
-@EqualsAndHashCode(callSuper = true)
 public class SalesReturn extends BaseEntity {
 
     /**
@@ -112,4 +108,43 @@ public class SalesReturn extends BaseEntity {
      * 审核时间
      */
     private LocalDateTime auditedAt;
+
+    public String getReturnNo() { return returnNo; }
+    public void setReturnNo(String returnNo) { this.returnNo = returnNo; }
+    public String getOrderId() { return orderId; }
+    public void setOrderId(String orderId) { this.orderId = orderId; }
+    public String getOrderNo() { return orderNo; }
+    public void setOrderNo(String orderNo) { this.orderNo = orderNo; }
+    public String getOutId() { return outId; }
+    public void setOutId(String outId) { this.outId = outId; }
+    public String getOutNo() { return outNo; }
+    public void setOutNo(String outNo) { this.outNo = outNo; }
+    public String getCustomerId() { return customerId; }
+    public void setCustomerId(String customerId) { this.customerId = customerId; }
+    public String getCustomerName() { return customerName; }
+    public void setCustomerName(String customerName) { this.customerName = customerName; }
+    public LocalDate getReturnDate() { return returnDate; }
+    public void setReturnDate(LocalDate returnDate) { this.returnDate = returnDate; }
+    public String getWarehouseId() { return warehouseId; }
+    public void setWarehouseId(String warehouseId) { this.warehouseId = warehouseId; }
+    public String getWarehouseName() { return warehouseName; }
+    public void setWarehouseName(String warehouseName) { this.warehouseName = warehouseName; }
+    public String getReturnBy() { return returnBy; }
+    public void setReturnBy(String returnBy) { this.returnBy = returnBy; }
+    public String getReturnByName() { return returnByName; }
+    public void setReturnByName(String returnByName) { this.returnByName = returnByName; }
+    public Integer getStatus() { return status; }
+    public void setStatus(Integer status) { this.status = status; }
+    public BigDecimal getTotalAmount() { return totalAmount; }
+    public void setTotalAmount(BigDecimal totalAmount) { this.totalAmount = totalAmount; }
+    public BigDecimal getRefundAmount() { return refundAmount; }
+    public void setRefundAmount(BigDecimal refundAmount) { this.refundAmount = refundAmount; }
+    public String getReason() { return reason; }
+    public void setReason(String reason) { this.reason = reason; }
+    public String getRemark() { return remark; }
+    public void setRemark(String remark) { this.remark = remark; }
+    public String getAuditedBy() { return auditedBy; }
+    public void setAuditedBy(String auditedBy) { this.auditedBy = auditedBy; }
+    public LocalDateTime getAuditedAt() { return auditedAt; }
+    public void setAuditedAt(LocalDateTime auditedAt) { this.auditedAt = auditedAt; }
 }

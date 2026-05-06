@@ -5,8 +5,8 @@ import com.ims.procurement.dto.request.UpdatePurchaseOrderRequest;
 import com.ims.procurement.entity.PurchaseOrder;
 import com.ims.procurement.service.PurchaseOrderService;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,13 +15,17 @@ import java.util.List;
 /**
  * 采购订单 Controller
  */
-@Slf4j
 @RestController
 @RequestMapping("/api/procurement/orders")
-@RequiredArgsConstructor
 public class PurchaseOrderController {
 
+    private static final Logger log = LoggerFactory.getLogger(PurchaseOrderController.class);
+
     private final PurchaseOrderService purchaseOrderService;
+
+    public PurchaseOrderController(PurchaseOrderService purchaseOrderService) {
+        this.purchaseOrderService = purchaseOrderService;
+    }
 
     /**
      * 创建采购订单

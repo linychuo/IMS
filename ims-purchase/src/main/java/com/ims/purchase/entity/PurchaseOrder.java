@@ -2,8 +2,6 @@ package com.ims.purchase.entity;
 
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.ims.core.entity.BaseEntity;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -11,8 +9,6 @@ import java.time.LocalDateTime;
 /**
  * 采购订单实体
  */
-@Data
-@EqualsAndHashCode(callSuper = true)
 @TableName("ims_purchase_order")
 public class PurchaseOrder extends BaseEntity {
 
@@ -70,4 +66,92 @@ public class PurchaseOrder extends BaseEntity {
      * 备注
      */
     private String remark;
+
+    public String getOrderNo() {
+        return orderNo;
+    }
+
+    public void setOrderNo(String orderNo) {
+        this.orderNo = orderNo;
+    }
+
+    public Long getSupplierId() {
+        return supplierId;
+    }
+
+    public void setSupplierId(Long supplierId) {
+        this.supplierId = supplierId;
+    }
+
+    public LocalDateTime getOrderDate() {
+        return orderDate;
+    }
+
+    public void setOrderDate(LocalDateTime orderDate) {
+        this.orderDate = orderDate;
+    }
+
+    public BigDecimal getTotalAmount() {
+        return totalAmount;
+    }
+
+    public void setTotalAmount(BigDecimal totalAmount) {
+        this.totalAmount = totalAmount;
+    }
+
+    public BigDecimal getPaidAmount() {
+        return paidAmount;
+    }
+
+    public void setPaidAmount(BigDecimal paidAmount) {
+        this.paidAmount = paidAmount;
+    }
+
+    public BigDecimal getDiscountAmount() {
+        return discountAmount;
+    }
+
+    public void setDiscountAmount(BigDecimal discountAmount) {
+        this.discountAmount = discountAmount;
+    }
+
+    public Integer getStatus() {
+        return status;
+    }
+
+    public void setStatus(Integer status) {
+        this.status = status;
+    }
+
+    public String getPurchaser() {
+        return purchaser;
+    }
+
+    public void setPurchaser(String purchaser) {
+        this.purchaser = purchaser;
+    }
+
+    public LocalDateTime getExpectDate() {
+        return expectDate;
+    }
+
+    public void setExpectDate(LocalDateTime expectDate) {
+        this.expectDate = expectDate;
+    }
+
+    public LocalDateTime getArrivalDate() {
+        return arrivalDate;
+    }
+
+    public void setArrivalDate(LocalDateTime arrivalDate) {
+        this.arrivalDate = arrivalDate;
+    }
+
+    public String getRemark() {
+        return remark;
+    }
+
+    public void setRemark(String remark) {
+        this.remark = remark;
+    }
 }

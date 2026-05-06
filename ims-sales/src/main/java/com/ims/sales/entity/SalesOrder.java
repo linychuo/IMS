@@ -2,8 +2,6 @@ package com.ims.sales.entity;
 
 import com.ims.common.entity.BaseEntity;
 import jakarta.validation.constraints.NotNull;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -12,8 +10,6 @@ import java.time.LocalDateTime;
 /**
  * 销售订单实体
  */
-@Data
-@EqualsAndHashCode(callSuper = true)
 public class SalesOrder extends BaseEntity {
 
     /**
@@ -76,4 +72,29 @@ public class SalesOrder extends BaseEntity {
      * 审核时间
      */
     private LocalDateTime auditedAt;
+
+    public String getOrderNo() { return orderNo; }
+    public void setOrderNo(String orderNo) { this.orderNo = orderNo; }
+    public String getCustomerId() { return customerId; }
+    public void setCustomerId(String customerId) { this.customerId = customerId; }
+    public String getCustomerName() { return customerName; }
+    public void setCustomerName(String customerName) { this.customerName = customerName; }
+    public LocalDate getOrderDate() { return orderDate; }
+    public void setOrderDate(LocalDate orderDate) { this.orderDate = orderDate; }
+    public LocalDate getExpectedDate() { return expectedDate; }
+    public void setExpectedDate(LocalDate expectedDate) { this.expectedDate = expectedDate; }
+    public Integer getStatus() { return status; }
+    public void setStatus(Integer status) { this.status = status; }
+    public BigDecimal getTotalAmount() { return totalAmount; }
+    public void setTotalAmount(BigDecimal totalAmount) { this.totalAmount = totalAmount; }
+    public BigDecimal getDiscountAmount() { return discountAmount; }
+    public void setDiscountAmount(BigDecimal discountAmount) { this.discountAmount = discountAmount; }
+    public BigDecimal getNetAmount() { return netAmount; }
+    public void setNetAmount(BigDecimal netAmount) { this.netAmount = netAmount; }
+    public String getRemark() { return remark; }
+    public void setRemark(String remark) { this.remark = remark; }
+    public String getAuditedBy() { return auditedBy; }
+    public void setAuditedBy(String auditedBy) { this.auditedBy = auditedBy; }
+    public LocalDateTime getAuditedAt() { return auditedAt; }
+    public void setAuditedAt(LocalDateTime auditedAt) { this.auditedAt = auditedAt; }
 }

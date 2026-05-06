@@ -13,13 +13,16 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 库存台账 Service 实现
  */
 @Service
 public class InventoryServiceImpl extends ServiceImpl<InventoryMapper, Inventory> implements InventoryService {
-    
+
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(InventoryServiceImpl.class);
+
     @Autowired
     private InventoryRecordMapper recordMapper;
 
@@ -72,7 +75,7 @@ public class InventoryServiceImpl extends ServiceImpl<InventoryMapper, Inventory
         LambdaQueryWrapper<Inventory> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Inventory::getProductId, productId)
                .eq(Inventory::getWarehouseId, warehouseId);
-        
+
         if (locationId != null) {
             wrapper.eq(Inventory::getLocationId, locationId);
         }
@@ -81,30 +84,107 @@ public class InventoryServiceImpl extends ServiceImpl<InventoryMapper, Inventory
         } else {
             wrapper.isNull(Inventory::getBatchNo);
         }
-        
+
         Inventory inventory = this.getOne(wrapper);
-        
+
         if (inventory == null || inventory.getQuantity().compareTo(quantity) < 0) {
             throw new RuntimeException("库存不足");
         }
-        
+
         BigDecimal beforeQuantity = inventory.getQuantity();
-        
+
         // 检查可用库存是否充足 (库存 - 冻结)
         BigDecimal availableQuantity = inventory.getQuantity().subtract(inventory.getFrozenQuantity());
         if (availableQuantity.compareTo(quantity) < 0) {
             throw new RuntimeException("可用库存不足，已有冻结库存");
         }
-        
+
         // 扣减库存
         inventory.setQuantity(inventory.getQuantity().subtract(quantity));
         this.updateById(inventory);
-        
+
         // 记录库存变动
         recordChange(productId, warehouseId, locationId, "OUT", quantity,
                      beforeQuantity, beforeQuantity.subtract(quantity), orderType, orderId, batchNo, "出库");
-        
+
         return true;
+    }
+
+    @Override
+    @Transactional
+    public boolean reduceStockByFifo(Long productId, Long warehouseId, Long locationId,
+                                      BigDecimal quantity, String batchNo,
+                                      String orderType, Long orderId) {
+        // 如果指定了批次，按指定批次扣减
+        if (batchNo != null && !batchNo.isEmpty()) {
+            return reduceStock(productId, warehouseId, locationId, quantity, batchNo, orderType, orderId);
+        }
+
+        // FIFO模式：按生产日期升序选择批次
+        LambdaQueryWrapper<Inventory> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Inventory::getProductId, productId)
+               .eq(Inventory::getWarehouseId, warehouseId)
+               .gt(Inventory::getQuantity, BigDecimal.ZERO); // 只选有库存的
+
+        // 按生产日期升序，最早的生产日期排前面
+        wrapper.orderByAsc(Inventory::getProductionDate)
+               .orderByAsc(Inventory::getCreateTime);
+
+        List<Inventory> inventoryList = this.list(wrapper);
+
+        if (inventoryList.isEmpty()) {
+            throw new RuntimeException("库存不足，没有可用批次");
+        }
+
+        // 按FIFO顺序扣减
+        BigDecimal remainingQuantity = quantity;
+        for (Inventory inventory : inventoryList) {
+            if (remainingQuantity.compareTo(BigDecimal.ZERO) <= 0) {
+                break;
+            }
+
+            BigDecimal availableQty = inventory.getQuantity().subtract(inventory.getFrozenQuantity());
+            if (availableQty.compareTo(BigDecimal.ZERO) <= 0) {
+                continue; // 跳过没有可用库存的批次
+            }
+
+            BigDecimal deductQty = availableQty.compareTo(remainingQuantity) >= 0
+                    ? remainingQuantity : availableQty;
+
+            BigDecimal beforeQuantity = inventory.getQuantity();
+            inventory.setQuantity(inventory.getQuantity().subtract(deductQty));
+            this.updateById(inventory);
+
+            // 记录库存变动
+            recordChange(productId, warehouseId, inventory.getLocationId(), "OUT", deductQty,
+                         beforeQuantity, beforeQuantity.subtract(deductQty), orderType, orderId,
+                         inventory.getBatchNo(), "FIFO出库");
+
+            log.info("FIFO扣减: 批次{} 商品{} 数量{} 剩余库存{}",
+                     inventory.getBatchNo(), productId, deductQty, inventory.getQuantity());
+
+            remainingQuantity = remainingQuantity.subtract(deductQty);
+        }
+
+        if (remainingQuantity.compareTo(BigDecimal.ZERO) > 0) {
+            throw new RuntimeException("库存不足，无法完成FIFO扣减，缺少: " + remainingQuantity);
+        }
+
+        return true;
+    }
+
+    @Override
+    public List<Inventory> getInventoryListByProduct(Long productId, Long warehouseId) {
+        LambdaQueryWrapper<Inventory> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Inventory::getProductId, productId)
+               .eq(warehouseId != null, Inventory::getWarehouseId, warehouseId)
+               .gt(Inventory::getQuantity, BigDecimal.ZERO);
+
+        // 按生产日期升序，用于FIFO推荐
+        wrapper.orderByAsc(Inventory::getProductionDate)
+               .orderByAsc(Inventory::getCreateTime);
+
+        return this.list(wrapper);
     }
 
     @Override

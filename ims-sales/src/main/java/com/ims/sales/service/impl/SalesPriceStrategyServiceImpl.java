@@ -4,8 +4,8 @@ import com.ims.common.util.OrderNoGenerator;
 import com.ims.sales.entity.SalesPriceStrategy;
 import com.ims.sales.mapper.SalesPriceStrategyMapper;
 import com.ims.sales.service.SalesPriceStrategyService;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,18 +17,24 @@ import java.util.List;
 /**
  * 销售价格策略服务实现
  */
-@Slf4j
 @Service
-@RequiredArgsConstructor
 public class SalesPriceStrategyServiceImpl implements SalesPriceStrategyService {
+
+    private static final Logger log = LoggerFactory.getLogger(SalesPriceStrategyServiceImpl.class);
 
     private final SalesPriceStrategyMapper salesPriceStrategyMapper;
     private final OrderNoGenerator orderNoGenerator;
 
+    public SalesPriceStrategyServiceImpl(SalesPriceStrategyMapper salesPriceStrategyMapper,
+                                          OrderNoGenerator orderNoGenerator) {
+        this.salesPriceStrategyMapper = salesPriceStrategyMapper;
+        this.orderNoGenerator = orderNoGenerator;
+    }
+
     @Override
     @Transactional
     public SalesPriceStrategy create(SalesPriceStrategy strategy) {
-        strategy.setStrategyNo(orderNoGenerator.generate("SP"));
+        strategy.setStrategyNo(orderNoGenerator.generateSalesPriceStrategyNo());
         strategy.setStatus(1);
         salesPriceStrategyMapper.insert(strategy);
         log.info("创建销售价格策略: {}", strategy.getStrategyNo());

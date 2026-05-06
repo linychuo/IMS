@@ -3,7 +3,7 @@ package com.ims.inventory.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.ims.core.dto.PageResult;
+import com.ims.core.result.PageResult;
 import com.ims.inventory.entity.InventoryRecord;
 import com.ims.inventory.mapper.InventoryRecordMapper;
 import com.ims.inventory.service.InventoryRecordService;

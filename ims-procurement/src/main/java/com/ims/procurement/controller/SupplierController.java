@@ -2,8 +2,8 @@ package com.ims.procurement.controller;
 
 import com.ims.procurement.entity.Supplier;
 import com.ims.procurement.service.SupplierService;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -12,13 +12,17 @@ import java.util.List;
 /**
  * 供应商 Controller
  */
-@Slf4j
 @RestController
 @RequestMapping("/api/procurement/suppliers")
-@RequiredArgsConstructor
 public class SupplierController {
 
+    private static final Logger log = LoggerFactory.getLogger(SupplierController.class);
+
     private final SupplierService supplierService;
+
+    public SupplierController(SupplierService supplierService) {
+        this.supplierService = supplierService;
+    }
 
     /**
      * 创建供应商
