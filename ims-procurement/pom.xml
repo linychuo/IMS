@@ -25,6 +25,11 @@
             <artifactId>ims-finance</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.ims</groupId>
+            <artifactId>ims-inventory</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <!-- Spring Boot -->
         <dependency>

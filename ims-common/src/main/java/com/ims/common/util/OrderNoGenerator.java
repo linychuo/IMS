@@ -56,6 +56,13 @@ public final class OrderNoGenerator {
     }
 
     /**
+     * 生成采购退货单编号 PR + 年月日 + 6位序号
+     */
+    public static String generatePurchaseReturnNo() {
+        return generateOrderNo("PR");
+    }
+
+    /**
      * 生成销售价格策略编号 SP + 年月日 + 6位序号
      */
     public static String generateSalesPriceStrategyNo() {
