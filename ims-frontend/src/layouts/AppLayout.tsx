@@ -10,6 +10,7 @@ import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   LogoutOutlined,
+  PieChartOutlined,
 } from '@ant-design/icons';
 import { useNavigate, Outlet } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
@@ -23,6 +24,7 @@ const AppLayout: React.FC = () => {
 
   const menuItems = [
     { key: '/dashboard', icon: <BarChartOutlined />, label: '仪表盘' },
+    { key: '/report', icon: <PieChartOutlined />, label: '报表中心' },
     { key: '/sales', icon: <ShoppingCartOutlined />, label: '销售管理' },
     { key: '/purchase', icon: <ShopOutlined />, label: '采购管理' },
     { key: '/inventory', icon: <InboxOutlined />, label: '库存管理' },

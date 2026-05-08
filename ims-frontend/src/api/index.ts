@@ -18,6 +18,10 @@ const createApi = (baseURL: string): AxiosInstance => {
 };
 
 export const systemApi = createApi('http://localhost:8080/system');
-export const salesApi = createApi('http://localhost:8080');
 export const procurementApi = createApi('http://localhost:8081');
 export const reportApi = createApi('http://localhost:8085');
+export const productApi = createApi('http://localhost:8080/api');
+export const warehouseApi = createApi('http://localhost:8080/api');
+export const customerApi = createApi('http://localhost:8080');
+export const supplierApi = createApi('http://localhost:8080');
+export const salesApi = createApi('http://localhost:8080/api/sales');
