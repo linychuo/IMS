@@ -2,6 +2,7 @@ package com.ims.procurement.service.impl;
 
 import com.ims.procurement.entity.Supplier;
 import com.ims.procurement.mapper.SupplierMapper;
+import com.ims.procurement.service.SupplierService;
 import com.ims.common.util.OrderNoGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,7 +16,7 @@ import java.util.List;
  * 供应商服务实现
  */
 @Service
-public class SupplierServiceImpl implements com.ims.procurement.service.SupplierService {
+public class SupplierServiceImpl implements SupplierService {
 
     private static final Logger log = LoggerFactory.getLogger(SupplierServiceImpl.class);
 
@@ -28,7 +29,6 @@ public class SupplierServiceImpl implements com.ims.procurement.service.Supplier
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Supplier create(Supplier supplier) {
-        // 检查编码是否存在
         var existed = supplierMapper.selectByCode(supplier.getSupplierCode());
         if (existed != null) {
             throw new IllegalArgumentException("供应商编码已存在");

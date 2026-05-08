@@ -4,27 +4,37 @@
 
     <resultMap id="BaseResultMap" type="com.ims.customer.entity.Customer">
         <id column="id" property="id"/>
-        <result column="code" property="code"/>
-        <result column="name" property="name"/>
+        <result column="customer_code" property="code"/>
+        <result column="customer_name" property="name"/>
+        <result column="type" property="type"/>
         <result column="contact" property="contact"/>
         <result column="phone" property="phone"/>
+        <result column="mobile" property="mobile"/>
+        <result column="email" property="email"/>
         <result column="address" property="address"/>
+        <result column="level" property="level"/>
+        <result column="credit_limit" property="creditLimit"/>
+        <result column="receivable_amount" property="receivableAmount"/>
+        <result column="settle_period" property="settlePeriod"/>
+        <result column="bank_name" property="bankName"/>
+        <result column="bank_account" property="bankAccount"/>
+        <result column="tax_no" property="taxNo"/>
         <result column="status" property="status"/>
         <result column="remark" property="remark"/>
-        <result column="create_time" property="createTime"/>
-        <result column="update_time" property="updateTime"/>
+        <result column="created_at" property="createTime"/>
+        <result column="updated_at" property="updateTime"/>
     </resultMap>
 
     <sql id="Base_Column_List">
-        id, code, name, contact, phone, address, status, remark, create_time, update_time
+        id, customer_code, customer_name, type, contact, phone, mobile, email, address, level, credit_limit, receivable_amount, settle_period, bank_name, bank_account, tax_no, status, remark, created_at, updated_at
     </sql>
 
     <select id="selectByCode" resultMap="BaseResultMap">
-        SELECT <include refid="Base_Column_List"/> FROM customer WHERE code = #{code}
+        SELECT <include refid="Base_Column_List"/> FROM customer WHERE customer_code = #{code}
     </select>
 
     <select id="selectActiveList" resultMap="BaseResultMap">
-        SELECT <include refid="Base_Column_List"/> FROM customer WHERE status = 1 ORDER BY name ASC
+        SELECT <include refid="Base_Column_List"/> FROM customer WHERE status = 0 ORDER BY customer_name ASC
     </select>
 
 </mapper>

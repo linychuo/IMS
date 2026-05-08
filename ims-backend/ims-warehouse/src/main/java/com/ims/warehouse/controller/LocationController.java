@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
  * 库位Controller
  */
 @RestController
-@RequestMapping("/location")
+@RequestMapping("/api/location")
 public class LocationController {
 
     @Autowired

@@ -4,30 +4,30 @@
 
     <resultMap id="BaseResultMap" type="com.ims.product.entity.Product">
         <id column="id" property="id"/>
-        <result column="code" property="code"/>
-        <result column="name" property="name"/>
-        <result column="category" property="category"/>
+        <result column="product_code" property="code"/>
+        <result column="product_name" property="name"/>
+        <result column="category_id" property="categoryId"/>
         <result column="spec" property="spec"/>
         <result column="unit" property="unit"/>
-        <result column="purchase_price" property="purchasePrice"/>
-        <result column="sale_price" property="salePrice"/>
-        <result column="min_stock" property="minStock"/>
+        <result column="cost" property="purchasePrice"/>
+        <result column="price" property="salePrice"/>
+        <result column="stock_warning" property="stockWarning"/>
         <result column="status" property="status"/>
         <result column="remark" property="remark"/>
-        <result column="create_time" property="createTime"/>
-        <result column="update_time" property="updateTime"/>
+        <result column="created_at" property="createTime"/>
+        <result column="updated_at" property="updateTime"/>
     </resultMap>
 
     <sql id="Base_Column_List">
-        id, code, name, category, spec, unit, purchase_price, sale_price, min_stock, status, remark, create_time, update_time
+        id, product_code, product_name, category_id, spec, unit, cost, price, stock_warning, status, remark, created_at, updated_at
     </sql>
 
     <select id="selectByCode" resultMap="BaseResultMap">
-        SELECT <include refid="Base_Column_List"/> FROM product WHERE code = #{code}
+        SELECT <include refid="Base_Column_List"/> FROM product WHERE product_code = #{code}
     </select>
 
     <select id="selectByCategory" resultMap="BaseResultMap">
-        SELECT <include refid="Base_Column_List"/> FROM product WHERE category = #{category} ORDER BY create_time DESC
+        SELECT <include refid="Base_Column_List"/> FROM product WHERE category_id = #{categoryId} ORDER BY created_at DESC
     </select>
 
     <select id="selectLowStock" resultMap="BaseResultMap">
@@ -37,7 +37,7 @@
             FROM inventory_record
             GROUP BY product_id
         ) i ON p.id = i.product_id
-        WHERE p.status = 1 AND (i.stock IS NULL OR i.stock &lt; p.min_stock)
+        WHERE p.status = 1 AND (i.stock IS NULL OR i.stock &lt; p.stock_warning)
         ORDER BY i.stock ASC
     </select>
 

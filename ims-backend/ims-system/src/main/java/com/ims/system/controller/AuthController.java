@@ -4,6 +4,7 @@ import com.ims.core.result.Result;
 import com.ims.system.dto.LoginRequest;
 import com.ims.system.dto.LoginResult;
 import com.ims.system.service.UserService;
+import com.ims.system.util.JWTUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.validation.annotation.Validated;
@@ -18,9 +19,11 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final UserService userService;
+    private final JWTUtil jwtUtil;
 
-    public AuthController(UserService userService) {
+    public AuthController(UserService userService, JWTUtil jwtUtil) {
         this.userService = userService;
+        this.jwtUtil = jwtUtil;
     }
 
     /**
@@ -43,7 +46,9 @@ public class AuthController {
             return Result.error("无效的Token");
         }
         String token = authHeader.substring(7);
-        // TODO: 验证Token逻辑
-        return Result.success(token);
+        if (!jwtUtil.validateToken(token)) {
+            return Result.error("Token已过期");
+        }
+        return Result.success(jwtUtil.getUsernameFromToken(token));
     }
 }

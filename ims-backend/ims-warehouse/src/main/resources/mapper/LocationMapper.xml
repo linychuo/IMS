@@ -4,24 +4,30 @@
 
     <resultMap id="BaseResultMap" type="com.ims.warehouse.entity.Location">
         <id column="id" property="id"/>
+        <result column="location_code" property="code"/>
+        <result column="location_name" property="name"/>
         <result column="warehouse_id" property="warehouseId"/>
-        <result column="code" property="code"/>
-        <result column="name" property="name"/>
+        <result column="shelf_no" property="shelfNo"/>
+        <result column="row" property="row"/>
+        <result column="col" property="col"/>
+        <result column="level" property="level"/>
+        <result column="type" property="type"/>
         <result column="status" property="status"/>
-        <result column="create_time" property="createTime"/>
-        <result column="update_time" property="updateTime"/>
+        <result column="remark" property="remark"/>
+        <result column="created_at" property="createTime"/>
+        <result column="updated_at" property="updateTime"/>
     </resultMap>
 
     <sql id="Base_Column_List">
-        id, warehouse_id, code, name, status, create_time, update_time
+        id, location_code, location_name, warehouse_id, shelf_no, `row`, `col`, `level`, type, status, remark, created_at, updated_at
     </sql>
 
     <select id="selectByWarehouseId" resultMap="BaseResultMap">
-        SELECT <include refid="Base_Column_List"/> FROM location WHERE warehouse_id = #{warehouseId} ORDER BY code ASC
+        SELECT <include refid="Base_Column_List"/> FROM location WHERE warehouse_id = #{warehouseId} ORDER BY location_code ASC
     </select>
 
     <select id="selectByCode" resultMap="BaseResultMap">
-        SELECT <include refid="Base_Column_List"/> FROM location WHERE code = #{code} AND warehouse_id = #{warehouseId}
+        SELECT <include refid="Base_Column_List"/> FROM location WHERE location_code = #{code} AND warehouse_id = #{warehouseId}
     </select>
 
 </mapper>

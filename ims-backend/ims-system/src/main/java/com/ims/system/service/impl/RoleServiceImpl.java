@@ -2,7 +2,9 @@ package com.ims.system.service.impl;
 
 import com.ims.system.dto.RoleDTO;
 import com.ims.system.entity.SysRole;
+import com.ims.system.entity.SysRolePermission;
 import com.ims.system.mapper.SysRoleMapper;
+import com.ims.system.mapper.SysRolePermissionMapper;
 import com.ims.system.service.RoleService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
@@ -19,9 +21,11 @@ import java.util.stream.Collectors;
 public class RoleServiceImpl implements RoleService {
 
     private final SysRoleMapper roleMapper;
+    private final SysRolePermissionMapper rolePermissionMapper;
 
-    public RoleServiceImpl(SysRoleMapper roleMapper) {
+    public RoleServiceImpl(SysRoleMapper roleMapper, SysRolePermissionMapper rolePermissionMapper) {
         this.roleMapper = roleMapper;
+        this.rolePermissionMapper = rolePermissionMapper;
     }
 
     @Override
@@ -86,7 +90,18 @@ public class RoleServiceImpl implements RoleService {
     @Override
     @Transactional
     public void assignPermissions(Long roleId, List<Long> permissionIds) {
-        // TODO: 实现角色权限分配逻辑
+        rolePermissionMapper.deleteByRoleId(roleId);
+        if (permissionIds != null && !permissionIds.isEmpty()) {
+            List<SysRolePermission> rolePermissions = permissionIds.stream()
+                    .map(permissionId -> {
+                        SysRolePermission rp = new SysRolePermission();
+                        rp.setRoleId(roleId);
+                        rp.setPermissionId(permissionId);
+                        return rp;
+                    })
+                    .collect(Collectors.toList());
+            rolePermissionMapper.batchInsert(rolePermissions);
+        }
     }
 
     private RoleDTO convertToDTO(SysRole role) {

@@ -52,4 +52,9 @@ public interface InventoryService extends IService<Inventory> {
      * 获取可用库存 (库存 - 冻结)
      */
     BigDecimal getAvailableQuantity(Long productId, Long warehouseId);
+
+    /**
+     * 获取库存预警列表 (库存低于安全库存)
+     */
+    List<Inventory> getWarningList();
 }

@@ -4,25 +4,27 @@
 
     <resultMap id="BaseResultMap" type="com.ims.warehouse.entity.Warehouse">
         <id column="id" property="id"/>
-        <result column="code" property="code"/>
-        <result column="name" property="name"/>
+        <result column="warehouse_code" property="code"/>
+        <result column="warehouse_name" property="name"/>
+        <result column="contact" property="contact"/>
+        <result column="phone" property="phone"/>
         <result column="address" property="address"/>
         <result column="status" property="status"/>
         <result column="remark" property="remark"/>
-        <result column="create_time" property="createTime"/>
-        <result column="update_time" property="updateTime"/>
+        <result column="created_at" property="createTime"/>
+        <result column="updated_at" property="updateTime"/>
     </resultMap>
 
     <sql id="Base_Column_List">
-        id, code, name, address, status, remark, create_time, update_time
+        id, warehouse_code, warehouse_name, contact, phone, address, status, remark, created_at, updated_at
     </sql>
 
     <select id="selectByCode" resultMap="BaseResultMap">
-        SELECT <include refid="Base_Column_List"/> FROM warehouse WHERE code = #{code}
+        SELECT <include refid="Base_Column_List"/> FROM warehouse WHERE warehouse_code = #{code}
     </select>
 
     <select id="selectActiveList" resultMap="BaseResultMap">
-        SELECT <include refid="Base_Column_List"/> FROM warehouse WHERE status = 1 ORDER BY name ASC
+        SELECT <include refid="Base_Column_List"/> FROM warehouse WHERE status = 0 ORDER BY warehouse_name ASC
     </select>
 
 </mapper>

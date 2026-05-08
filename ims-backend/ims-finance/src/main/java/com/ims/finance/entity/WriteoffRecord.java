@@ -24,7 +24,7 @@ public class WriteoffRecord extends BaseEntity {
     /**
      * 来源ID (应收/应付ID)
      */
-    private Long sourceId;
+    private String sourceId;
 
     /**
      * 来源单号
@@ -34,7 +34,7 @@ public class WriteoffRecord extends BaseEntity {
     /**
      * 目标ID (收款/付款ID)
      */
-    private Long targetId;
+    private String targetId;
 
     /**
      * 目标单号
@@ -84,11 +84,11 @@ public class WriteoffRecord extends BaseEntity {
         this.writeoffType = writeoffType;
     }
 
-    public Long getSourceId() {
+    public String getSourceId() {
         return sourceId;
     }
 
-    public void setSourceId(Long sourceId) {
+    public void setSourceId(String sourceId) {
         this.sourceId = sourceId;
     }
 
@@ -100,11 +100,11 @@ public class WriteoffRecord extends BaseEntity {
         this.sourceNo = sourceNo;
     }
 
-    public Long getTargetId() {
+    public String getTargetId() {
         return targetId;
     }
 
-    public void setTargetId(Long targetId) {
+    public void setTargetId(String targetId) {
         this.targetId = targetId;
     }
 

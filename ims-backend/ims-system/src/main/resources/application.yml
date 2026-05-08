@@ -3,29 +3,29 @@ server:
 
 spring:
   application:
-    name: ims-system
+    name: ims
   datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/ims?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
-    username: root
-    password: root
-  jackson:
-    date-format: yyyy-MM-dd HH:mm:ss
-    time-zone: GMT+8
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5432/ims
+    username: ims
+    password: ims
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      idle-timeout: 30000
+      connection-timeout: 20000
+      max-lifetime: 1800000
 
-mybatis-plus:
-  mapper-locations: classpath*:mapper/**/*.xml
-  type-aliases-package: com.ims.system.entity
+mybatis:
+  mapper-locations: classpath*:/mapper/**/*.xml
+  type-aliases-package: com.ims.**.entity
   configuration:
     map-underscore-to-camel-case: true
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
 
-# JWT配置
 jwt:
   secret: ims-secret-key-for-jwt-token-generation-2024
-  expiration: 86400000  # 24小时
+  expiration: 86400000
 
-# Swagger配置
 springdoc:
   api-docs:
     enabled: true
@@ -34,4 +34,4 @@ springdoc:
 
 logging:
   level:
-    com.ims: debug
+    com.ims: DEBUG

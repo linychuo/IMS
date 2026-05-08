@@ -91,7 +91,6 @@ public class InventoryController {
      */
     @GetMapping("/warning")
     public Result<List<Inventory>> getWarningList() {
-        // TODO: 需要关联商品表，查询 min_stock
-        return Result.success(null);
+        return Result.success(inventoryService.getWarningList());
     }
 }

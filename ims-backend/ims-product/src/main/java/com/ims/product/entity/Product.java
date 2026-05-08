@@ -1,5 +1,6 @@
 package com.ims.product.entity;
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.ims.core.entity.BaseEntity;
 
@@ -8,18 +9,21 @@ import java.math.BigDecimal;
 /**
  * 商品实体
  */
-@TableName("ims_product")
+@TableName("product")
 public class Product extends BaseEntity {
 
     private String code;
     private String name;
-    private Long categoryId;
+    private String categoryId;
     private String spec;
     private String unit;
     private String barcode;
+    @TableField("cost")
     private BigDecimal purchasePrice;
+    @TableField("price")
     private BigDecimal salePrice;
     private BigDecimal minSalePrice;
+    private Integer stockWarning;
     private Integer status;
     private String imageUrl;
     private String remark;
@@ -28,8 +32,8 @@ public class Product extends BaseEntity {
     public void setCode(String code) { this.code = code; }
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
-    public Long getCategoryId() { return categoryId; }
-    public void setCategoryId(Long categoryId) { this.categoryId = categoryId; }
+    public String getCategoryId() { return categoryId; }
+    public void setCategoryId(String categoryId) { this.categoryId = categoryId; }
     public String getSpec() { return spec; }
     public void setSpec(String spec) { this.spec = spec; }
     public String getUnit() { return unit; }
@@ -42,6 +46,8 @@ public class Product extends BaseEntity {
     public void setSalePrice(BigDecimal salePrice) { this.salePrice = salePrice; }
     public BigDecimal getMinSalePrice() { return minSalePrice; }
     public void setMinSalePrice(BigDecimal minSalePrice) { this.minSalePrice = minSalePrice; }
+    public Integer getStockWarning() { return stockWarning; }
+    public void setStockWarning(Integer stockWarning) { this.stockWarning = stockWarning; }
     public Integer getStatus() { return status; }
     public void setStatus(Integer status) { this.status = status; }
     public String getImageUrl() { return imageUrl; }

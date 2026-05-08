@@ -17,10 +17,9 @@
         <module>ims-core</module>
         <module>ims-procurement</module>
         <module>ims-product</module>
-        <module>ims-supplier</module>
+        <!-- ims-supplier removed - empty module, Supplier is in ims-procurement -->
         <module>ims-customer</module>
         <module>ims-warehouse</module>
-        <module>ims-purchase</module>
         <module>ims-sales</module>
         <module>ims-inventory</module>
         <module>ims-finance</module>

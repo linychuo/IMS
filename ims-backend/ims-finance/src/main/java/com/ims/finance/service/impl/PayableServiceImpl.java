@@ -86,9 +86,9 @@ public class PayableServiceImpl extends ServiceImpl<PayableMapper, Payable> impl
         WriteoffRecord record = new WriteoffRecord();
         record.setWriteoffNo(orderNoGenerator.generateWriteoffNo());
         record.setWriteoffType("PAYABLE");
-        record.setSourceId(id);
+        record.setSourceId(String.valueOf(id));
         record.setSourceNo(payable.getOrderNo());
-        record.setTargetId(paymentId);
+        record.setTargetId(String.valueOf(paymentId));
         record.setAmount(amount);
         record.setWriteoffTime(LocalDateTime.now());
         record.setStatus(1);
@@ -139,9 +139,9 @@ public class PayableServiceImpl extends ServiceImpl<PayableMapper, Payable> impl
             WriteoffRecord record = new WriteoffRecord();
             record.setWriteoffNo(orderNoGenerator.generateWriteoffNo());
             record.setWriteoffType("PAYABLE");
-            record.setSourceId(payable.getId());
+            record.setSourceId(String.valueOf(payable.getId()));
             record.setSourceNo(payable.getOrderNo());
-            record.setTargetId(paymentId);
+            record.setTargetId(String.valueOf(paymentId));
             record.setAmount(writeoffAmount);
             record.setWriteoffTime(LocalDateTime.now());
             record.setStatus(1);

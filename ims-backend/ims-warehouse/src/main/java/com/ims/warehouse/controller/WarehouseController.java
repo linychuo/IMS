@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
  * 仓库Controller
  */
 @RestController
-@RequestMapping("/warehouse")
+@RequestMapping("/api/warehouse")
 public class WarehouseController {
 
     @Autowired

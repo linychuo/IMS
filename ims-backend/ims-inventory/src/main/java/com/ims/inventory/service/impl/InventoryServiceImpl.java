@@ -7,6 +7,8 @@ import com.ims.inventory.entity.InventoryRecord;
 import com.ims.inventory.mapper.InventoryMapper;
 import com.ims.inventory.mapper.InventoryRecordMapper;
 import com.ims.inventory.service.InventoryService;
+import com.ims.product.entity.Product;
+import com.ims.product.mapper.ProductMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +27,9 @@ public class InventoryServiceImpl extends ServiceImpl<InventoryMapper, Inventory
 
     @Autowired
     private InventoryRecordMapper recordMapper;
+
+    @Autowired
+    private ProductMapper productMapper;
 
     @Override
     @Transactional
@@ -264,6 +269,30 @@ public class InventoryServiceImpl extends ServiceImpl<InventoryMapper, Inventory
         }
         
         return inventory.getQuantity().subtract(inventory.getFrozenQuantity());
+    }
+
+    @Override
+    public List<Inventory> getWarningList() {
+        // 查询所有库存记录
+        List<Inventory> inventories = this.list();
+
+        // 获取商品的安全库存阈值
+        return inventories.stream()
+            .filter(inv -> {
+                Product product = productMapper.selectById(inv.getProductId());
+                if (product == null || product.getStockWarning() == null) {
+                    return false;
+                }
+                BigDecimal available = inv.getQuantity().subtract(inv.getFrozenQuantity());
+                return available.compareTo(BigDecimal.valueOf(product.getStockWarning())) < 0;
+            })
+            .map(inv -> {
+                Product product = productMapper.selectById(inv.getProductId());
+                inv.setProductName(product != null ? product.getName() : null);
+                inv.setProductCode(product != null ? product.getCode() : null);
+                return inv;
+            })
+            .toList();
     }
     
     /**

@@ -86,9 +86,9 @@ public class ReceivableServiceImpl extends ServiceImpl<ReceivableMapper, Receiva
         WriteoffRecord record = new WriteoffRecord();
         record.setWriteoffNo(orderNoGenerator.generateWriteoffNo());
         record.setWriteoffType("RECEIVABLE");
-        record.setSourceId(id);
+        record.setSourceId(String.valueOf(id));
         record.setSourceNo(receivable.getOrderNo());
-        record.setTargetId(receiptId);
+        record.setTargetId(String.valueOf(receiptId));
         record.setAmount(amount);
         record.setWriteoffTime(LocalDateTime.now());
         record.setStatus(1);
@@ -139,9 +139,9 @@ public class ReceivableServiceImpl extends ServiceImpl<ReceivableMapper, Receiva
             WriteoffRecord record = new WriteoffRecord();
             record.setWriteoffNo(orderNoGenerator.generateWriteoffNo());
             record.setWriteoffType("RECEIVABLE");
-            record.setSourceId(receivable.getId());
+            record.setSourceId(String.valueOf(receivable.getId()));
             record.setSourceNo(receivable.getOrderNo());
-            record.setTargetId(receiptId);
+            record.setTargetId(String.valueOf(receiptId));
             record.setAmount(writeoffAmount);
             record.setWriteoffTime(LocalDateTime.now());
             record.setStatus(1);

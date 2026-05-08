@@ -6,7 +6,8 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
- * 基础实体类
+ * 基础实体类 (JPA风格)
+ * 用于原生MyBatis模块 (ims-procurement, ims-sales)
  */
 @MappedSuperclass
 public abstract class BaseEntity implements Serializable {
@@ -56,14 +57,6 @@ public abstract class BaseEntity implements Serializable {
 
     public boolean isDeleted() {
         return deleted != null && deleted == 1;
-    }
-
-    public void markDeleted() {
-        deleted = 1;
-    }
-
-    public void unmarkDeleted() {
-        deleted = 0;
     }
 
     public String getId() { return id; }

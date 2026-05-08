@@ -55,10 +55,10 @@
             <version>${project.version}</version>
         </dependency>
         
-        <!-- IMS Purchase -->
+        <!-- IMS Procurement -->
         <dependency>
             <groupId>com.ims</groupId>
-            <artifactId>ims-purchase</artifactId>
+            <artifactId>ims-procurement</artifactId>
             <version>${project.version}</version>
         </dependency>
         
