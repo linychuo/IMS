@@ -20,6 +20,7 @@ import {
   SearchOutlined,
 } from '@ant-design/icons';
 import { productApi } from '../../api';
+import type { PageResult } from '../../types';
 
 const { TabPane } = Tabs;
 
@@ -49,14 +50,6 @@ interface Product {
   status: number;
   imageUrl?: string;
   remark?: string;
-}
-
-interface PageResult<T> {
-  current: number;
-  size: number;
-  total: number;
-  pages: number;
-  records: T[];
 }
 
 const ProductPage: React.FC = () => {
