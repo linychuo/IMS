@@ -78,11 +78,4 @@ public class PurchaseOrderController {
         var result = purchaseOrderService.list(query);
         return ResponseEntity.ok(result);
     }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        log.info("删除采购订单, id: {}", id);
-        purchaseOrderService.delete(id);
-        return ResponseEntity.ok().build();
-    }
 }

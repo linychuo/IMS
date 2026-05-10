@@ -116,13 +116,4 @@ public class SalesReturnController {
     public ResponseEntity<List<SalesReturn>> list(@ModelAttribute SalesReturn query) {
         return ResponseEntity.ok(salesReturnService.list(query));
     }
-
-    /**
-     * 删除
-     */
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        salesReturnService.delete(id);
-        return ResponseEntity.noContent().build();
-    }
 }

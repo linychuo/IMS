@@ -95,13 +95,4 @@ public class SalesOutController {
     public ResponseEntity<List<SalesOut>> list(@ModelAttribute SalesOut query) {
         return ResponseEntity.ok(salesOutService.list(query));
     }
-
-    /**
-     * 删除
-     */
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        salesOutService.delete(id);
-        return ResponseEntity.noContent().build();
-    }
 }

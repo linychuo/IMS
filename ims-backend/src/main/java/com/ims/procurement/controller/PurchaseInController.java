@@ -70,10 +70,4 @@ public class PurchaseInController {
     public ResponseEntity<List<PurchaseIn>> list(PurchaseIn query) {
         return ResponseEntity.ok(purchaseInService.list(query));
     }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        purchaseInService.delete(id);
-        return ResponseEntity.noContent().build();
-    }
 }

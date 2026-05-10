@@ -134,14 +134,7 @@ public class PurchaseReturnController {
         return ResponseEntity.ok(result);
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        log.info("删除采购退货单, id: {}", id);
-        purchaseReturnService.delete(id);
-        return ResponseEntity.ok().build();
-    }
-
-    private PurchaseReturnDetail toDetail(CreatePurchaseReturnRequest.PurchaseReturnDetailRequest request) {
+    } toDetail(CreatePurchaseReturnRequest.PurchaseReturnDetailRequest request) {
         PurchaseReturnDetail detail = new PurchaseReturnDetail();
         detail.setProductId(request.getProductId());
         detail.setProductName(request.getProductName());

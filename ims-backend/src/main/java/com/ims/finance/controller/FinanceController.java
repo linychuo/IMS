@@ -51,12 +51,7 @@ public class FinanceController {
         return Result.success(financeService.cancelIn(id));
     }
 
-    @DeleteMapping("/in/{id}")
-    public Result<Boolean> deleteIn(@PathVariable Long id) {
-        return Result.success(financeService.deleteIn(id));
     }
-
-    @PutMapping("/in/batch-audit")
     public Result<Integer> batchAuditIn(@RequestBody List<Long> ids, @RequestParam Long auditorId) {
         return Result.success(financeService.batchAuditIn(ids, auditorId));
     }
@@ -91,12 +86,7 @@ public class FinanceController {
         return Result.success(financeService.cancelOut(id));
     }
 
-    @DeleteMapping("/out/{id}")
-    public Result<Boolean> deleteOut(@PathVariable Long id) {
-        return Result.success(financeService.deleteOut(id));
     }
-
-    @PutMapping("/out/batch-audit")
     public Result<Integer> batchAuditOut(@RequestBody List<Long> ids, @RequestParam Long auditorId) {
         return Result.success(financeService.batchAuditOut(ids, auditorId));
     }
@@ -136,12 +126,7 @@ public class FinanceController {
         return Result.success(financeService.disableAccount(id));
     }
 
-    @DeleteMapping("/account/{id}")
-    public Result<Boolean> deleteAccount(@PathVariable Long id) {
-        return Result.success(financeService.deleteAccount(id));
     }
-
-    // ========== 财务报表 ==========
     @GetMapping("/stat")
     public Result<FinanceStatDTO> getStat() {
         return Result.success(financeService.getStat());
