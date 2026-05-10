@@ -28,6 +28,11 @@ public interface SysPermissionMapper {
     List<SysPermission> selectAllActive();
 
     /**
+     * 查询所有权限（包括已删除的，用于权限同步时检测冲突）
+     */
+    List<SysPermission> selectAllIncludingDeleted();
+
+    /**
      * 根据父级编码查询子权限
      */
     List<SysPermission> selectByParentCode(@Param("parentCode") String parentCode);

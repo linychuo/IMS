@@ -39,6 +39,12 @@
         WHERE deleted = 0
     </select>
 
+    <select id="selectAllIncludingDeleted" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM sys_permission
+        WHERE deleted IN (0, 1)
+    </select>
+
     <select id="selectAllActive" resultMap="BaseResultMap">
         SELECT <include refid="Base_Column_List"/>
         FROM sys_permission

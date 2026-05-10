@@ -27,6 +27,50 @@ import PayablePage from './pages/finance/Payable';
 import TransactionPage from './pages/finance/Transaction';
 import SystemPage from './pages/system/System';
 import ReportPage from './pages/report/Report';
+import { RequirePermission } from './components/RequirePermission';
+
+// 路由权限映射
+const routePermissionMap: Record<string, string> = {
+  '/dashboard': 'report:dashboard',
+  '/report': 'report:dashboard',
+  '/warehouse': 'warehouse:warehouse',
+  '/product': 'product:product',
+  '/customer': 'customer:customer',
+  '/supplier': 'supplier',
+  '/sales/order': 'sales:order',
+  '/sales/out': 'sales:out',
+  '/sales/return': 'sales:return',
+  '/sales/strategy': 'sales:price-strategy',
+  '/purchase/order': 'purchase:order',
+  '/purchase/in': 'purchase:in',
+  '/purchase/return': 'purchase:return',
+  '/inventory/account': 'inventory',
+  '/inventory/in': 'inventory:in',
+  '/inventory/out': 'inventory:out',
+  '/inventory/transfer': 'inventory:transfer',
+  '/inventory/check': 'inventory:check',
+  '/inventory/record': 'inventory:record',
+  '/finance/in': 'finance',
+  '/finance/out': 'finance',
+  '/finance/account': 'finance',
+  '/finance/receivable': 'finance:receivable',
+  '/finance/payable': 'finance:payable',
+  '/finance/transaction': 'finance',
+  '/system': 'system',
+};
+
+// 带权限控制的路由组件
+function PermissionRoute({ path, element }: { path: string; element: React.ReactNode }) {
+  const code = routePermissionMap[path];
+  if (code) {
+    return (
+      <RequirePermission codes={[code]}>
+        {element}
+      </RequirePermission>
+    );
+  }
+  return <>{element}</>;
+}
 
 export const router = createBrowserRouter([
   {
@@ -38,32 +82,32 @@ export const router = createBrowserRouter([
     element: <AppLayout />,
     children: [
       { index: true, element: <Navigate to="/dashboard" replace /> },
-      { path: 'dashboard', element: <Dashboard /> },
-      { path: 'product', element: <ProductPage /> },
-      { path: 'warehouse', element: <WarehousePage /> },
-      { path: 'customer', element: <CustomerPage /> },
-      { path: 'supplier', element: <SupplierPage /> },
-      { path: 'sales/order', element: <SalesOrderPage /> },
-      { path: 'sales/out', element: <SalesOutPage /> },
-      { path: 'sales/return', element: <SalesReturnPage /> },
-      { path: 'sales/strategy', element: <SalesPriceStrategyPage /> },
-      { path: 'purchase/order', element: <PurchaseOrderPage /> },
-      { path: 'purchase/in', element: <PurchaseInPage /> },
-      { path: 'purchase/return', element: <PurchaseReturnPage /> },
-      { path: 'inventory/account', element: <InventoryAccountPage /> },
-      { path: 'inventory/in', element: <InventoryInPage /> },
-      { path: 'inventory/out', element: <InventoryOutPage /> },
-      { path: 'inventory/transfer', element: <InventoryTransferPage /> },
-      { path: 'inventory/check', element: <InventoryCheckPage /> },
-      { path: 'inventory/record', element: <InventoryRecordPage /> },
-      { path: 'finance/in', element: <FinanceInPage /> },
-      { path: 'finance/out', element: <FinanceOutPage /> },
-      { path: 'finance/account', element: <AccountPage /> },
-      { path: 'finance/receivable', element: <ReceivablePage /> },
-      { path: 'finance/payable', element: <PayablePage /> },
-      { path: 'finance/transaction', element: <TransactionPage /> },
-      { path: 'system', element: <SystemPage /> },
-      { path: 'report', element: <ReportPage /> },
+      { path: 'dashboard', element: <PermissionRoute path="/dashboard" element={<Dashboard />} /> },
+      { path: 'product', element: <PermissionRoute path="/product" element={<ProductPage />} /> },
+      { path: 'warehouse', element: <PermissionRoute path="/warehouse" element={<WarehousePage />} /> },
+      { path: 'customer', element: <PermissionRoute path="/customer" element={<CustomerPage />} /> },
+      { path: 'supplier', element: <PermissionRoute path="/supplier" element={<SupplierPage />} /> },
+      { path: 'sales/order', element: <PermissionRoute path="/sales/order" element={<SalesOrderPage />} /> },
+      { path: 'sales/out', element: <PermissionRoute path="/sales/out" element={<SalesOutPage />} /> },
+      { path: 'sales/return', element: <PermissionRoute path="/sales/return" element={<SalesReturnPage />} /> },
+      { path: 'sales/strategy', element: <PermissionRoute path="/sales/strategy" element={<SalesPriceStrategyPage />} /> },
+      { path: 'purchase/order', element: <PermissionRoute path="/purchase/order" element={<PurchaseOrderPage />} /> },
+      { path: 'purchase/in', element: <PermissionRoute path="/purchase/in" element={<PurchaseInPage />} /> },
+      { path: 'purchase/return', element: <PermissionRoute path="/purchase/return" element={<PurchaseReturnPage />} /> },
+      { path: 'inventory/account', element: <PermissionRoute path="/inventory/account" element={<InventoryAccountPage />} /> },
+      { path: 'inventory/in', element: <PermissionRoute path="/inventory/in" element={<InventoryInPage />} /> },
+      { path: 'inventory/out', element: <PermissionRoute path="/inventory/out" element={<InventoryOutPage />} /> },
+      { path: 'inventory/transfer', element: <PermissionRoute path="/inventory/transfer" element={<InventoryTransferPage />} /> },
+      { path: 'inventory/check', element: <PermissionRoute path="/inventory/check" element={<InventoryCheckPage />} /> },
+      { path: 'inventory/record', element: <PermissionRoute path="/inventory/record" element={<InventoryRecordPage />} /> },
+      { path: 'finance/in', element: <PermissionRoute path="/finance/in" element={<FinanceInPage />} /> },
+      { path: 'finance/out', element: <PermissionRoute path="/finance/out" element={<FinanceOutPage />} /> },
+      { path: 'finance/account', element: <PermissionRoute path="/finance/account" element={<AccountPage />} /> },
+      { path: 'finance/receivable', element: <PermissionRoute path="/finance/receivable" element={<ReceivablePage />} /> },
+      { path: 'finance/payable', element: <PermissionRoute path="/finance/payable" element={<PayablePage />} /> },
+      { path: 'finance/transaction', element: <PermissionRoute path="/finance/transaction" element={<TransactionPage />} /> },
+      { path: 'system', element: <PermissionRoute path="/system" element={<SystemPage />} /> },
+      { path: 'report', element: <PermissionRoute path="/report" element={<ReportPage />} /> },
     ],
   },
 ]);

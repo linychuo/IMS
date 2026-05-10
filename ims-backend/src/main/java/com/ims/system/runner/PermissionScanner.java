@@ -100,8 +100,8 @@ public class PermissionScanner implements ApplicationListener<ContextRefreshedEv
 
         log.info("扫描到 {} 个按钮权限，{} 个菜单权限", buttonPermissions.size(), menuPermissions.size());
 
-        // 3. 读取数据库现有权限
-        List<SysPermission> existingPermissions = permissionMapper.selectAll();
+        // 3. 读取数据库现有权限（包括已删除的，用于检测冲突）
+        List<SysPermission> existingPermissions = permissionMapper.selectAllIncludingDeleted();
         log.info("数据库已有 {} 个权限点", existingPermissions.size());
 
         // 4. 同步权限
@@ -120,8 +120,20 @@ public class PermissionScanner implements ApplicationListener<ContextRefreshedEv
             if (existing == null) {
                 permissionMapper.insert(menu);
             } else {
-                menu.setId(existing.getId());
-                permissionMapper.update(menu);
+                // Only update menu if parent_id is not already set
+                // This preserves manually configured parent_id values
+                if (existing.getParentId() == null && menu.getParentId() != null) {
+                    menu.setId(existing.getId());
+                    permissionMapper.update(menu);
+                } else if (existing.getParentId() != null && menu.getParentId() == null) {
+                    // Keep existing parent_id
+                    menu.setId(existing.getId());
+                    menu.setParentId(existing.getParentId());
+                    permissionMapper.update(menu);
+                } else {
+                    menu.setId(existing.getId());
+                    permissionMapper.update(menu);
+                }
             }
         }
 
@@ -211,6 +223,8 @@ public class PermissionScanner implements ApplicationListener<ContextRefreshedEv
 
     private SysPermission buildSecondLevelMenu(ClassPermissionInfo classInfo) {
         // 二级菜单：如 "system:user"
+        String topLevelCode = extractTopLevel(classInfo.code);
+
         SysPermission menu = new SysPermission();
         menu.setPermissionCode(classInfo.code);
         menu.setPermissionName(classInfo.name.isEmpty() ? classInfo.code : classInfo.name);
@@ -218,7 +232,9 @@ public class PermissionScanner implements ApplicationListener<ContextRefreshedEv
         menu.setStatus(1);
         menu.setDeleted(0);
         menu.setSortOrder(1);
-        menu.setParentId(null); // 父级由数据库查询确定
+        // 通过 code 前缀匹配来确定父子关系，先查询一级菜单的 ID
+        Long parentId = findParentIdByCode(topLevelCode);
+        menu.setParentId(parentId);
 
         return menu;
     }
@@ -232,11 +248,12 @@ public class PermissionScanner implements ApplicationListener<ContextRefreshedEv
     }
 
     private Long findParentIdByCode(String code) {
-        // 一级菜单（如 system）没有父级
+        // 如果是一级菜单本身（不包含冒号），没有父级
         if (!code.contains(":")) {
             return null;
         }
-        List<SysPermission> all = permissionMapper.selectAll();
+        // 否则查找该 code 对应的权限 ID 作为父级
+        List<SysPermission> all = permissionMapper.selectAllIncludingDeleted();
         for (SysPermission p : all) {
             if (p.getPermissionCode().equals(code)) {
                 return p.getId();

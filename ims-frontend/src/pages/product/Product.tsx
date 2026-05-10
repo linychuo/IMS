@@ -20,6 +20,7 @@ import {
   SearchOutlined,
 } from '@ant-design/icons';
 import { productApi } from '../../api';
+import { PermissionWrapper } from '../../components/PermissionWrapper';
 import type { PageResult } from '../../types';
 
 const { TabPane } = Tabs;
@@ -250,10 +251,14 @@ const ProductPage: React.FC = () => {
       width: 150,
       render: (_: any, record: Product) => (
         <Space>
-          <Button type="link" icon={<EditOutlined />} onClick={() => handleEditProduct(record)}>编辑</Button>
-          <Popconfirm title="确定删除此商品？" onConfirm={() => record.id && handleDeleteProduct(record.id)}>
-            <Button type="link" danger icon={<DeleteOutlined />}>删除</Button>
-          </Popconfirm>
+          <PermissionWrapper code="product:product:update">
+            <Button type="link" icon={<EditOutlined />} onClick={() => handleEditProduct(record)}>编辑</Button>
+          </PermissionWrapper>
+          <PermissionWrapper code="product:product:delete">
+            <Popconfirm title="确定删除此商品？" onConfirm={() => record.id && handleDeleteProduct(record.id)}>
+              <Button type="link" danger icon={<DeleteOutlined />}>删除</Button>
+            </Popconfirm>
+          </PermissionWrapper>
         </Space>
       ),
     },
@@ -292,7 +297,9 @@ const ProductPage: React.FC = () => {
               style={{ width: 200 }}
               prefix={<SearchOutlined />}
             />
-            <Button type="primary" icon={<PlusOutlined />} onClick={handleAddProduct}>新增商品</Button>
+            <PermissionWrapper code="product:product:create">
+              <Button type="primary" icon={<PlusOutlined />} onClick={handleAddProduct}>新增商品</Button>
+            </PermissionWrapper>
           </div>
           <Table
             columns={productColumns}
@@ -314,7 +321,9 @@ const ProductPage: React.FC = () => {
 
         <TabPane tab="商品分类" key="category">
           <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-end' }}>
-            <Button type="primary" icon={<PlusOutlined />} onClick={handleAddCategory}>新增分类</Button>
+            <PermissionWrapper code="product:category:create">
+              <Button type="primary" icon={<PlusOutlined />} onClick={handleAddCategory}>新增分类</Button>
+            </PermissionWrapper>
           </div>
           <Table
             columns={categoryColumns}
