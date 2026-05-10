@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ims.sales.mapper.SalesPriceStrategyMapper">
+
+    <resultMap id="BaseResultMap" type="com.ims.sales.entity.SalesPriceStrategy">
+        <id column="id" property="id"/>
+        <result column="strategy_no" property="strategyNo"/>
+        <result column="strategy_name" property="strategyName"/>
+        <result column="customer_id" property="customerId"/>
+        <result column="customer_name" property="customerName"/>
+        <result column="product_id" property="productId"/>
+        <result column="product_name" property="productName"/>
+        <result column="product_category_id" property="productCategoryId"/>
+        <result column="product_category_name" property="productCategoryName"/>
+        <result column="start_date" property="startDate"/>
+        <result column="end_date" property="endDate"/>
+        <result column="price_type" property="priceType"/>
+        <result column="price" property="price"/>
+        <result column="discount_rate" property="discountRate"/>
+        <result column="status" property="status"/>
+        <result column="remark" property="remark"/>
+        <result column="created_by" property="createdBy"/>
+        <result column="created_at" property="createTime"/>
+        <result column="updated_by" property="updatedBy"/>
+        <result column="updated_at" property="updateTime"/>
+        <result column="deleted" property="deleted"/>
+    </resultMap>
+
+    <sql id="baseColumns">
+        id, strategy_no, strategy_name, customer_id, customer_name,
+        product_id, product_name, product_category_id, product_category_name,
+        start_date, end_date, price_type, price, discount_rate, status, remark,
+        created_by, created_at, updated_by, updated_at, deleted
+    </sql>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="baseColumns"/>
+        FROM sales_price_strategy
+        WHERE id = #{id} AND deleted = 0
+    </select>
+
+    <select id="selectByStrategyNo" resultMap="BaseResultMap">
+        SELECT <include refid="baseColumns"/>
+        FROM sales_price_strategy
+        WHERE strategy_no = #{strategyNo} AND deleted = 0
+    </select>
+
+    <select id="selectList" resultMap="BaseResultMap">
+        SELECT <include refid="baseColumns"/>
+        FROM sales_price_strategy
+        WHERE deleted = 0
+        <if test="query.customerId != null">
+            AND (customer_id = #{query.customerId} OR customer_id IS NULL)
+        </if>
+        <if test="query.productId != null">
+            AND (product_id = #{query.productId} OR product_id IS NULL)
+        </if>
+        <if test="query.productCategoryId != null">
+            AND product_category_id = #{query.productCategoryId}
+        </if>
+        <if test="query.status != null">
+            AND status = #{query.status}
+        </if>
+        <if test="query.strategyNo != null">
+            AND strategy_no LIKE CONCAT('%', #{query.strategyNo}, '%')
+        </if>
+        <if test="query.strategyName != null">
+            AND strategy_name LIKE CONCAT('%', #{query.strategyName}, '%')
+        </if>
+        ORDER BY customer_id DESC, product_id DESC, created_at DESC
+    </select>
+
+    <select id="selectEffective" resultMap="BaseResultMap">
+        SELECT <include refid="baseColumns"/>
+        FROM sales_price_strategy
+        WHERE deleted = 0 AND status = 1
+        AND (
+            (customer_id = #{customerId} AND product_id = #{productId})
+            OR (customer_id = #{customerId} AND product_id IS NULL)
+            OR (customer_id IS NULL AND product_id = #{productId})
+            OR (customer_id IS NULL AND product_id IS NULL)
+        )
+        AND (start_date IS NULL OR start_date &lt;= CURRENT_DATE)
+        AND (end_date IS NULL OR end_date &gt;= CURRENT_DATE)
+        ORDER BY 
+            CASE WHEN customer_id IS NOT NULL AND product_id IS NOT NULL THEN 0
+                 WHEN customer_id IS NOT NULL AND product_id IS NULL THEN 1
+                 WHEN customer_id IS NULL AND product_id IS NOT NULL THEN 2
+                 ELSE 3 END
+        LIMIT 1
+    </select>
+
+    <insert id="insert" parameterType="com.ims.sales.entity.SalesPriceStrategy">
+        INSERT INTO sales_price_strategy (
+            strategy_no, strategy_name, customer_id, customer_name,
+            product_id, product_name, product_category_id, product_category_name,
+            start_date, end_date, price_type, price, discount_rate, status, remark,
+            created_by, created_at, deleted
+        ) VALUES (
+            #{strategyNo}, #{strategyName}, #{customerId}, #{customerName},
+            #{productId}, #{productName}, #{productCategoryId}, #{productCategoryName},
+            #{startDate}, #{endDate}, #{priceType}, #{price}, #{discountRate}, #{status}, #{remark},
+            #{createdBy}, #{createTime}, 0
+        )
+    </insert>
+
+    <update id="update" parameterType="com.ims.sales.entity.SalesPriceStrategy">
+        UPDATE sales_price_strategy
+        <set>
+            <if test="strategyName != null">strategy_name = #{strategyName},</if>
+            <if test="customerId != null">customer_id = #{customerId},</if>
+            <if test="customerName != null">customer_name = #{customerName},</if>
+            <if test="productId != null">product_id = #{productId},</if>
+            <if test="productName != null">product_name = #{productName},</if>
+            <if test="productCategoryId != null">product_category_id = #{productCategoryId},</if>
+            <if test="productCategoryName != null">product_category_name = #{productCategoryName},</if>
+            <if test="startDate != null">start_date = #{startDate},</if>
+            <if test="endDate != null">end_date = #{endDate},</if>
+            <if test="priceType != null">price_type = #{priceType},</if>
+            <if test="price != null">price = #{price},</if>
+            <if test="discountRate != null">discount_rate = #{discountRate},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="updatedBy != null">updated_by = #{updatedBy},</if>
+            <if test="updateTime != null">updated_at = #{updateTime},</if>
+        </set>
+        WHERE id = #{id} AND deleted = 0
+    </update>
+
+    <update id="deleteById">
+        UPDATE sales_price_strategy SET deleted = 1 WHERE id = #{id}
+    </update>
+
+</mapper>

@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ims.procurement.mapper.PurchaseOrderMapper">
+
+    <resultMap id="BaseResultMap" type="com.ims.procurement.entity.PurchaseOrder">
+        <id column="id" property="id"/>
+        <result column="order_no" property="orderNo"/>
+        <result column="supplier_id" property="supplierId"/>
+        <result column="supplier_name" property="supplierName"/>
+        <result column="order_date" property="orderDate"/>
+        <result column="expected_date" property="expectedDate"/>
+        <result column="status" property="status"/>
+        <result column="total_amount" property="totalAmount"/>
+        <result column="discount_amount" property="discountAmount"/>
+        <result column="net_amount" property="netAmount"/>
+        <result column="remark" property="remark"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="audited_by" property="auditedBy"/>
+        <result column="audited_at" property="auditedAt"/>
+        <result column="deleted" property="deleted"/>
+    </resultMap>
+
+    <sql id="baseColumns">
+        id, order_no, supplier_id, supplier_name, order_date, expected_date, status,
+        total_amount, discount_amount, net_amount, remark,
+        create_time, update_time, audited_by, audited_at, deleted
+    </sql>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="baseColumns"/>
+        FROM purchase_order
+        WHERE id = #{id} AND deleted = 0
+    </select>
+
+    <select id="selectByOrderNo" resultMap="BaseResultMap">
+        SELECT <include refid="baseColumns"/>
+        FROM purchase_order
+        WHERE order_no = #{orderNo} AND deleted = 0
+    </select>
+
+    <select id="selectList" resultMap="BaseResultMap">
+        SELECT <include refid="baseColumns"/>
+        FROM purchase_order
+        WHERE deleted = 0
+        <if test="query.supplierId != null">
+            AND supplier_id = #{query.supplierId}
+        </if>
+        <if test="query.status != null">
+            AND status = #{query.status}
+        </if>
+        <if test="query.orderNo != null">
+            AND order_no LIKE CONCAT('%', #{query.orderNo}, '%')
+        </if>
+        ORDER BY create_time DESC
+    </select>
+
+    <insert id="insert" parameterType="com.ims.procurement.entity.PurchaseOrder">
+        INSERT INTO purchase_order (
+            id, order_no, supplier_id, supplier_name, order_date, expected_date, status,
+            total_amount, discount_amount, net_amount, remark,
+            create_time, deleted
+        ) VALUES (
+            #{id}, #{orderNo}, #{supplierId}, #{supplierName}, #{orderDate}, #{expectedDate}, #{status},
+            #{totalAmount}, #{discountAmount}, #{netAmount}, #{remark},
+            #{createTime}, 0
+        )
+    </insert>
+
+    <update id="update" parameterType="com.ims.procurement.entity.PurchaseOrder">
+        UPDATE purchase_order
+        <set>
+            <if test="supplierId != null">supplier_id = #{supplierId},</if>
+            <if test="supplierName != null">supplier_name = #{supplierName},</if>
+            <if test="expectedDate != null">expected_date = #{expectedDate},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="totalAmount != null">total_amount = #{totalAmount},</if>
+            <if test="discountAmount != null">discount_amount = #{discountAmount},</if>
+            <if test="netAmount != null">net_amount = #{netAmount},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="auditedBy != null">audited_by = #{auditedBy},</if>
+            <if test="auditedAt != null">audited_at = #{auditedAt},</if>
+        </set>
+        WHERE id = #{id} AND deleted = 0
+    </update>
+
+    <update id="deleteById">
+        UPDATE purchase_order SET deleted = 1 WHERE id = #{id}
+    </update>
+
+</mapper>

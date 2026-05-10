@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ims.procurement.mapper.PurchaseInMapper">
+
+    <resultMap id="BaseResultMap" type="com.ims.procurement.entity.PurchaseIn">
+        <id column="id" property="id"/>
+        <result column="in_no" property="inNo"/>
+        <result column="order_id" property="orderId"/>
+        <result column="order_no" property="orderNo"/>
+        <result column="supplier_id" property="supplierId"/>
+        <result column="supplier_name" property="supplierName"/>
+        <result column="in_date" property="inDate"/>
+        <result column="warehouse_id" property="warehouseId"/>
+        <result column="warehouse_name" property="warehouseName"/>
+        <result column="in_by" property="inBy"/>
+        <result column="in_by_name" property="inByName"/>
+        <result column="status" property="status"/>
+        <result column="total_amount" property="totalAmount"/>
+        <result column="remark" property="remark"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="audited_by" property="auditedBy"/>
+        <result column="audited_at" property="auditedAt"/>
+        <result column="deleted" property="deleted"/>
+    </resultMap>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT * FROM purchase_in WHERE id = #{id} AND deleted = 0
+    </select>
+
+    <select id="selectByInNo" resultMap="BaseResultMap">
+        SELECT * FROM purchase_in WHERE in_no = #{inNo} AND deleted = 0
+    </select>
+
+    <select id="selectList" resultMap="BaseResultMap">
+        SELECT * FROM purchase_in WHERE deleted = 0
+        <if test="supplierId != null">AND supplier_id = #{supplierId}</if>
+        <if test="status != null">AND status = #{status}</if>
+        <if test="inNo != null">AND in_no LIKE CONCAT('%', #{inNo}, '%')</if>
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO purchase_in (in_no, order_id, order_no, supplier_id, supplier_name, in_date,
+            warehouse_id, warehouse_name, in_by, in_by_name, status, total_amount, remark)
+        VALUES (#{inNo}, #{orderId}, #{orderNo}, #{supplierId}, #{supplierName}, #{inDate},
+            #{warehouseId}, #{warehouseName}, #{inBy}, #{inByName}, #{status}, #{totalAmount}, #{remark})
+    </insert>
+
+    <update id="update">
+        UPDATE purchase_in
+        <set>
+            <if test="orderId != null">order_id = #{orderId},</if>
+            <if test="supplierId != null">supplier_id = #{supplierId},</if>
+            <if test="supplierName != null">supplier_name = #{supplierName},</if>
+            <if test="inDate != null">in_date = #{inDate},</if>
+            <if test="warehouseId != null">warehouse_id = #{warehouseId},</if>
+            <if test="warehouseName != null">warehouse_name = #{warehouseName},</if>
+            <if test="inBy != null">in_by = #{inBy},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="totalAmount != null">total_amount = #{totalAmount},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+            <if test="auditedBy != null">audited_by = #{auditedBy},</if>
+            <if test="auditedAt != null">audited_at = #{auditedAt},</if>
+        </set>
+        WHERE id = #{id} AND deleted = 0
+    </update>
+
+    <update id="deleteById">
+        UPDATE purchase_in SET deleted = 1 WHERE id = #{id}
+    </update>
+
+</mapper>
