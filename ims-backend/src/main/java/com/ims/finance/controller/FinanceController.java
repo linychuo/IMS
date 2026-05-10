@@ -51,7 +51,7 @@ public class FinanceController {
         return Result.success(financeService.cancelIn(id));
     }
 
-    }
+    @PutMapping("/in/batch-audit")
     public Result<Integer> batchAuditIn(@RequestBody List<Long> ids, @RequestParam Long auditorId) {
         return Result.success(financeService.batchAuditIn(ids, auditorId));
     }
@@ -86,7 +86,7 @@ public class FinanceController {
         return Result.success(financeService.cancelOut(id));
     }
 
-    }
+    @PutMapping("/out/batch-audit")
     public Result<Integer> batchAuditOut(@RequestBody List<Long> ids, @RequestParam Long auditorId) {
         return Result.success(financeService.batchAuditOut(ids, auditorId));
     }
@@ -126,7 +126,7 @@ public class FinanceController {
         return Result.success(financeService.disableAccount(id));
     }
 
-    }
+    // ========== 财务报表 ==========
     @GetMapping("/stat")
     public Result<FinanceStatDTO> getStat() {
         return Result.success(financeService.getStat());

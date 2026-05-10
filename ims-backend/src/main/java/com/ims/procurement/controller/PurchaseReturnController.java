@@ -134,7 +134,7 @@ public class PurchaseReturnController {
         return ResponseEntity.ok(result);
     }
 
-    } toDetail(CreatePurchaseReturnRequest.PurchaseReturnDetailRequest request) {
+    private PurchaseReturnDetail toDetail(CreatePurchaseReturnRequest.PurchaseReturnDetailRequest request) {
         PurchaseReturnDetail detail = new PurchaseReturnDetail();
         detail.setProductId(request.getProductId());
         detail.setProductName(request.getProductName());
