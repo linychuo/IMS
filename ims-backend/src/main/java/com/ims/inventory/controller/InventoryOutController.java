@@ -2,6 +2,7 @@ package com.ims.inventory.controller;
 
 import com.ims.core.result.PageResult;
 import com.ims.core.result.Result;
+import com.ims.inventory.dto.InventoryOutRequest;
 import com.ims.inventory.entity.InventoryOut;
 import com.ims.inventory.entity.InventoryOutDetail;
 import com.ims.inventory.service.InventoryOutService;
@@ -69,8 +70,8 @@ public class InventoryOutController {
      */
     @PostMapping("/with-details")
     @Permission(code = "create", name = "创建出库单")
-    public Result<Boolean> saveWithDetails(@RequestBody InventoryOut out, @RequestBody List<InventoryOutDetail> details) {
-        return Result.success(inventoryOutService.saveOutWithDetails(out, details));
+    public Result<Boolean> saveWithDetails(@RequestBody InventoryOutRequest request) {
+        return Result.success(inventoryOutService.saveOutWithDetails(request.getOut(), request.getDetails()));
     }
 
     /**

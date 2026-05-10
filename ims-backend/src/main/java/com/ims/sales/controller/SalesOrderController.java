@@ -1,5 +1,6 @@
 package com.ims.sales.controller;
 
+import com.ims.sales.dto.SalesOrderRequest;
 import com.ims.sales.entity.SalesOrder;
 import com.ims.sales.entity.SalesOrderDetail;
 import com.ims.sales.service.SalesOrderService;
@@ -33,9 +34,8 @@ public class SalesOrderController {
      */
     @PostMapping
     @Permission(code = "create", name = "创建销售订单")
-    public ResponseEntity<SalesOrder> create(@Valid @RequestBody SalesOrder salesOrder,
-                                           @RequestBody List<SalesOrderDetail> details) {
-        return ResponseEntity.ok(salesOrderService.create(salesOrder, details));
+    public ResponseEntity<SalesOrder> create(@RequestBody SalesOrderRequest request) {
+        return ResponseEntity.ok(salesOrderService.create(request.getSalesOrder(), request.getDetails()));
     }
 
     /**
@@ -44,9 +44,8 @@ public class SalesOrderController {
     @PutMapping("/{id}")
     @Permission(code = "update", name = "更新销售订单")
     public ResponseEntity<SalesOrder> update(@PathVariable Long id,
-                                          @Valid @RequestBody SalesOrder salesOrder,
-                                          @RequestBody List<SalesOrderDetail> details) {
-        return ResponseEntity.ok(salesOrderService.update(id, salesOrder, details));
+                                              @RequestBody SalesOrderRequest request) {
+        return ResponseEntity.ok(salesOrderService.update(id, request.getSalesOrder(), request.getDetails()));
     }
 
     /**

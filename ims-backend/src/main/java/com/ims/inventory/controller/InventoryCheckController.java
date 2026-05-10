@@ -2,6 +2,7 @@ package com.ims.inventory.controller;
 
 import com.ims.core.result.PageResult;
 import com.ims.core.result.Result;
+import com.ims.inventory.dto.InventoryCheckRequest;
 import com.ims.inventory.entity.InventoryCheck;
 import com.ims.inventory.entity.InventoryCheckDetail;
 import com.ims.inventory.service.InventoryCheckService;
@@ -49,9 +50,8 @@ public class InventoryCheckController {
      */
     @PostMapping
     @Permission(code = "create", name = "创建盘点单")
-    public Result<InventoryCheck> create(@RequestBody InventoryCheck check,
-                                          @RequestBody List<InventoryCheckDetail> details) {
-        return Result.success(inventoryCheckService.create(check, details));
+    public Result<InventoryCheck> create(@RequestBody InventoryCheckRequest request) {
+        return Result.success(inventoryCheckService.create(request.getCheck(), request.getDetails()));
     }
 
     /**
@@ -69,8 +69,8 @@ public class InventoryCheckController {
     @PutMapping("/{id}/submit")
     @Permission(code = "update", name = "更新盘点单")
     public Result<Boolean> submitResult(@PathVariable Long id,
-                                        @RequestBody List<InventoryCheckDetail> details) {
-        return Result.success(inventoryCheckService.submitResult(id, details));
+                                        @RequestBody InventoryCheckRequest request) {
+        return Result.success(inventoryCheckService.submitResult(id, request.getDetails()));
     }
 
     /**

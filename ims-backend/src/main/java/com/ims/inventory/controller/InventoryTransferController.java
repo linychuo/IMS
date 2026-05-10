@@ -2,6 +2,7 @@ package com.ims.inventory.controller;
 
 import com.ims.core.result.PageResult;
 import com.ims.core.result.Result;
+import com.ims.inventory.dto.InventoryTransferRequest;
 import com.ims.inventory.entity.InventoryTransfer;
 import com.ims.inventory.entity.InventoryTransferDetail;
 import com.ims.inventory.service.InventoryTransferService;
@@ -50,9 +51,8 @@ public class InventoryTransferController {
      */
     @PostMapping
     @Permission(code = "create", name = "创建调拨单")
-    public Result<InventoryTransfer> create(@RequestBody InventoryTransfer transfer,
-                                             @RequestBody List<InventoryTransferDetail> details) {
-        return Result.success(inventoryTransferService.create(transfer, details));
+    public Result<InventoryTransfer> create(@RequestBody InventoryTransferRequest request) {
+        return Result.success(inventoryTransferService.create(request.getTransfer(), request.getDetails()));
     }
 
     /**

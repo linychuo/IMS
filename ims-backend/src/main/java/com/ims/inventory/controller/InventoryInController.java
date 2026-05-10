@@ -2,6 +2,7 @@ package com.ims.inventory.controller;
 
 import com.ims.core.result.PageResult;
 import com.ims.core.result.Result;
+import com.ims.inventory.dto.InventoryInRequest;
 import com.ims.inventory.entity.InventoryIn;
 import com.ims.inventory.entity.InventoryInDetail;
 import com.ims.inventory.service.InventoryInService;
@@ -69,8 +70,8 @@ public class InventoryInController {
      */
     @PostMapping("/with-details")
     @Permission(code = "create", name = "创建入库单")
-    public Result<Boolean> saveWithDetails(@RequestBody InventoryIn in, @RequestBody List<InventoryInDetail> details) {
-        return Result.success(inventoryInService.saveInWithDetails(in, details));
+    public Result<Boolean> saveWithDetails(@RequestBody InventoryInRequest request) {
+        return Result.success(inventoryInService.saveInWithDetails(request.getIn(), request.getDetails()));
     }
 
     /**
