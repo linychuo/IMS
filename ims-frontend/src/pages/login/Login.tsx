@@ -15,7 +15,15 @@ const Login: React.FC = () => {
     try {
       const res = await systemApi.post('/auth/login', values);
       if (res.data.code === 200) {
-        setAuth(res.data.data.token, res.data.data.userId, res.data.data.username);
+        const data = res.data.data;
+        setAuth({
+          token: data.token,
+          userId: data.userId,
+          username: data.username,
+          realName: data.realName,
+          menus: data.menus || [],
+          permissions: data.permissions || [],
+        });
         message.success('登录成功');
         navigate('/dashboard');
       } else {

@@ -1,6 +1,7 @@
 package com.ims.system.controller;
 
 import com.ims.core.result.Result;
+import com.ims.system.annotation.Permission;
 import com.ims.system.dto.RoleDTO;
 import com.ims.system.entity.SysRole;
 import com.ims.system.service.RoleService;
@@ -9,11 +10,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-/**
- * 角色管理控制器
- */
 @RestController
 @RequestMapping("/role")
+@Permission(code = "role", name = "系统管理")
 public class RoleController {
 
     private final RoleService roleService;
@@ -22,70 +21,47 @@ public class RoleController {
         this.roleService = roleService;
     }
 
-    /**
-     * 根据用户ID获取角色列表
-     */
     @GetMapping("/user/{userId}")
+    @Permission(code = "list", name = "查看角色")
     public Result<List<RoleDTO>> getByUserId(@PathVariable Long userId) {
-        List<RoleDTO> roles = roleService.getByUserId(userId);
-        return Result.success(roles);
+        return Result.success(roleService.getByUserId(userId));
     }
 
-    /**
-     * 获取所有角色
-     */
     @GetMapping("/list")
+    @Permission(code = "list", name = "查看角色列表")
     public Result<List<RoleDTO>> listAll() {
-        List<RoleDTO> roles = roleService.listAll();
-        return Result.success(roles);
+        return Result.success(roleService.listAll());
     }
 
-    /**
-     * 根据ID获取角色
-     */
     @GetMapping("/{id}")
+    @Permission(code = "read", name = "查看角色")
     public Result<RoleDTO> getById(@PathVariable Long id) {
         RoleDTO role = roleService.getById(id);
-        if (role == null) {
-            return Result.error("角色不存在");
-        }
-        return Result.success(role);
+        return role == null ? Result.error("角色不存在") : Result.success(role);
     }
 
-    /**
-     * 创建角色
-     */
     @PostMapping
+    @Permission(code = "create", name = "创建角色")
     public Result<RoleDTO> create(@RequestBody @Validated SysRole role) {
-        RoleDTO result = roleService.create(role);
-        return Result.success(result);
+        return Result.success(roleService.create(role));
     }
 
-    /**
-     * 更新角色
-     */
     @PutMapping
+    @Permission(code = "update", name = "更新角色")
     public Result<RoleDTO> update(@RequestBody @Validated SysRole role) {
-        RoleDTO result = roleService.update(role);
-        return Result.success(result);
+        return Result.success(roleService.update(role));
     }
 
-    /**
-     * 删除角色
-     */
     @DeleteMapping("/{id}")
+    @Permission(code = "delete", name = "删除角色")
     public Result<Void> delete(@PathVariable Long id) {
         roleService.delete(id);
         return Result.success(null);
     }
 
-    /**
-     * 分配权限
-     */
     @PostMapping("/{id}/permissions")
-    public Result<Void> assignPermissions(
-            @PathVariable Long id,
-            @RequestBody List<Long> permissionIds) {
+    @Permission(code = "assign", name = "分配权限")
+    public Result<Void> assignPermissions(@PathVariable Long id, @RequestBody List<Long> permissionIds) {
         roleService.assignPermissions(id, permissionIds);
         return Result.success(null);
     }

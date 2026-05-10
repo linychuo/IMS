@@ -53,10 +53,10 @@
             <artifactId>spring-boot-starter-data-jdbc</artifactId>
         </dependency>
 
-        <!-- H2 In-Memory Database -->
+        <!-- PostgreSQL Driver -->
         <dependency>
-            <groupId>com.h2database</groupId>
-            <artifactId>h2</artifactId>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
             <scope>runtime</scope>
         </dependency>
 

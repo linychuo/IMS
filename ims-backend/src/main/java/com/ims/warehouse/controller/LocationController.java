@@ -7,23 +7,20 @@ import com.ims.core.result.PageResult;
 import com.ims.core.result.Result;
 import com.ims.warehouse.entity.Location;
 import com.ims.warehouse.service.LocationService;
+import com.ims.system.annotation.Permission;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-/**
- * 库位Controller
- */
 @RestController
 @RequestMapping("/api/location")
+@Permission(code = "warehouse:location", name = "库位管理")
 public class LocationController {
 
     @Autowired
     private LocationService locationService;
 
-    /**
-     * 分页查询
-     */
     @GetMapping("/page")
+    @Permission(code = "list", name = "查看库位")
     public Result<PageResult<Location>> page(
             @RequestParam(defaultValue = "1") Long current,
             @RequestParam(defaultValue = "10") Long size,
@@ -38,10 +35,8 @@ public class LocationController {
         return Result.ok(PageResult.build(result.getRecords(), result.getTotal(), current, size));
     }
 
-    /**
-     * 列表查询
-     */
     @GetMapping("/list")
+    @Permission(code = "list", name = "查看库位")
     public Result<?> list(@RequestParam(required = false) Long warehouseId) {
         LambdaQueryWrapper<Location> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(warehouseId != null, Location::getWarehouseId, warehouseId)
@@ -50,37 +45,29 @@ public class LocationController {
         return Result.ok(locationService.list(wrapper));
     }
 
-    /**
-     * 根据ID查询
-     */
     @GetMapping("/{id}")
+    @Permission(code = "read", name = "查看库位")
     public Result<Location> get(@PathVariable Long id) {
         Location location = locationService.getById(id);
         return location != null ? Result.ok(location) : Result.error("库位不存在");
     }
 
-    /**
-     * 新增
-     */
     @PostMapping
+    @Permission(code = "create", name = "创建库位")
     public Result<?> add(@RequestBody Location location) {
         locationService.save(location);
         return Result.ok();
     }
 
-    /**
-     * 修改
-     */
     @PutMapping
+    @Permission(code = "update", name = "更新库位")
     public Result<?> update(@RequestBody Location location) {
         locationService.updateById(location);
         return Result.ok();
     }
 
-    /**
-     * 删除
-     */
     @DeleteMapping("/{id}")
+    @Permission(code = "delete", name = "删除库位")
     public Result<?> delete(@PathVariable Long id) {
         locationService.removeById(id);
         return Result.ok();

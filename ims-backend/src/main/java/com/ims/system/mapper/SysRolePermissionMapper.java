@@ -26,4 +26,9 @@ public interface SysRolePermissionMapper {
      * 根据角色ID查询权限ID列表
      */
     List<Long> selectPermissionIdsByRoleId(@Param("roleId") Long roleId);
+
+    /**
+     * 根据权限ID删除所有角色权限关联
+     */
+    int deleteByPermissionId(@Param("permissionId") Long permissionId);
 }

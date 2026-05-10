@@ -16,6 +16,7 @@ public class Warehouse extends BaseEntity {
     @TableField("warehouse_name")
     private String name;
 
+    @TableField("manager")
     private String contact;
     private String phone;
     private String address;

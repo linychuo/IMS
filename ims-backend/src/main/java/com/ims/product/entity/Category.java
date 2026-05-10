@@ -18,6 +18,7 @@ public class Category extends BaseEntity {
 
     private String parentId;
     private Integer level;
+    @TableField("sort_order")
     private Integer sort;
     private Integer status;
 

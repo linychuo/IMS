@@ -4,6 +4,7 @@ import com.ims.core.result.PageResult;
 import com.ims.core.result.Result;
 import com.ims.finance.entity.Receivable;
 import com.ims.finance.service.ReceivableService;
+import com.ims.system.annotation.Permission;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -11,20 +12,16 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
-/**
- * 应收账款控制器
- */
 @RestController
 @RequestMapping("/api/finance/receivable")
+@Permission(code = "finance:receivable", name = "应收账款")
 public class ReceivableController {
 
     @Autowired
     private ReceivableService receivableService;
 
-    /**
-     * 分页查询
-     */
     @GetMapping("/page")
+    @Permission(code = "read", name = "查看应收账款")
     public Result<PageResult<Receivable>> page(
             @RequestParam(defaultValue = "1") Long page,
             @RequestParam(defaultValue = "10") Long pageSize,
@@ -33,62 +30,48 @@ public class ReceivableController {
         return Result.success(receivableService.page(page, pageSize, customerId, status));
     }
 
-    /**
-     * 根据ID查询
-     */
     @GetMapping("/{id}")
+    @Permission(code = "read", name = "查看应收账款")
     public Result<Receivable> getById(@PathVariable Long id) {
         return Result.success(receivableService.getById(id));
     }
 
-    /**
-     * 创建应收
-     */
     @PostMapping
+    @Permission(code = "create", name = "创建应收账款")
     public Result<Boolean> create(@RequestBody Receivable receivable) {
         return Result.success(receivableService.create(receivable));
     }
 
-    /**
-     * 更新应收
-     */
     @PutMapping
+    @Permission(code = "update", name = "更新应收账款")
     public Result<Boolean> update(@RequestBody Receivable receivable) {
         return Result.success(receivableService.update(receivable));
     }
 
-    /**
-     * 收款核销
-     */
     @PutMapping("/{id}/writeoff")
+    @Permission(code = "writeoff", name = "收款核销")
     public Result<Boolean> writeoff(@PathVariable Long id,
                                     @RequestParam Long receiptId,
                                     @RequestParam BigDecimal amount) {
         return Result.success(receivableService.writeoff(id, receiptId, amount));
     }
 
-    /**
-     * 根据客户查询应收
-     */
     @GetMapping("/customer/{customerId}")
+    @Permission(code = "read", name = "查看应收账款")
     public Result<List<Receivable>> listByCustomer(@PathVariable Long customerId) {
         return Result.success(receivableService.listByCustomer(customerId));
     }
 
-    /**
-     * 账龄分析
-     */
     @GetMapping("/aging")
+    @Permission(code = "read", name = "查看应收账款")
     public Result<List<Receivable>> getAgingAnalysis(
             @RequestParam(required = false) LocalDate startDate,
             @RequestParam(required = false) LocalDate endDate) {
         return Result.success(receivableService.getAgingAnalysis(startDate, endDate));
     }
 
-    /**
-     * 客户应收汇总
-     */
     @GetMapping("/customer/{customerId}/total")
+    @Permission(code = "read", name = "查看应收账款")
     public Result<BigDecimal> getTotalPending(@PathVariable Long customerId) {
         return Result.success(receivableService.getTotalPendingByCustomer(customerId));
     }

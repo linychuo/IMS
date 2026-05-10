@@ -5,6 +5,7 @@ import com.ims.procurement.dto.request.UpdatePurchaseReturnRequest;
 import com.ims.procurement.entity.PurchaseReturn;
 import com.ims.procurement.entity.PurchaseReturnDetail;
 import com.ims.procurement.service.PurchaseReturnService;
+import com.ims.system.annotation.Permission;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,6 +19,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/procurement/return")
+@Permission(code = "purchase:return", name = "采购退货")
 public class PurchaseReturnController {
 
     private static final Logger log = LoggerFactory.getLogger(PurchaseReturnController.class);
@@ -29,6 +31,7 @@ public class PurchaseReturnController {
     }
 
     @PostMapping
+    @Permission(code = "create", name = "创建采购退货")
     public ResponseEntity<PurchaseReturn> create(@Valid @RequestBody CreatePurchaseReturnRequest request) {
         log.info("创建采购退货单, supplierId: {}", request.getSupplierId());
 
@@ -51,6 +54,7 @@ public class PurchaseReturnController {
     }
 
     @PutMapping("/{id}")
+    @Permission(code = "update", name = "更新采购退货")
     public ResponseEntity<PurchaseReturn> update(
             @PathVariable Long id,
             @Valid @RequestBody UpdatePurchaseReturnRequest request) {
@@ -75,6 +79,7 @@ public class PurchaseReturnController {
     }
 
     @PostMapping("/{id}/approve")
+    @Permission(code = "audit", name = "审核采购退货")
     public ResponseEntity<Void> approve(
             @PathVariable Long id,
             @RequestParam String userId) {
@@ -84,6 +89,7 @@ public class PurchaseReturnController {
     }
 
     @PostMapping("/{id}/reject")
+    @Permission(code = "reject", name = "拒绝采购退货")
     public ResponseEntity<Void> reject(
             @PathVariable Long id,
             @RequestParam String reason) {
@@ -93,6 +99,7 @@ public class PurchaseReturnController {
     }
 
     @PostMapping("/{id}/cancel")
+    @Permission(code = "cancel", name = "取消采购退货")
     public ResponseEntity<Void> cancel(
             @PathVariable Long id,
             @RequestParam String reason) {
@@ -102,6 +109,7 @@ public class PurchaseReturnController {
     }
 
     @PostMapping("/{id}/outbound")
+    @Permission(code = "outbound", name = "采购退货出库")
     public ResponseEntity<Void> outbound(
             @PathVariable Long id,
             @RequestParam String userId) {
@@ -111,24 +119,28 @@ public class PurchaseReturnController {
     }
 
     @GetMapping("/{id}")
+    @Permission(code = "read", name = "查看采购退货")
     public ResponseEntity<PurchaseReturn> getById(@PathVariable Long id) {
         var result = purchaseReturnService.getById(id);
         return result != null ? ResponseEntity.ok(result) : ResponseEntity.notFound().build();
     }
 
     @GetMapping("/no/{returnNo}")
+    @Permission(code = "read", name = "查看采购退货")
     public ResponseEntity<PurchaseReturn> getByReturnNo(@PathVariable String returnNo) {
         var result = purchaseReturnService.getByReturnNo(returnNo);
         return result != null ? ResponseEntity.ok(result) : ResponseEntity.notFound().build();
     }
 
     @GetMapping("/{id}/details")
+    @Permission(code = "read", name = "查看采购退货")
     public ResponseEntity<List<PurchaseReturnDetail>> getDetails(@PathVariable Long id) {
         var result = purchaseReturnService.getDetails(id);
         return ResponseEntity.ok(result);
     }
 
     @GetMapping
+    @Permission(code = "read", name = "查看采购退货")
     public ResponseEntity<List<PurchaseReturn>> list(PurchaseReturn query) {
         var result = purchaseReturnService.list(query);
         return ResponseEntity.ok(result);

@@ -5,6 +5,7 @@ import com.ims.core.result.Result;
 import com.ims.inventory.entity.InventoryTransfer;
 import com.ims.inventory.entity.InventoryTransferDetail;
 import com.ims.inventory.service.InventoryTransferService;
+import com.ims.system.annotation.Permission;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,6 +16,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/inventory/transfer")
+@Permission(code = "inventory:transfer", name = "库存调拨")
 public class InventoryTransferController {
 
     @Autowired
@@ -24,6 +26,7 @@ public class InventoryTransferController {
      * 分页查询
      */
     @GetMapping("/page")
+    @Permission(code = "read", name = "查看调拨单")
     public Result<PageResult<InventoryTransfer>> page(
             @RequestParam(defaultValue = "1") Long page,
             @RequestParam(defaultValue = "10") Long pageSize,
@@ -37,6 +40,7 @@ public class InventoryTransferController {
      * 根据ID查询
      */
     @GetMapping("/{id}")
+    @Permission(code = "read", name = "查看调拨单")
     public Result<InventoryTransfer> getById(@PathVariable Long id) {
         return Result.success(inventoryTransferService.getById(id));
     }
@@ -45,6 +49,7 @@ public class InventoryTransferController {
      * 创建调拨单
      */
     @PostMapping
+    @Permission(code = "create", name = "创建调拨单")
     public Result<InventoryTransfer> create(@RequestBody InventoryTransfer transfer,
                                              @RequestBody List<InventoryTransferDetail> details) {
         return Result.success(inventoryTransferService.create(transfer, details));
@@ -54,6 +59,7 @@ public class InventoryTransferController {
      * 开始调拨
      */
     @PutMapping("/{id}/start")
+    @Permission(code = "update", name = "更新调拨单")
     public Result<Boolean> startTransfer(@PathVariable Long id, @RequestParam Long transfererId) {
         return Result.success(inventoryTransferService.startTransfer(id, transfererId));
     }
@@ -62,6 +68,7 @@ public class InventoryTransferController {
      * 确认出库
      */
     @PutMapping("/{id}/confirm-out")
+    @Permission(code = "update", name = "更新调拨单")
     public Result<Boolean> confirmOut(@PathVariable Long id) {
         return Result.success(inventoryTransferService.confirmOut(id));
     }
@@ -70,6 +77,7 @@ public class InventoryTransferController {
      * 确认入库
      */
     @PutMapping("/{id}/confirm-in")
+    @Permission(code = "update", name = "更新调拨单")
     public Result<Boolean> confirmIn(@PathVariable Long id) {
         return Result.success(inventoryTransferService.confirmIn(id));
     }
@@ -78,6 +86,7 @@ public class InventoryTransferController {
      * 完成调拨
      */
     @PutMapping("/{id}/finish")
+    @Permission(code = "update", name = "更新调拨单")
     public Result<Boolean> finishTransfer(@PathVariable Long id) {
         return Result.success(inventoryTransferService.finishTransfer(id));
     }
@@ -86,6 +95,7 @@ public class InventoryTransferController {
      * 取消调拨
      */
     @PutMapping("/{id}/cancel")
+    @Permission(code = "cancel", name = "取消调拨单")
     public Result<Boolean> cancelTransfer(@PathVariable Long id, @RequestParam String reason) {
         return Result.success(inventoryTransferService.cancelTransfer(id, reason));
     }
@@ -94,6 +104,7 @@ public class InventoryTransferController {
      * 获取调拨明细
      */
     @GetMapping("/{id}/details")
+    @Permission(code = "read", name = "查看调拨单")
     public Result<List<InventoryTransferDetail>> getDetails(@PathVariable Long id) {
         return Result.success(inventoryTransferService.getDetails(id));
     }
@@ -102,6 +113,7 @@ public class InventoryTransferController {
      * 查询进行中的调拨
      */
     @GetMapping("/pending")
+    @Permission(code = "read", name = "查看调拨单")
     public Result<List<InventoryTransfer>> listPending() {
         return Result.success(inventoryTransferService.listPending());
     }

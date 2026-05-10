@@ -1,9 +1,12 @@
 package com.ims.system.dto;
 
+import java.io.Serializable;
+import java.util.List;
+
 /**
  * 登录结果DTO
  */
-public class LoginResult {
+public class LoginResult implements Serializable {
 
     private String token;
 
@@ -14,6 +17,10 @@ public class LoginResult {
     private String realName;
 
     private String avatar;
+
+    private List<MenuTree> menus;
+
+    private List<String> permissions;
 
     public String getToken() {
         return token;
@@ -53,5 +60,21 @@ public class LoginResult {
 
     public void setAvatar(String avatar) {
         this.avatar = avatar;
+    }
+
+    public List<MenuTree> getMenus() {
+        return menus;
+    }
+
+    public void setMenus(List<MenuTree> menus) {
+        this.menus = menus;
+    }
+
+    public List<String> getPermissions() {
+        return permissions;
+    }
+
+    public void setPermissions(List<String> permissions) {
+        this.permissions = permissions;
     }
 }

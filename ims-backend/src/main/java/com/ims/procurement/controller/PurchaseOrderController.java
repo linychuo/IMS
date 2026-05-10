@@ -4,6 +4,7 @@ import com.ims.procurement.dto.request.CreatePurchaseOrderRequest;
 import com.ims.procurement.dto.request.UpdatePurchaseOrderRequest;
 import com.ims.procurement.entity.PurchaseOrder;
 import com.ims.procurement.service.PurchaseOrderService;
+import com.ims.system.annotation.Permission;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +18,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/procurement/orders")
+@Permission(code = "purchase:order", name = "采购订单")
 public class PurchaseOrderController {
 
     private static final Logger log = LoggerFactory.getLogger(PurchaseOrderController.class);
@@ -28,6 +30,7 @@ public class PurchaseOrderController {
     }
 
     @PostMapping
+    @Permission(code = "create", name = "创建采购订单")
     public ResponseEntity<PurchaseOrder> create(@Valid @RequestBody CreatePurchaseOrderRequest request) {
         log.info("创建采购订单, supplierId: {}", request.getSupplierId());
         var result = purchaseOrderService.create(request);
@@ -35,6 +38,7 @@ public class PurchaseOrderController {
     }
 
     @PutMapping("/{id}")
+    @Permission(code = "update", name = "更新采购订单")
     public ResponseEntity<PurchaseOrder> update(
             @PathVariable Long id,
             @Valid @RequestBody UpdatePurchaseOrderRequest request) {
@@ -44,6 +48,7 @@ public class PurchaseOrderController {
     }
 
     @PostMapping("/{id}/approve")
+    @Permission(code = "audit", name = "审核采购订单")
     public ResponseEntity<Void> approve(
             @PathVariable Long id,
             @RequestParam String userId) {
@@ -53,6 +58,7 @@ public class PurchaseOrderController {
     }
 
     @PostMapping("/{id}/cancel")
+    @Permission(code = "cancel", name = "取消采购订单")
     public ResponseEntity<Void> cancel(
             @PathVariable Long id,
             @RequestParam String reason) {
@@ -62,18 +68,21 @@ public class PurchaseOrderController {
     }
 
     @GetMapping("/{id}")
+    @Permission(code = "read", name = "查看采购订单")
     public ResponseEntity<PurchaseOrder> getById(@PathVariable Long id) {
         var result = purchaseOrderService.getById(id);
         return result != null ? ResponseEntity.ok(result) : ResponseEntity.notFound().build();
     }
 
     @GetMapping("/no/{orderNo}")
+    @Permission(code = "read", name = "查看采购订单")
     public ResponseEntity<PurchaseOrder> getByOrderNo(@PathVariable String orderNo) {
         var result = purchaseOrderService.getByOrderNo(orderNo);
         return result != null ? ResponseEntity.ok(result) : ResponseEntity.notFound().build();
     }
 
     @GetMapping
+    @Permission(code = "read", name = "查看采购订单")
     public ResponseEntity<List<PurchaseOrder>> list(PurchaseOrder query) {
         var result = purchaseOrderService.list(query);
         return ResponseEntity.ok(result);

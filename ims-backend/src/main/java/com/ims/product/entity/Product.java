@@ -12,19 +12,25 @@ import java.math.BigDecimal;
 @TableName("product")
 public class Product extends BaseEntity {
 
+    @TableField("product_code")
     private String code;
+    @TableField("product_name")
     private String name;
+    @TableField("category_id")
     private String categoryId;
     private String spec;
     private String unit;
     private String barcode;
-    @TableField("cost")
+    @TableField("purchase_price")
     private BigDecimal purchasePrice;
-    @TableField("price")
+    @TableField("sale_price")
     private BigDecimal salePrice;
+    @TableField("min_sale_price")
     private BigDecimal minSalePrice;
+    @TableField("min_stock")
     private Integer stockWarning;
     private Integer status;
+    @TableField("image_url")
     private String imageUrl;
     private String remark;
 

@@ -1,9 +1,11 @@
 package com.ims.system.service.impl;
 
 import com.ims.system.dto.LoginResult;
+import com.ims.system.dto.MenuTree;
 import com.ims.system.dto.UserDTO;
 import com.ims.system.entity.SysUser;
 import com.ims.system.mapper.SysUserMapper;
+import com.ims.system.service.PermissionService;
 import com.ims.system.service.UserService;
 import com.ims.system.util.JWTUtil;
 import com.ims.system.util.SecurityUtil;
@@ -23,10 +25,12 @@ public class UserServiceImpl implements UserService {
 
     private final SysUserMapper userMapper;
     private final JWTUtil jwtUtil;
+    private final PermissionService permissionService;
 
-    public UserServiceImpl(SysUserMapper userMapper, JWTUtil jwtUtil) {
+    public UserServiceImpl(SysUserMapper userMapper, JWTUtil jwtUtil, PermissionService permissionService) {
         this.userMapper = userMapper;
         this.jwtUtil = jwtUtil;
+        this.permissionService = permissionService;
     }
 
     @Override
@@ -50,6 +54,10 @@ public class UserServiceImpl implements UserService {
         // 生成Token
         String token = jwtUtil.generateToken(user.getId(), user.getUsername());
 
+        // 获取用户菜单和权限
+        List<MenuTree> menus = permissionService.getMenuTreeByUserId(user.getId());
+        List<String> permissionCodes = permissionService.getPermissionCodesByUserId(user.getId());
+
         // 构建返回结果
         LoginResult result = new LoginResult();
         result.setToken(token);
@@ -57,6 +65,8 @@ public class UserServiceImpl implements UserService {
         result.setUsername(user.getUsername());
         result.setRealName(user.getRealName());
         result.setAvatar(user.getAvatar() != null ? user.getAvatar().toString() : null);
+        result.setMenus(menus);
+        result.setPermissions(permissionCodes);
 
         return result;
     }

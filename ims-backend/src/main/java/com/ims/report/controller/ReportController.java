@@ -2,6 +2,7 @@ package com.ims.report.controller;
 
 import com.ims.report.dto.*;
 import com.ims.report.service.IReportService;
+import com.ims.system.annotation.Permission;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,31 +14,35 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/report")
+@Permission(code = "report:dashboard", name = "报表中心")
 public class ReportController {
-    
+
     @Autowired
     private IReportService reportService;
-    
+
     /**
      * 仪表盘数据
      */
     @GetMapping("/dashboard")
+    @Permission(code = "read", name = "查看仪表盘")
     public DashboardDTO getDashboard() {
         return reportService.getDashboardData();
     }
-    
+
     /**
      * 销售日报
      */
     @GetMapping("/sales/daily")
+    @Permission(code = "read", name = "查看销售报表")
     public SalesReportDTO getDailySales() {
         return reportService.getDailySalesReport();
     }
-    
+
     /**
      * 销售汇总
      */
     @GetMapping("/sales/summary")
+    @Permission(code = "read", name = "查看销售报表")
     public List<SalesReportDTO> getSalesSummary(
             @RequestParam(required = false) LocalDate startDate,
             @RequestParam(required = false) LocalDate endDate) {
@@ -46,19 +51,21 @@ public class ReportController {
         request.setEndDate(endDate);
         return reportService.getSalesSummary(request);
     }
-    
+
     /**
      * 采购日报
      */
     @GetMapping("/purchase/daily")
+    @Permission(code = "read", name = "查看采购报表")
     public PurchaseReportDTO getDailyPurchase() {
         return reportService.getDailyPurchaseReport();
     }
-    
+
     /**
      * 采购汇总
      */
     @GetMapping("/purchase/summary")
+    @Permission(code = "read", name = "查看采购报表")
     public List<PurchaseReportDTO> getPurchaseSummary(
             @RequestParam(required = false) LocalDate startDate,
             @RequestParam(required = false) LocalDate endDate) {
@@ -67,11 +74,12 @@ public class ReportController {
         request.setEndDate(endDate);
         return reportService.getPurchaseSummary(request);
     }
-    
+
     /**
      * 库存报表
      */
     @GetMapping("/inventory/list")
+    @Permission(code = "read", name = "查看库存报表")
     public List<InventoryReportDTO> getInventoryList(
             @RequestParam(required = false) Long warehouseId,
             @RequestParam(required = false) Long productId) {
@@ -80,28 +88,31 @@ public class ReportController {
         request.setProductId(productId);
         return reportService.getInventoryList(request);
     }
-    
+
     /**
      * 低库存预警
      */
     @GetMapping("/inventory/low-stock")
+    @Permission(code = "read", name = "查看库存报表")
     public List<InventoryReportDTO> getLowStockWarning() {
         return reportService.getLowStockWarning();
     }
-    
+
     /**
      * 呆滞库存
      */
     @GetMapping("/inventory/idle-stock")
+    @Permission(code = "read", name = "查看库存报表")
     public List<InventoryReportDTO> getIdleStock(
             @RequestParam(defaultValue = "30") Integer days) {
         return reportService.getIdleStock(days);
     }
-    
+
     /**
      * 销售趋势
      */
     @GetMapping("/trend/sales")
+    @Permission(code = "read", name = "查看趋势分析")
     public TrendDTO getSalesTrend(
             @RequestParam(required = false) LocalDate startDate,
             @RequestParam(required = false) LocalDate endDate) {
@@ -110,11 +121,12 @@ public class ReportController {
         request.setEndDate(endDate);
         return reportService.getSalesTrend(request);
     }
-    
+
     /**
      * 采购趋势
      */
     @GetMapping("/trend/purchase")
+    @Permission(code = "read", name = "查看趋势分析")
     public TrendDTO getPurchaseTrend(
             @RequestParam(required = false) LocalDate startDate,
             @RequestParam(required = false) LocalDate endDate) {
@@ -123,11 +135,12 @@ public class ReportController {
         request.setEndDate(endDate);
         return reportService.getPurchaseTrend(request);
     }
-    
+
     /**
      * 财务报表
      */
     @GetMapping("/finance/summary")
+    @Permission(code = "read", name = "查看财务报表")
     public FinanceReportDTO getFinanceSummary(
             @RequestParam(required = false) LocalDate startDate,
             @RequestParam(required = false) LocalDate endDate) {
@@ -141,6 +154,7 @@ public class ReportController {
      * 客户分析 - 汇总
      */
     @GetMapping("/analysis/customer")
+    @Permission(code = "read", name = "查看分析报表")
     public List<CustomerAnalysisDTO> getCustomerAnalysis(
             @RequestParam(required = false) LocalDate startDate,
             @RequestParam(required = false) LocalDate endDate) {
@@ -151,6 +165,7 @@ public class ReportController {
      * 客户分析 - 单个客户
      */
     @GetMapping("/analysis/customer/{customerId}")
+    @Permission(code = "read", name = "查看分析报表")
     public CustomerAnalysisDTO getCustomerAnalysisById(@PathVariable Long customerId) {
         return reportService.getCustomerAnalysisById(customerId);
     }
@@ -159,6 +174,7 @@ public class ReportController {
      * 商品分析
      */
     @GetMapping("/analysis/product")
+    @Permission(code = "read", name = "查看分析报表")
     public List<ProductAnalysisDTO> getProductAnalysis(
             @RequestParam(required = false) LocalDate startDate,
             @RequestParam(required = false) LocalDate endDate) {
@@ -169,6 +185,7 @@ public class ReportController {
      * 供应商分析 - 汇总
      */
     @GetMapping("/analysis/supplier")
+    @Permission(code = "read", name = "查看分析报表")
     public List<SupplierAnalysisDTO> getSupplierAnalysis(
             @RequestParam(required = false) LocalDate startDate,
             @RequestParam(required = false) LocalDate endDate) {
@@ -179,6 +196,7 @@ public class ReportController {
      * 供应商分析 - 单个供应商
      */
     @GetMapping("/analysis/supplier/{supplierId}")
+    @Permission(code = "read", name = "查看分析报表")
     public SupplierAnalysisDTO getSupplierAnalysisById(@PathVariable Long supplierId) {
         return reportService.getSupplierAnalysisById(supplierId);
     }
