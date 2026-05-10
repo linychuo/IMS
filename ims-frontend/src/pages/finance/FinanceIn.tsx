@@ -101,16 +101,6 @@ const FinanceInPage: React.FC = () => {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    try {
-      await warehouseApi.delete(`/finance/in/${id}`);
-      message.success('删除成功');
-      fetchData();
-    } catch (error) {
-      message.error('删除失败');
-    }
-  };
-
   const handleModalOk = async () => {
     try {
       const values = await form.validateFields();
@@ -160,9 +150,6 @@ const FinanceInPage: React.FC = () => {
             <>
               <Button type="link" size="small" icon={<CheckCircleOutlined />} onClick={() => handleAudit(record.id)}>审核</Button>
               <Button type="link" size="small" danger icon={<CloseCircleOutlined />} onClick={() => handleCancel(record.id)}>取消</Button>
-              <Popconfirm title="确定删除？" onConfirm={() => handleDelete(record.id)}>
-                <Button type="link" size="small" danger>删除</Button>
-              </Popconfirm>
             </>
           )}
         </Space>

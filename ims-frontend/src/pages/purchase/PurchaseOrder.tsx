@@ -140,16 +140,6 @@ const PurchaseOrderPage: React.FC = () => {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    try {
-      await procurementApi.delete(`/orders/${id}`);
-      message.success('删除成功');
-      fetchData();
-    } catch (error) {
-      message.error('删除失败');
-    }
-  };
-
   const renderStatus = (status: number) => {
     const map: Record<number, { text: string; color: string }> = {
       0: { text: '新建', color: 'default' },
@@ -187,11 +177,6 @@ const PurchaseOrderPage: React.FC = () => {
                 <Button type="link" size="small" danger icon={<CloseCircleOutlined />}>取消</Button>
               </Popconfirm>
             </>
-          )}
-          {record.status === 0 && (
-            <Popconfirm title="确定删除？" onConfirm={() => handleDelete(record.id)}>
-              <Button type="link" size="small" danger>删除</Button>
-            </Popconfirm>
           )}
         </Space>
       ),
