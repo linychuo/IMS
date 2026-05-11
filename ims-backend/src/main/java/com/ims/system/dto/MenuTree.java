@@ -16,6 +16,8 @@ public class MenuTree implements Serializable {
 
     private String icon;
 
+    private String permissionCode;
+
     private List<MenuTree> children;
 
     public Long getId() {
@@ -56,5 +58,13 @@ public class MenuTree implements Serializable {
 
     public void setChildren(List<MenuTree> children) {
         this.children = children;
+    }
+
+    public String getPermissionCode() {
+        return permissionCode;
+    }
+
+    public void setPermissionCode(String permissionCode) {
+        this.permissionCode = permissionCode;
     }
 }

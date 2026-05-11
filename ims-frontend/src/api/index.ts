@@ -17,11 +17,15 @@ const createApi = (baseURL: string): AxiosInstance => {
   return api;
 };
 
-export const systemApi = createApi('http://localhost:8080/system');
-export const procurementApi = createApi('http://localhost:8081');
-export const reportApi = createApi('http://localhost:8085');
+export const authApi = createApi('http://localhost:8080');
+export const systemApi = createApi('http://localhost:8080');
 export const productApi = createApi('http://localhost:8080/api');
 export const warehouseApi = createApi('http://localhost:8080/api');
-export const customerApi = createApi('http://localhost:8080');
-export const supplierApi = createApi('http://localhost:8080');
-export const salesApi = createApi('http://localhost:8080/api/sales');
+export const customerApi = createApi('http://localhost:8080/api');
+export const supplierApi = createApi('http://localhost:8080/api');
+export const salesApi = createApi('http://localhost:8080/api');
+export const purchaseApi = createApi('http://localhost:8080/api');
+export const procurementApi = createApi('http://localhost:8080/api');
+export const inventoryApi = createApi('http://localhost:8080/api');
+export const financeApi = createApi('http://localhost:8080/api');
+export const reportApi = createApi('http://localhost:8080/api');

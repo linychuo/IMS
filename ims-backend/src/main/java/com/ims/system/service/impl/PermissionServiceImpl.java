@@ -70,6 +70,7 @@ public class PermissionServiceImpl implements PermissionService {
                 tree.setName(menu.getPermissionName());
                 tree.setPath(menu.getPath());
                 tree.setIcon(menu.getIcon());
+                tree.setPermissionCode(menu.getPermissionCode());
 
                 // 查找子菜单
                 List<MenuTree> children = new ArrayList<>();
@@ -82,6 +83,7 @@ public class PermissionServiceImpl implements PermissionService {
                             childTree.setName(child.getPermissionName());
                             childTree.setPath(child.getPath());
                             childTree.setIcon(child.getIcon());
+                            childTree.setPermissionCode(child.getPermissionCode());
                             children.add(childTree);
                         }
                     }

@@ -1,6 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { Layout, Menu, Avatar, Dropdown, Button, Space } from 'antd';
-import type { MenuProps } from 'antd';
 const { Sider, Header, Content } = Layout;
 import {
   ShoppingCartOutlined,
@@ -14,15 +13,11 @@ import {
   LogoutOutlined,
   PieChartOutlined,
   SettingOutlined,
-  BankOutlined,
-  TeamOutlined,
   ContainerOutlined,
-  FileTextOutlined,
 } from '@ant-design/icons';
 import { useNavigate, Outlet } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 
-// 图标映射
 const iconMap: Record<string, React.ReactNode> = {
   ShoppingCartOutlined: <ShoppingCartOutlined />,
   ShopOutlined: <ShopOutlined />,
@@ -32,139 +27,51 @@ const iconMap: Record<string, React.ReactNode> = {
   UserOutlined: <UserOutlined />,
   PieChartOutlined: <PieChartOutlined />,
   SettingOutlined: <SettingOutlined />,
-  BankOutlined: <BankOutlined />,
-  TeamOutlined: <TeamOutlined />,
   ContainerOutlined: <ContainerOutlined />,
-  FileTextOutlined: <FileTextOutlined />,
 };
 
-// 默认菜单（未登录或无菜单数据时显示）
+// 默认菜单
 const defaultMenuItems = [
   { key: '/dashboard', icon: <BarChartOutlined />, label: '仪表盘' },
   { key: '/report', icon: <PieChartOutlined />, label: '报表中心' },
 ];
-
-// 菜单分组配置 - 将多个相关菜单合并为一个分组
-const menuGroups = {
-  '基础资料': {
-    icon: <ShopOutlined />,
-    routes: ['/product', '/warehouse', '/customer', '/supplier'],
-  },
-  '销售管理': {
-    icon: <ShoppingCartOutlined />,
-    routes: ['/sales/order', '/sales/out', '/sales/return', '/sales/strategy'],
-  },
-  '采购管理': {
-    icon: <ContainerOutlined />,
-    routes: ['/purchase/order', '/purchase/in', '/purchase/return'],
-  },
-  '库存管理': {
-    icon: <InboxOutlined />,
-    routes: ['/inventory/account', '/inventory/in', '/inventory/out', '/inventory/transfer', '/inventory/check', '/inventory/record'],
-  },
-  '财务报表': {
-    icon: <DollarOutlined />,
-    routes: ['/finance/in', '/finance/out', '/finance/account', '/finance/receivable', '/finance/payable', '/finance/transaction'],
-  },
-  '系统管理': {
-    icon: <SettingOutlined />,
-    routes: ['/system'],
-  },
-};
-
-// 路由到分组名的映射
-const routeToGroup = Object.entries(menuGroups).reduce((acc, [groupName, config]) => {
-  config.routes.forEach(route => {
-    acc[route] = groupName;
-  });
-  return acc;
-}, {} as Record<string, string>);
 
 const AppLayout: React.FC = () => {
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
   const { username, realName, menus, logout } = useAuthStore();
 
-  // 将后端菜单数据按分组组织
-  const menuItems = useMemo(() => {
-    if (!menus || menus.length === 0) {
-      return defaultMenuItems;
+  // permission_code 转路由路径
+  // customer:customer -> /customer, sales:order -> /sales/order
+  const codeToPath = (code: string): string => {
+    if (!code) return '/';
+    const segments = code.split(':');
+    // 如果第二段和第一段相同，只取第一段，如 customer:customer -> /customer
+    if (segments.length === 2 && segments[0] === segments[1]) {
+      return '/' + segments[0];
     }
+    return '/' + code.replace(/:/g, '/');
+  };
 
-    // 构建路由到菜单项的映射
-    const routeMenuMap = new Map<string, any>();
-    const buildRouteMap = (menuList: any[], parentPath = '') => {
-      for (const menu of menuList) {
-        if (menu.path) {
-          routeMenuMap.set(menu.path, menu);
-        }
-        if (menu.children && menu.children.length > 0) {
-          buildRouteMap(menu.children, menu.path);
-        }
-      }
-    };
-    buildRouteMap(menus);
+  // 直接使用后端返回的菜单树
+  const buildMenuItems = (menuList: any[]): any[] => {
+    return menuList.map(menu => ({
+      key: menu.path || codeToPath(menu.permissionCode),
+      label: menu.name,
+      icon: menu.icon && iconMap[menu.icon] ? iconMap[menu.icon] : undefined,
+      children: menu.children && menu.children.length > 0 ? buildMenuItems(menu.children) : undefined,
+    }));
+  };
 
-    // 按分组组织菜单
-    const groupedMenus: Record<string, any[]> = {};
-    for (const [groupName, config] of Object.entries(menuGroups)) {
-      groupedMenus[groupName] = [];
-    }
-
-    // 将菜单分配到分组
-    routeMenuMap.forEach((menu, path) => {
-      const groupName = routeToGroup[path];
-      if (groupName && groupedMenus[groupName]) {
-        groupedMenus[groupName].push(menu);
-      }
-    });
-
-    // 构建 antd 菜单项
-    const items: { key: string; icon?: React.ReactNode; label: string; children?: any[] }[] = [];
-
-    for (const [groupName, config] of Object.entries(menuGroups)) {
-      const groupMenus = groupedMenus[groupName];
-      if (groupMenus.length === 0) continue;
-
-      // 检查用户是否有该分组的任何菜单权限
-      const hasAccess = groupMenus.some(m => routeMenuMap.has(m.path));
-      if (!hasAccess) continue;
-
-      const groupItem: typeof items[0] = {
-        key: groupName,
-        label: groupName,
-        icon: config.icon,
-        children: groupMenus.map(menu => ({
-          key: menu.path,
-          label: menu.name,
-          icon: menu.icon && iconMap[menu.icon] ? iconMap[menu.icon] : undefined,
-        })),
-      };
-
-      items.push(groupItem);
-    }
-
-    // 添加不在任何分组中的独立菜单（如仪表盘、报表）
-    const standaloneRoutes = ['/dashboard', '/report'];
-    for (const route of standaloneRoutes) {
-      const menu = routeMenuMap.get(route);
-      if (menu) {
-        items.push({
-          key: route,
-          label: menu.name,
-          icon: menu.icon && iconMap[menu.icon] ? iconMap[menu.icon] : <BarChartOutlined />,
-        });
-      }
-    }
-
-    return items;
-  }, [menus]);
+  const menuItems = menus && menus.length > 0
+    ? buildMenuItems(menus)
+    : defaultMenuItems;
 
   const userMenuItems = [
     { key: 'logout', icon: <LogoutOutlined />, label: '退出登录' },
   ];
 
-  const handleMenuClick = (key: string) => {
+  const handleMenuClick = ({ key }: { key: string }) => {
     navigate(key);
   };
 
@@ -194,7 +101,7 @@ const AppLayout: React.FC = () => {
           mode="inline"
           defaultSelectedKeys={['/dashboard']}
           items={menuItems}
-          onClick={({ key }) => handleMenuClick(key)}
+          onClick={handleMenuClick}
         />
       </Sider>
       <Layout>

@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ims.procurement.mapper.PurchaseReturnMapper">
+
+    <resultMap id="BaseResultMap" type="com.ims.procurement.entity.PurchaseReturn">
+        <id column="id" property="id"/>
+        <result column="return_no" property="returnNo"/>
+        <result column="purchase_in_id" property="purchaseInId"/>
+        <result column="purchase_in_no" property="purchaseInNo"/>
+        <result column="supplier_id" property="supplierId"/>
+        <result column="supplier_name" property="supplierName"/>
+        <result column="return_date" property="returnDate"/>
+        <result column="warehouse_id" property="warehouseId"/>
+        <result column="warehouse_name" property="warehouseName"/>
+        <result column="return_by" property="returnBy"/>
+        <result column="return_by_name" property="returnByName"/>
+        <result column="status" property="status"/>
+        <result column="total_amount" property="totalAmount"/>
+        <result column="refund_amount" property="refundAmount"/>
+        <result column="reason" property="reason"/>
+        <result column="remark" property="remark"/>
+        <result column="audited_by" property="auditedBy"/>
+        <result column="audited_at" property="auditedAt"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="deleted" property="deleted"/>
+    </resultMap>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT * FROM purchase_return WHERE id = #{id} AND deleted = 0
+    </select>
+
+    <select id="selectByReturnNo" resultMap="BaseResultMap">
+        SELECT * FROM purchase_return WHERE return_no = #{returnNo} AND deleted = 0
+    </select>
+
+    <select id="selectList" resultMap="BaseResultMap">
+        SELECT * FROM purchase_return WHERE deleted = 0
+        <if test="supplierId != null">AND supplier_id = #{supplierId}</if>
+        <if test="status != null">AND status = #{status}</if>
+        <if test="returnNo != null">AND return_no LIKE CONCAT('%', #{returnNo}, '%')</if>
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO purchase_return (return_no, purchase_in_id, purchase_in_no, supplier_id, supplier_name,
+            return_date, warehouse_id, warehouse_name, return_by, return_by_name, status,
+            total_amount, refund_amount, reason, remark, create_time)
+        VALUES (#{returnNo}, #{purchaseInId}, #{purchaseInNo}, #{supplierId}, #{supplierName},
+            #{returnDate}, #{warehouseId}, #{warehouseName}, #{returnBy}, #{returnByName}, #{status},
+            #{totalAmount}, #{refundAmount}, #{reason}, #{remark}, #{createTime})
+    </insert>
+
+    <update id="update">
+        UPDATE purchase_return
+        <set>
+            <if test="supplierId != null">supplier_id = #{supplierId},</if>
+            <if test="supplierName != null">supplier_name = #{supplierName},</if>
+            <if test="returnDate != null">return_date = #{returnDate},</if>
+            <if test="warehouseId != null">warehouse_id = #{warehouseId},</if>
+            <if test="warehouseName != null">warehouse_name = #{warehouseName},</if>
+            <if test="returnBy != null">return_by = #{returnBy},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="totalAmount != null">total_amount = #{totalAmount},</if>
+            <if test="refundAmount != null">refund_amount = #{refundAmount},</if>
+            <if test="reason != null">reason = #{reason},</if>
+            <if test="remark != null">remark = #{remark},</if>
+            <if test="auditedBy != null">audited_by = #{auditedBy},</if>
+            <if test="auditedAt != null">audited_at = #{auditedAt},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </set>
+        WHERE id = #{id} AND deleted = 0
+    </update>
+
+    <update id="deleteById">
+        UPDATE purchase_return SET deleted = 1 WHERE id = #{id}
+    </update>
+
+</mapper>

@@ -4,100 +4,98 @@
 
     <!-- 获取仪表盘数据 -->
     <select id="getDashboardData" resultType="com.ims.report.dto.DashboardDTO">
-        SELECT 
-            (SELECT COALESCE(SUM(total_amount), 0) FROM sales_out WHERE DATE(create_time) = CURDATE() AND status = 'approved') as todaySalesAmount,
-            (SELECT COALESCE(SUM(total_amount), 0) FROM purchase_in WHERE DATE(create_time) = CURDATE() AND status = 'approved') as todayPurchaseAmount,
-            (SELECT COALESCE(SUM(amount), 0) FROM finance_income WHERE DATE(create_time) = CURDATE() AND status = 'approved') as todayReceiveAmount,
-            (SELECT COALESCE(SUM(amount), 0) FROM finance_expense WHERE DATE(create_time) = CURDATE() AND status = 'approved') as todayPaymentAmount,
-            (SELECT COALESCE(SUM(total_amount), 0) FROM sales_out WHERE DATE(create_time) >= DATE_SUB(CURDATE(), INTERVAL DAY(CURDATE()) DAY) AND status = 'approved') as monthSalesAmount,
-            (SELECT COALESCE(SUM(total_amount), 0) FROM purchase_in WHERE DATE(create_time) >= DATE_SUB(CURDATE(), INTERVAL DAY(CURDATE()) DAY) AND status = 'approved') as monthPurchaseAmount,
+        SELECT
+            (SELECT COALESCE(SUM(total_amount), 0) FROM sales_out WHERE create_time::date = CURRENT_DATE AND status = 1) as todaySalesAmount,
+            (SELECT COALESCE(SUM(total_amount), 0) FROM purchase_in WHERE create_time::date = CURRENT_DATE AND status = 1) as todayPurchaseAmount,
+            (SELECT COALESCE(SUM(amount), 0) FROM finance_in WHERE create_time::date = CURRENT_DATE AND status = 1) as todayReceiveAmount,
+            (SELECT COALESCE(SUM(amount), 0) FROM finance_out WHERE create_time::date = CURRENT_DATE AND status = 1) as todayPaymentAmount,
+            (SELECT COALESCE(SUM(total_amount), 0) FROM sales_out WHERE create_time::date >= DATE_TRUNC('month', CURRENT_DATE) AND status = 1) as monthSalesAmount,
+            (SELECT COALESCE(SUM(total_amount), 0) FROM purchase_in WHERE create_time::date >= DATE_TRUNC('month', CURRENT_DATE) AND status = 1) as monthPurchaseAmount,
             (SELECT COALESCE(SUM(quantity), 0) FROM inventory) as totalInventoryCount,
-            (SELECT COUNT(*) FROM inventory WHERE quantity &lt;= min_quantity) as warningInventoryCount,
-            (SELECT COUNT(*) FROM purchase_order WHERE status = 'pending') as pendingPurchaseCount,
-            (SELECT COUNT(*) FROM sales_order WHERE status = 'pending') as pendingSalesCount
+            (SELECT COUNT(*) FROM inventory i JOIN product p ON i.product_id = p.id WHERE i.quantity &lt;= p.min_stock) as warningInventoryCount,
+            (SELECT COUNT(*) FROM purchase_order WHERE status = 0) as pendingPurchaseCount,
+            (SELECT COUNT(*) FROM sales_order WHERE status = 0) as pendingSalesCount
     </select>
 
     <!-- 获取今日销售数据 -->
     <select id="getTodaySalesData" resultType="com.ims.report.dto.SalesReportDTO">
-        SELECT 
-            CURDATE() as reportDate,
+        SELECT
+            CURRENT_DATE as reportDate,
             'daily' as reportType,
             COALESCE(SUM(total_amount), 0) as totalSalesAmount,
             COUNT(*) as totalOrderCount,
             COALESCE(AVG(total_amount), 0) as avgOrderAmount,
             COALESCE(SUM(discount_amount), 0) as discountAmount,
             COALESCE(SUM(return_amount), 0) as returnAmount
-        FROM sales_out 
-        WHERE DATE(create_time) = CURDATE() AND status = 'approved'
+        FROM sales_out
+        WHERE create_time::date = CURRENT_DATE AND status = 1
     </select>
 
     <!-- 获取今日采购数据 -->
     <select id="getTodayPurchaseData" resultType="com.ims.report.dto.PurchaseReportDTO">
-        SELECT 
-            CURDATE() as reportDate,
+        SELECT
+            CURRENT_DATE as reportDate,
             'daily' as reportType,
             COALESCE(SUM(total_amount), 0) as totalPurchaseAmount,
             COUNT(*) as totalOrderCount,
             COALESCE(AVG(total_amount), 0) as avgOrderAmount,
             COALESCE(SUM(return_amount), 0) as returnAmount
-        FROM purchase_in 
-        WHERE DATE(create_time) = CURDATE() AND status = 'approved'
+        FROM purchase_in
+        WHERE create_time::date = CURRENT_DATE AND status = 1
     </select>
 
     <!-- 获取销售汇总列表 -->
     <select id="getSalesSummaryList" resultType="com.ims.report.dto.SalesReportDTO">
-        SELECT 
-            DATE(create_time) as reportDate,
+        SELECT
+            create_time::date as reportDate,
             'summary' as reportType,
             COALESCE(SUM(total_amount), 0) as totalSalesAmount,
             COUNT(*) as totalOrderCount,
             COALESCE(AVG(total_amount), 0) as avgOrderAmount
-        FROM sales_out 
-        WHERE status = 'approved'
+        FROM sales_out
+        WHERE status = 1
         <if test="startDate != null and endDate != null">
-            AND DATE(create_time) BETWEEN #{startDate} AND #{endDate}
+            AND create_time::date BETWEEN #{startDate} AND #{endDate}
         </if>
-        GROUP BY DATE(create_time)
+        GROUP BY create_time::date
         ORDER BY reportDate DESC
     </select>
 
     <!-- 获取采购汇总列表 -->
     <select id="getPurchaseSummaryList" resultType="com.ims.report.dto.PurchaseReportDTO">
-        SELECT 
-            DATE(create_time) as reportDate,
+        SELECT
+            create_time::date as reportDate,
             'summary' as reportType,
             COALESCE(SUM(total_amount), 0) as totalPurchaseAmount,
             COUNT(*) as totalOrderCount,
             COALESCE(AVG(total_amount), 0) as avgOrderAmount
-        FROM purchase_in 
-        WHERE status = 'approved'
+        FROM purchase_in
+        WHERE status = 1
         <if test="startDate != null and endDate != null">
-            AND DATE(create_time) BETWEEN #{startDate} AND #{endDate}
+            AND create_time::date BETWEEN #{startDate} AND #{endDate}
         </if>
-        GROUP BY DATE(create_time)
+        GROUP BY create_time::date
         ORDER BY reportDate DESC
     </select>
 
     <!-- 获取库存报表 -->
     <select id="getInventoryList" resultType="com.ims.report.dto.InventoryReportDTO">
-        SELECT 
+        SELECT
             i.id,
             i.product_id as productId,
-            p.product_name as productName,
-            p.product_code as productCode,
-            w.warehouse_name as warehouseName,
-            l.location_name as locationName,
+            i.product_name as productName,
+            i.product_code as productCode,
+            i.warehouse_name as warehouseName,
+            i.location_name as locationName,
             i.quantity,
-            i.min_quantity as minQuantity,
-            i.max_quantity as maxQuantity,
-            i.unit_price as unitPrice,
-            i.quantity * i.unit_price as totalAmount,
-            i.last_in_time as lastInTime,
-            i.last_out_time as lastOutTime
+            p.min_stock as minQuantity,
+            p.min_stock as maxQuantity,
+            i.cost as unitPrice,
+            i.quantity * i.cost as totalAmount,
+            i.production_date as lastInTime,
+            i.expiry_date as lastOutTime
         FROM inventory i
         LEFT JOIN product p ON i.product_id = p.id
-        LEFT JOIN warehouse w ON i.warehouse_id = w.id
-        LEFT JOIN location l ON i.location_id = l.id
         <where>
             <if test="warehouseId != null">
                 AND i.warehouse_id = #{warehouseId}
@@ -110,79 +108,76 @@
 
     <!-- 获取低库存预警 -->
     <select id="getLowStockList" resultType="com.ims.report.dto.InventoryReportDTO">
-        SELECT 
+        SELECT
             i.id,
             i.product_id as productId,
-            p.product_name as productName,
-            p.product_code as productCode,
-            w.warehouse_name as warehouseName,
+            i.product_name as productName,
+            i.product_code as productCode,
+            i.warehouse_name as warehouseName,
             i.quantity,
-            i.min_quantity as minQuantity,
-            i.unit_price as unitPrice
+            p.min_stock as minQuantity,
+            i.cost as unitPrice
         FROM inventory i
         LEFT JOIN product p ON i.product_id = p.id
-        LEFT JOIN warehouse w ON i.warehouse_id = w.id
-        WHERE i.quantity &lt;= i.min_quantity
+        WHERE i.quantity &lt;= p.min_stock
         ORDER BY i.quantity ASC
     </select>
 
-    <!-- 获取呆滞库存 -->
+    <!-- 获取呆滞库存 (使用 create_time 作为最后出入库时间) -->
     <select id="getIdleStockList" resultType="com.ims.report.dto.InventoryReportDTO">
-        SELECT 
+        SELECT
             i.id,
             i.product_id as productId,
-            p.product_name as productName,
-            p.product_code as productCode,
-            w.warehouse_name as warehouseName,
+            i.product_name as productName,
+            i.product_code as productCode,
+            i.warehouse_name as warehouseName,
             i.quantity,
-            i.unit_price as unitPrice,
-            DATEDIFF(CURDATE(), COALESCE(i.last_out_time, i.create_time)) as idleDays
+            i.cost as unitPrice,
+            CURRENT_DATE - i.create_time::date as idleDays
         FROM inventory i
-        LEFT JOIN product p ON i.product_id = p.id
-        LEFT JOIN warehouse w ON i.warehouse_id = w.id
-        WHERE i.quantity > 0 
-        AND DATEDIFF(CURDATE(), COALESCE(i.last_out_time, i.create_time)) &gt;= #{days}
+        WHERE i.quantity > 0
+        AND CURRENT_DATE - i.create_time::date &gt;= #{days}
         ORDER BY idleDays DESC
     </select>
 
     <!-- 获取销售趋势 -->
     <select id="getSalesTrendList" resultType="com.ims.report.dto.TrendDTO$TrendPointDTO">
-        SELECT 
-            DATE(create_time) as date,
+        SELECT
+            create_time::date as date,
             COALESCE(SUM(total_amount), 0) as amount,
             COUNT(*) as count
         FROM sales_out
-        WHERE status = 'approved'
+        WHERE status = 1
         <if test="startDate != null and endDate != null">
-            AND DATE(create_time) BETWEEN #{startDate} AND #{endDate}
+            AND create_time::date BETWEEN #{startDate} AND #{endDate}
         </if>
-        GROUP BY DATE(create_time)
+        GROUP BY create_time::date
         ORDER BY date ASC
     </select>
 
     <!-- 获取采购趋势 -->
     <select id="getPurchaseTrendList" resultType="com.ims.report.dto.TrendDTO$TrendPointDTO">
-        SELECT 
-            DATE(create_time) as date,
+        SELECT
+            create_time::date as date,
             COALESCE(SUM(total_amount), 0) as amount,
             COUNT(*) as count
         FROM purchase_in
-        WHERE status = 'approved'
+        WHERE status = 1
         <if test="startDate != null and endDate != null">
-            AND DATE(create_time) BETWEEN #{startDate} AND #{endDate}
+            AND create_time::date BETWEEN #{startDate} AND #{endDate}
         </if>
-        GROUP BY DATE(create_time)
+        GROUP BY create_time::date
         ORDER BY date ASC
     </select>
 
     <!-- 获取财务报表 -->
     <select id="getFinanceSummary" resultType="com.ims.report.dto.FinanceReportDTO">
         SELECT
-            CURDATE() as reportDate,
+            CURRENT_DATE as reportDate,
             'summary' as reportType,
-            (SELECT COALESCE(SUM(amount), 0) FROM finance_income WHERE status = 'approved') as totalIncome,
-            (SELECT COALESCE(SUM(amount), 0) FROM finance_expense WHERE status = 'approved') as totalExpense,
-            (SELECT COALESCE(SUM(balance), 0) FROM finance_account WHERE status = 'active') as accountCount
+            (SELECT COALESCE(SUM(amount), 0) FROM finance_in WHERE status = 1) as totalIncome,
+            (SELECT COALESCE(SUM(amount), 0) FROM finance_out WHERE status = 1) as totalExpense,
+            (SELECT COUNT(*) FROM account WHERE status = 1) as accountCount
     </select>
 
     <!-- 获取客户分析汇总 -->
@@ -202,9 +197,9 @@
             END as paymentRate,
             c.customer_level as customerLevel
         FROM customer c
-        LEFT JOIN sales_out so ON c.id = so.customer_id AND so.status = 'approved'
+        LEFT JOIN sales_out so ON c.id = so.customer_id AND so.status = 1
         <if test="startDate != null and endDate != null">
-            AND DATE(so.create_time) BETWEEN #{startDate} AND #{endDate}
+            AND so.create_time::date BETWEEN #{startDate} AND #{endDate}
         </if>
         GROUP BY c.id, c.customer_name, c.customer_level
         ORDER BY totalSalesAmount DESC
@@ -224,7 +219,7 @@
             100 as paymentRate,
             c.customer_level as customerLevel
         FROM customer c
-        LEFT JOIN sales_out so ON c.id = so.customer_id AND so.status = 'approved'
+        LEFT JOIN sales_out so ON c.id = so.customer_id AND so.status = 1
         WHERE c.id = #{customerId}
         GROUP BY c.id, c.customer_name, c.customer_level
     </select>
@@ -240,7 +235,7 @@
             COALESCE(SUM(pid.quantity), 0) as purchaseQuantity,
             COALESCE(SUM(pid.quantity * pid.unit_price), 0) as purchaseAmount,
             COALESCE(SUM(i.quantity), 0) as stockQuantity,
-            COALESCE(SUM(i.quantity * i.unit_price), 0) as stockAmount,
+            COALESCE(SUM(i.quantity * i.cost), 0) as stockAmount,
             COALESCE(SUM(sod.quantity * sod.unit_price), 0) - COALESCE(SUM(pid.quantity * pid.unit_price), 0) as profit,
             CASE
                 WHEN COALESCE(SUM(sod.quantity * sod.unit_price), 0) > 0
@@ -254,7 +249,7 @@
         LEFT JOIN product_category pc ON p.category_id = pc.id
         LEFT JOIN inventory i ON p.id = i.product_id
         <if test="startDate != null and endDate != null">
-            WHERE DATE(sod.create_time) BETWEEN #{startDate} AND #{endDate}
+            WHERE sod.create_time::date BETWEEN #{startDate} AND #{endDate}
         </if>
         GROUP BY p.id, p.product_name, pc.category_name
         ORDER BY salesAmount DESC
@@ -277,9 +272,9 @@
             END as paymentRate,
             s.supplier_level as supplierLevel
         FROM supplier s
-        LEFT JOIN purchase_in pi ON s.id = pi.supplier_id AND pi.status = 'approved'
+        LEFT JOIN purchase_in pi ON s.id = pi.supplier_id AND pi.status = 1
         <if test="startDate != null and endDate != null">
-            AND DATE(pi.create_time) BETWEEN #{startDate} AND #{endDate}
+            AND pi.create_time::date BETWEEN #{startDate} AND #{endDate}
         </if>
         GROUP BY s.id, s.supplier_name, s.supplier_level
         ORDER BY totalPurchaseAmount DESC
@@ -299,7 +294,7 @@
             100 as paymentRate,
             s.supplier_level as supplierLevel
         FROM supplier s
-        LEFT JOIN purchase_in pi ON s.id = pi.supplier_id AND pi.status = 'approved'
+        LEFT JOIN purchase_in pi ON s.id = pi.supplier_id AND pi.status = 1
         WHERE s.id = #{supplierId}
         GROUP BY s.id, s.supplier_name, s.supplier_level
     </select>

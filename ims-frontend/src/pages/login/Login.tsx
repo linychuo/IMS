@@ -3,7 +3,7 @@ import { Form, Input, Button, Card, message } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
-import { systemApi } from '../../api';
+import { systemApi, authApi } from '../../api';
 
 const Login: React.FC = () => {
   const [loading, setLoading] = useState(false);
@@ -13,7 +13,7 @@ const Login: React.FC = () => {
   const onFinish = async (values: { username: string; password: string }) => {
     setLoading(true);
     try {
-      const res = await systemApi.post('/auth/login', values);
+      const res = await authApi.post('/auth/login', values);
       if (res.data.code === 200) {
         const data = res.data.data;
         setAuth({
