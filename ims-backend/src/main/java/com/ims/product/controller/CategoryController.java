@@ -11,7 +11,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/category")
-@Permission(code = "product:category", name = "商品管理")
+@Permission(code = "product:category", name = "商品分类")
 public class CategoryController {
 
     @Autowired
