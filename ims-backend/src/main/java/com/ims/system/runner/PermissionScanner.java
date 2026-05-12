@@ -211,7 +211,7 @@ public class PermissionScanner implements ApplicationListener<ContextRefreshedEv
 
         SysPermission menu = new SysPermission();
         menu.setPermissionCode(topLevelCode);
-        menu.setPermissionName(topLevelCode); // 用code作为名称
+        menu.setPermissionName(classInfo.name.isEmpty() ? topLevelCode : classInfo.name);
         menu.setPermissionType("menu");
         menu.setStatus(1);
         menu.setDeleted(0);
