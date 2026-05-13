@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Tag, message } from 'antd';
-import { warehouseApi } from '../../api';
+import { financeApi } from '../../api';
 
 interface Payable {
   id: number;
@@ -28,7 +28,7 @@ const PayablePage: React.FC = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const res = await warehouseApi.get('/finance/payable/page', {
+      const res = await financeApi.get('/finance/payable/page', {
         params: { page: pagination.current, pageSize: pagination.size },
       });
       if (res.data.code === 200) {

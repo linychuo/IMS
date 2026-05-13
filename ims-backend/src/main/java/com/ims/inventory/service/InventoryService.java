@@ -12,6 +12,16 @@ import java.util.List;
 public interface InventoryService extends IService<Inventory> {
 
     /**
+     * 分页查询库存
+     */
+    List<Inventory> selectPage(Long productId, Long warehouseId, Long pageSize, Long offset);
+
+    /**
+     * 查询库存总数
+     */
+    long selectCount(Long productId, Long warehouseId);
+
+    /**
      * 增加库存
      */
     boolean addStock(Long productId, Long warehouseId, Long locationId,

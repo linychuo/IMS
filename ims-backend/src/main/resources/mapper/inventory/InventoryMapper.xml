@@ -6,26 +6,51 @@
         <id column="id" property="id"/>
         <result column="product_id" property="productId"/>
         <result column="warehouse_id" property="warehouseId"/>
+        <result column="location_id" property="locationId"/>
         <result column="quantity" property="quantity"/>
-        <result column="reserved_quantity" property="reservedQuantity"/>
-        <result column="available_quantity" property="availableQuantity"/>
+        <result column="frozen_quantity" property="frozenQuantity"/>
+        <result column="cost" property="cost"/>
         <result column="batch_no" property="batchNo"/>
         <result column="production_date" property="productionDate"/>
-        <result column="expire_date" property="expireDate"/>
-        <result column="unit_price" property="unitPrice"/>
-        <result column="total_amount" property="totalAmount"/>
-        <result column="created_by" property="createdBy"/>
-        <result column="created_at" property="createdAt"/>
-        <result column="updated_by" property="updatedBy"/>
-        <result column="updated_at" property="updatedAt"/>
+        <result column="expiry_date" property="expiryDate"/>
+        <result column="product_name" property="productName"/>
+        <result column="product_code" property="productCode"/>
+        <result column="warehouse_name" property="warehouseName"/>
+        <result column="location_name" property="locationName"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
         <result column="deleted" property="deleted"/>
     </resultMap>
 
     <sql id="baseColumns">
-        id, product_id, warehouse_id, quantity, reserved_quantity, available_quantity,
-        batch_no, production_date, expire_date, unit_price, total_amount,
-        created_by, created_at, updated_by, updated_at, deleted
+        id, product_id, warehouse_id, location_id, quantity, frozen_quantity, cost,
+        batch_no, production_date, expiry_date, product_name, product_code,
+        warehouse_name, location_name, create_time, update_time, deleted
     </sql>
+
+    <select id="selectPage" resultMap="BaseResultMap">
+        SELECT <include refid="baseColumns"/>
+        FROM inventory
+        WHERE deleted = 0
+        <if test="productId != null">
+            AND product_id = #{productId}
+        </if>
+        <if test="warehouseId != null">
+            AND warehouse_id = #{warehouseId}
+        </if>
+        ORDER BY id DESC
+        LIMIT #{pageSize} OFFSET #{offset}
+    </select>
+
+    <select id="selectCount" resultType="long">
+        SELECT COUNT(*) FROM inventory WHERE deleted = 0
+        <if test="productId != null">
+            AND product_id = #{productId}
+        </if>
+        <if test="warehouseId != null">
+            AND warehouse_id = #{warehouseId}
+        </if>
+    </select>
 
     <select id="selectById" resultMap="BaseResultMap">
         SELECT <include refid="baseColumns"/>
@@ -43,7 +68,7 @@
         <if test="warehouseId != null">
             AND warehouse_id = #{warehouseId}
         </if>
-        ORDER BY created_at DESC
+        ORDER BY create_time DESC
     </select>
 
     <select id="selectByProductId" resultMap="BaseResultMap">
@@ -67,13 +92,13 @@
 
     <insert id="insert" parameterType="com.ims.inventory.entity.Inventory">
         INSERT INTO inventory (
-            id, product_id, warehouse_id, quantity, reserved_quantity, available_quantity,
-            batch_no, production_date, expire_date, unit_price, total_amount,
-            created_by, created_at, deleted
+            id, product_id, warehouse_id, location_id, quantity, frozen_quantity, cost,
+            batch_no, production_date, expiry_date, product_name, product_code,
+            warehouse_name, location_name, create_time, deleted
         ) VALUES (
-            #{id}, #{productId}, #{warehouseId}, #{quantity}, #{reservedQuantity}, #{availableQuantity},
-            #{batchNo}, #{productionDate}, #{expireDate}, #{unitPrice}, #{totalAmount},
-            #{createdBy}, #{createdAt}, 0
+            #{id}, #{productId}, #{warehouseId}, #{locationId}, #{quantity}, #{frozenQuantity}, #{cost},
+            #{batchNo}, #{productionDate}, #{expiryDate}, #{productName}, #{productCode},
+            #{warehouseName}, #{locationName}, #{createTime}, 0
         )
     </insert>
 
@@ -81,12 +106,10 @@
         UPDATE inventory
         <set>
             <if test="quantity != null">quantity = #{quantity},</if>
-            <if test="reservedQuantity != null">reserved_quantity = #{reservedQuantity},</if>
-            <if test="availableQuantity != null">available_quantity = #{availableQuantity},</if>
-            <if test="unitPrice != null">unit_price = #{unitPrice},</if>
-            <if test="totalAmount != null">total_amount = #{totalAmount},</if>
-            <if test="updatedBy != null">updated_by = #{updatedBy},</if>
-            <if test="updatedAt != null">updated_at = #{updatedAt},</if>
+            <if test="frozenQuantity != null">frozen_quantity = #{frozenQuantity},</if>
+            <if test="cost != null">cost = #{cost},</if>
+            <if test="batchNo != null">batch_no = #{batchNo},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
         </set>
         WHERE id = #{id} AND deleted = 0
     </update>

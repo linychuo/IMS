@@ -1,7 +1,5 @@
 package com.ims.inventory.controller;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.ims.core.result.PageResult;
 import com.ims.core.result.Result;
 import com.ims.inventory.entity.Inventory;
@@ -35,14 +33,10 @@ public class InventoryController {
             @RequestParam(required = false) Long productId,
             @RequestParam(required = false) Long warehouseId) {
 
-        LambdaQueryWrapper<Inventory> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(productId != null, Inventory::getProductId, productId)
-               .eq(warehouseId != null, Inventory::getWarehouseId, warehouseId)
-               .orderByDesc(Inventory::getId);
-
-        Page<Inventory> result = inventoryService.page(new Page<>(page, pageSize), wrapper);
-
-        return Result.success(PageResult.of(result));
+        Long offset = (page - 1) * pageSize;
+        List<Inventory> records = inventoryService.selectPage(productId, warehouseId, pageSize, offset);
+        long total = inventoryService.selectCount(productId, warehouseId);
+        return Result.success(PageResult.build(records, total, page, pageSize));
     }
 
     /**

@@ -28,7 +28,7 @@ const { TabPane } = Tabs;
 // ============ 分类 ============
 interface Category {
   id?: number;
-  name: string;
+  categoryName: string;
   parentId?: number;
   sort?: number;
   status: number;
@@ -265,7 +265,7 @@ const ProductPage: React.FC = () => {
   ];
 
   const categoryColumns = [
-    { title: '分类名称', dataIndex: 'name', key: 'name', width: 200 },
+    { title: '分类名称', dataIndex: 'categoryName', key: 'categoryName', width: 200 },
     { title: '排序', dataIndex: 'sort', key: 'sort', width: 80 },
     { title: '状态', dataIndex: 'status', key: 'status', width: 80, render: (status: number) => <Tag color={status === 1 ? 'green' : 'red'}>{status === 1 ? '启用' : '禁用'}</Tag> },
     { title: '备注', dataIndex: 'remark', key: 'remark', ellipsis: true },
@@ -396,7 +396,7 @@ const ProductPage: React.FC = () => {
         width={500}
       >
         <Form form={categoryForm} layout="vertical">
-          <Form.Item name="name" label="分类名称" rules={[{ required: true, message: '请输入分类名称' }]}>
+          <Form.Item name="categoryName" label="分类名称" rules={[{ required: true, message: '请输入分类名称' }]}>
             <Input placeholder="请输入分类名称" />
           </Form.Item>
           <Space style={{ width: '100%' }} size="large">

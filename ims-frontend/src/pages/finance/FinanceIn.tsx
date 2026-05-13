@@ -13,7 +13,7 @@ import {
   Tag,
 } from 'antd';
 import { PlusOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
-import { warehouseApi, customerApi } from '../../api';
+import { financeApi, customerApi } from '../../api';
 
 interface FinanceIn {
   id: number;
@@ -60,7 +60,7 @@ const FinanceInPage: React.FC = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const res = await warehouseApi.get('/finance/in/page', {
+      const res = await financeApi.get('/finance/in/page', {
         params: { page: pagination.current, pageSize: pagination.size },
       });
       if (res.data.code === 200) {
@@ -83,7 +83,7 @@ const FinanceInPage: React.FC = () => {
 
   const handleAudit = async (id: number) => {
     try {
-      await warehouseApi.put(`/finance/in/audit/${id}`);
+      await financeApi.put(`/finance/in/audit/${id}`);
       message.success('审核成功');
       fetchData();
     } catch (error) {
@@ -93,7 +93,7 @@ const FinanceInPage: React.FC = () => {
 
   const handleCancel = async (id: number) => {
     try {
-      await warehouseApi.put(`/finance/in/cancel/${id}`);
+      await financeApi.put(`/finance/in/cancel/${id}`);
       message.success('取消成功');
       fetchData();
     } catch (error) {
@@ -105,10 +105,10 @@ const FinanceInPage: React.FC = () => {
     try {
       const values = await form.validateFields();
       if (editingRecord?.id) {
-        await warehouseApi.put(`/finance/in/${editingRecord.id}`, values);
+        await financeApi.put(`/finance/in/${editingRecord.id}`, values);
         message.success('修改成功');
       } else {
-        await warehouseApi.post('/finance/in', values);
+        await financeApi.post('/finance/in', values);
         message.success('新增成功');
       }
       setModalVisible(false);

@@ -13,7 +13,7 @@ import {
   Descriptions,
 } from 'antd';
 import { PlusOutlined, SearchOutlined, CheckCircleOutlined, CloseCircleOutlined, EyeOutlined } from '@ant-design/icons';
-import { warehouseApi } from '../../api';
+import { inventoryApi, warehouseApi } from '../../api';
 
 interface InventoryIn {
   id: number;
@@ -43,7 +43,7 @@ const InventoryInPage: React.FC = () => {
 
   const fetchWarehouses = async () => {
     try {
-      const res = await warehouseApi.get('/warehouse/list');
+      const res = await inventoryApi.get('/warehouse/list');
       if (res.data.code === 200) {
         setWarehouseList(res.data.data || []);
       }
@@ -55,7 +55,7 @@ const InventoryInPage: React.FC = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const res = await warehouseApi.get('/inventory/in/page', {
+      const res = await inventoryApi.get('/inventory/in/page', {
         params: { page: pagination.current, pageSize: pagination.size },
       });
       if (res.data.code === 200) {
@@ -72,7 +72,7 @@ const InventoryInPage: React.FC = () => {
 
   const handleView = async (record: InventoryIn) => {
     try {
-      const res = await warehouseApi.get(`/inventory/in/${record.id}`);
+      const res = await inventoryApi.get(`/inventory/in/${record.id}`);
       if (res.data) {
         setEditingRecord(res.data);
         setModalVisible(true);
@@ -84,7 +84,7 @@ const InventoryInPage: React.FC = () => {
 
   const handleAudit = async (id: number) => {
     try {
-      await warehouseApi.post(`/inventory/in/${id}/audit`);
+      await inventoryApi.post(`/inventory/in/${id}/audit`);
       message.success('审核成功');
       fetchData();
     } catch (error) {
@@ -94,7 +94,7 @@ const InventoryInPage: React.FC = () => {
 
   const handleCancel = async (id: number) => {
     try {
-      await warehouseApi.post(`/inventory/in/${id}/cancel`);
+      await inventoryApi.post(`/inventory/in/${id}/cancel`);
       message.success('取消成功');
       fetchData();
     } catch (error) {
@@ -105,7 +105,7 @@ const InventoryInPage: React.FC = () => {
   const handleModalOk = async () => {
     try {
       const values = await form.validateFields();
-      await warehouseApi.post('/inventory/in', values);
+      await inventoryApi.post('/inventory/in', values);
       message.success('新增成功');
       setModalVisible(false);
       fetchData();

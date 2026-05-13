@@ -5,61 +5,50 @@
     <resultMap id="BaseResultMap" type="com.ims.sales.entity.SalesOutDetail">
         <id column="id" property="id"/>
         <result column="out_id" property="outId"/>
-        <result column="out_no" property="outNo"/>
         <result column="order_detail_id" property="orderDetailId"/>
         <result column="product_id" property="productId"/>
-        <result column="warehouse_id" property="warehouseId"/>
-        <result column="location_id" property="locationId"/>
         <result column="product_name" property="productName"/>
         <result column="spec" property="spec"/>
         <result column="unit" property="unit"/>
         <result column="quantity" property="quantity"/>
         <result column="price" property="price"/>
         <result column="amount" property="amount"/>
-        <result column="created_at" property="createdAt"/>
+        <result column="create_time" property="createTime"/>
     </resultMap>
 
     <sql id="baseColumns">
-        id, out_id, out_no, order_detail_id, product_id, warehouse_id, location_id, product_name, spec, unit, quantity, price, amount, created_at
+        id, out_id, order_detail_id, product_id, product_name, spec, unit, quantity, price, amount, create_time
     </sql>
 
     <select id="selectById" resultMap="BaseResultMap">
         SELECT <include refid="baseColumns"/>
         FROM sales_out_detail
-        WHERE id = #{id}
+        WHERE id = #{id} AND deleted = 0
     </select>
 
     <select id="selectByOutId" resultMap="BaseResultMap">
         SELECT <include refid="baseColumns"/>
         FROM sales_out_detail
-        WHERE out_id = #{outId}
+        WHERE out_id = #{outId} AND deleted = 0
     </select>
 
     <select id="selectByOutNo" resultMap="BaseResultMap">
-        SELECT <include refid="baseColumns"/>
-        FROM sales_out_detail
-        WHERE out_no = #{outNo}
+        SELECT d.* FROM sales_out_detail d
+        JOIN sales_out o ON d.out_id = o.id
+        WHERE o.out_no = #{outNo} AND d.deleted = 0
     </select>
-
-    <insert id="insert" parameterType="com.ims.sales.entity.SalesOutDetail">
-        INSERT INTO sales_out_detail (
-            id, out_id, out_no, order_detail_id, product_id, warehouse_id, location_id, product_name, spec, unit, quantity, price, amount, created_at
-        ) VALUES (
-            #{id}, #{outId}, #{outNo}, #{orderDetailId}, #{productId}, #{warehouseId}, #{locationId}, #{productName}, #{spec}, #{unit}, #{quantity}, #{price}, #{amount}, #{createdAt}
-        )
-    </insert>
 
     <insert id="batchInsert" parameterType="list">
         INSERT INTO sales_out_detail (
-            id, out_id, out_no, order_detail_id, product_id, warehouse_id, location_id, product_name, spec, unit, quantity, price, amount, created_at
+            id, out_id, order_detail_id, product_id, product_name, spec, unit, quantity, price, amount, deleted
         ) VALUES
         <foreach collection="list" item="item" separator=",">
-            (#{item.id}, #{item.outId}, #{item.outNo}, #{item.orderDetailId}, #{item.productId}, #{item.warehouseId}, #{item.locationId}, #{item.productName}, #{item.spec}, #{item.unit}, #{item.quantity}, #{item.price}, #{item.amount}, #{item.createdAt})
+            (#{item.id}, #{item.outId}, #{item.orderDetailId}, #{item.productId}, #{item.productName}, #{item.spec}, #{item.unit}, #{item.quantity}, #{item.price}, #{item.amount}, 0)
         </foreach>
     </insert>
 
     <delete id="deleteByOutId">
-        DELETE FROM sales_out_detail WHERE out_id = #{outId}
+        UPDATE sales_out_detail SET deleted = 1 WHERE out_id = #{outId}
     </delete>
 
 </mapper>

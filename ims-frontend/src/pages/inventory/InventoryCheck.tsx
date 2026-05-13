@@ -13,7 +13,7 @@ import {
   Descriptions,
 } from 'antd';
 import { PlusOutlined, EyeOutlined } from '@ant-design/icons';
-import { warehouseApi } from '../../api';
+import { inventoryApi, warehouseApi } from '../../api';
 
 interface InventoryCheck {
   id: number;
@@ -43,7 +43,7 @@ const InventoryCheckPage: React.FC = () => {
 
   const fetchWarehouses = async () => {
     try {
-      const res = await warehouseApi.get('/warehouse/list');
+      const res = await inventoryApi.get('/warehouse/list');
       if (res.data.code === 200) {
         setWarehouseList(res.data.data || []);
       }
@@ -55,7 +55,7 @@ const InventoryCheckPage: React.FC = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const res = await warehouseApi.get('/inventory/check/page', {
+      const res = await inventoryApi.get('/inventory/check/page', {
         params: { page: pagination.current, pageSize: pagination.size },
       });
       if (res.data.code === 200) {
@@ -72,7 +72,7 @@ const InventoryCheckPage: React.FC = () => {
 
   const handleView = async (record: InventoryCheck) => {
     try {
-      const res = await warehouseApi.get(`/inventory/check/${record.id}`);
+      const res = await inventoryApi.get(`/inventory/check/${record.id}`);
       if (res.data) {
         setEditingRecord(res.data);
         setModalVisible(true);
@@ -84,7 +84,7 @@ const InventoryCheckPage: React.FC = () => {
 
   const handleStart = async (id: number) => {
     try {
-      await warehouseApi.put(`/inventory/check/${id}/start`);
+      await inventoryApi.put(`/inventory/check/${id}/start`);
       message.success('开始盘点成功');
       fetchData();
     } catch (error) {
@@ -94,7 +94,7 @@ const InventoryCheckPage: React.FC = () => {
 
   const handleFinish = async (id: number) => {
     try {
-      await warehouseApi.put(`/inventory/check/${id}/finish`);
+      await inventoryApi.put(`/inventory/check/${id}/finish`);
       message.success('完成盘点成功');
       fetchData();
     } catch (error) {
@@ -104,7 +104,7 @@ const InventoryCheckPage: React.FC = () => {
 
   const handleCancel = async (id: number) => {
     try {
-      await warehouseApi.put(`/inventory/check/${id}/cancel`, null, { params: { reason: '用户取消' } });
+      await inventoryApi.put(`/inventory/check/${id}/cancel`, null, { params: { reason: '用户取消' } });
       message.success('取消成功');
       fetchData();
     } catch (error) {
@@ -115,7 +115,7 @@ const InventoryCheckPage: React.FC = () => {
   const handleModalOk = async () => {
     try {
       const values = await form.validateFields();
-      await warehouseApi.post('/inventory/check', values);
+      await inventoryApi.post('/inventory/check', values);
       message.success('新增成功');
       setModalVisible(false);
       fetchData();

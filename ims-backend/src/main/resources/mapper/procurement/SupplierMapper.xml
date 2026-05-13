@@ -9,10 +9,6 @@
         <result column="contact" property="contact"/>
         <result column="phone" property="phone"/>
         <result column="address" property="address"/>
-        <result column="email" property="email"/>
-        <result column="credit_level" property="creditLevel"/>
-        <result column="payable_amount" property="payableAmount"/>
-        <result column="paid_amount" property="paidAmount"/>
         <result column="status" property="status"/>
         <result column="remark" property="remark"/>
         <result column="create_time" property="createTime"/>
@@ -36,10 +32,10 @@
     </select>
 
     <insert id="insert">
-        INSERT INTO supplier (id, supplier_code, supplier_name, contact, phone, address, email,
-            credit_level, payable_amount, paid_amount, status, remark, create_time, deleted)
-        VALUES (#{id}, #{supplierCode}, #{supplierName}, #{contact}, #{phone}, #{address}, #{email},
-            #{creditLevel}, #{payableAmount}, #{paidAmount}, #{status}, #{remark}, #{createTime}, 0)
+        INSERT INTO supplier (supplier_code, supplier_name, contact, phone, address,
+            status, remark, create_time, deleted)
+        VALUES (#{supplierCode}, #{supplierName}, #{contact}, #{phone}, #{address},
+            #{status}, #{remark}, #{createTime}, 0)
     </insert>
 
     <update id="update">
@@ -49,10 +45,6 @@
             contact = #{contact},
             phone = #{phone},
             address = #{address},
-            email = #{email},
-            credit_level = #{creditLevel},
-            payable_amount = #{payableAmount},
-            paid_amount = #{paidAmount},
             status = #{status},
             remark = #{remark},
             update_time = #{updateTime}

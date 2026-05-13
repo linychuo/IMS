@@ -14,19 +14,17 @@
         <result column="discount_amount" property="discountAmount"/>
         <result column="net_amount" property="netAmount"/>
         <result column="remark" property="remark"/>
-        <result column="created_by" property="createdBy"/>
-        <result column="created_at" property="createTime"/>
-        <result column="updated_by" property="updatedBy"/>
-        <result column="updated_at" property="updateTime"/>
         <result column="audited_by" property="auditedBy"/>
         <result column="audited_at" property="auditedAt"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
         <result column="deleted" property="deleted"/>
     </resultMap>
 
     <sql id="baseColumns">
         id, order_no, customer_id, customer_name, order_date, expected_date, status,
         total_amount, discount_amount, net_amount, remark,
-        created_by, created_at, updated_by, updated_at, audited_by, audited_at, deleted
+        audited_by, audited_at, create_time, update_time, deleted
     </sql>
 
     <select id="selectById" resultMap="BaseResultMap">
@@ -45,14 +43,14 @@
         SELECT <include refid="baseColumns"/>
         FROM sales_order
         WHERE deleted = 0
-        <if test="query.customerId != null">
-            AND customer_id = #{query.customerId}
+        <if test="customerId != null">
+            AND customer_id = #{customerId}
         </if>
-        <if test="query.status != null">
-            AND status = #{query.status}
+        <if test="status != null">
+            AND status = #{status}
         </if>
-        <if test="query.orderNo != null">
-            AND order_no LIKE CONCAT('%', #{query.orderNo}, '%')
+        <if test="orderNo != null">
+            AND order_no LIKE CONCAT('%', #{orderNo}, '%')
         </if>
         ORDER BY create_time DESC
     </select>
@@ -61,11 +59,11 @@
         INSERT INTO sales_order (
             order_no, customer_id, customer_name, order_date, expected_date, status,
             total_amount, discount_amount, net_amount, remark,
-            created_by, deleted
+            create_time, deleted
         ) VALUES (
             #{orderNo}, #{customerId}, #{customerName}, #{orderDate}, #{expectedDate}, #{status},
             #{totalAmount}, #{discountAmount}, #{netAmount}, #{remark},
-            #{createdBy}, 0
+            #{createTime}, 0
         )
     </insert>
 
@@ -80,9 +78,9 @@
             <if test="discountAmount != null">discount_amount = #{discountAmount},</if>
             <if test="netAmount != null">net_amount = #{netAmount},</if>
             <if test="remark != null">remark = #{remark},</if>
-            <if test="updatedBy != null">updated_by = #{updatedBy},</if>
             <if test="auditedBy != null">audited_by = #{auditedBy},</if>
             <if test="auditedAt != null">audited_at = #{auditedAt},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
         </set>
         WHERE id = #{id} AND deleted = 0
     </update>

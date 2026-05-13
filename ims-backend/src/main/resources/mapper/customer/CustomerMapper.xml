@@ -6,7 +6,7 @@
         <id column="id" property="id"/>
         <result column="customer_code" property="code"/>
         <result column="customer_name" property="name"/>
-        <result column="type" property="type"/>
+        <result column="customer_type" property="type"/>
         <result column="contact" property="contact"/>
         <result column="phone" property="phone"/>
         <result column="mobile" property="mobile"/>
@@ -21,12 +21,13 @@
         <result column="tax_no" property="taxNo"/>
         <result column="status" property="status"/>
         <result column="remark" property="remark"/>
-        <result column="created_at" property="createTime"/>
-        <result column="updated_at" property="updateTime"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="deleted" property="deleted"/>
     </resultMap>
 
     <sql id="Base_Column_List">
-        id, customer_code, customer_name, type, contact, phone, mobile, email, address, level, credit_limit, receivable_amount, settle_period, bank_name, bank_account, tax_no, status, remark, created_at, updated_at
+        id, customer_code, customer_name, customer_type, contact, phone, mobile, email, address, level, credit_limit, receivable_amount, settle_period, bank_name, bank_account, tax_no, status, remark, create_time, update_time, deleted
     </sql>
 
     <select id="selectByCode" resultMap="BaseResultMap">
@@ -34,7 +35,7 @@
     </select>
 
     <select id="selectActiveList" resultMap="BaseResultMap">
-        SELECT <include refid="Base_Column_List"/> FROM customer WHERE status = 0 ORDER BY customer_name ASC
+        SELECT <include refid="Base_Column_List"/> FROM customer WHERE status = 1 AND deleted = 0 ORDER BY customer_name ASC
     </select>
 
 </mapper>

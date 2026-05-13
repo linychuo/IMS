@@ -108,4 +108,10 @@ public class Supplier extends BaseEntity {
     public void setRemark(String remark) {
         this.remark = remark;
     }
+
+    // 前端兼容别名
+    public String getCode() { return supplierCode; }
+    public void setCode(String code) { this.supplierCode = code; }
+    public String getName() { return supplierName; }
+    public void setName(String name) { this.supplierName = name; }
 }

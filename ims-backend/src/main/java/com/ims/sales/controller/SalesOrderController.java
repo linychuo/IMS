@@ -1,5 +1,6 @@
 package com.ims.sales.controller;
 
+import com.ims.core.result.Result;
 import com.ims.sales.dto.SalesOrderRequest;
 import com.ims.sales.entity.SalesOrder;
 import com.ims.sales.entity.SalesOrderDetail;
@@ -8,7 +9,6 @@ import com.ims.system.annotation.Permission;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -34,8 +34,8 @@ public class SalesOrderController {
      */
     @PostMapping
     @Permission(code = "create", name = "创建销售订单")
-    public ResponseEntity<SalesOrder> create(@RequestBody SalesOrderRequest request) {
-        return ResponseEntity.ok(salesOrderService.create(request.getSalesOrder(), request.getDetails()));
+    public Result<SalesOrder> create(@RequestBody SalesOrderRequest request) {
+        return Result.success(salesOrderService.create(request.getSalesOrder(), request.getDetails()));
     }
 
     /**
@@ -43,9 +43,9 @@ public class SalesOrderController {
      */
     @PutMapping("/{id}")
     @Permission(code = "update", name = "更新销售订单")
-    public ResponseEntity<SalesOrder> update(@PathVariable Long id,
+    public Result<SalesOrder> update(@PathVariable Long id,
                                               @RequestBody SalesOrderRequest request) {
-        return ResponseEntity.ok(salesOrderService.update(id, request.getSalesOrder(), request.getDetails()));
+        return Result.success(salesOrderService.update(id, request.getSalesOrder(), request.getDetails()));
     }
 
     /**
@@ -53,10 +53,11 @@ public class SalesOrderController {
      */
     @PostMapping("/{id}/approve")
     @Permission(code = "audit", name = "审核销售订单")
-    public ResponseEntity<Void> approve(@PathVariable Long id,
-                                         @RequestParam String userId) {
-        salesOrderService.approve(id, userId);
-        return ResponseEntity.ok().build();
+    public Result<Void> approve(@PathVariable Long id,
+                                         @RequestHeader(value = "X-User-Id", required = false) Long userId) {
+        String userIdStr = userId != null ? String.valueOf(userId) : "system";
+        salesOrderService.approve(id, userIdStr);
+        return Result.success(null);
     }
 
     /**
@@ -64,10 +65,10 @@ public class SalesOrderController {
      */
     @PostMapping("/{id}/cancel")
     @Permission(code = "cancel", name = "取消销售订单")
-    public ResponseEntity<Void> cancel(@PathVariable Long id,
-                                       @RequestParam String reason) {
-        salesOrderService.cancel(id, reason);
-        return ResponseEntity.ok().build();
+    public Result<Void> cancel(@PathVariable Long id,
+                                       @RequestParam(required = false) String reason) {
+        salesOrderService.cancel(id, reason != null ? reason : "用户取消");
+        return Result.success(null);
     }
 
     /**
@@ -75,8 +76,8 @@ public class SalesOrderController {
      */
     @GetMapping("/{id}")
     @Permission(code = "read", name = "查看销售订单")
-    public ResponseEntity<SalesOrder> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(salesOrderService.getById(id));
+    public Result<SalesOrder> getById(@PathVariable Long id) {
+        return Result.success(salesOrderService.getById(id));
     }
 
     /**
@@ -84,8 +85,8 @@ public class SalesOrderController {
      */
     @GetMapping("/no/{orderNo}")
     @Permission(code = "read", name = "查看销售订单")
-    public ResponseEntity<SalesOrder> getByOrderNo(@PathVariable String orderNo) {
-        return ResponseEntity.ok(salesOrderService.getByOrderNo(orderNo));
+    public Result<SalesOrder> getByOrderNo(@PathVariable String orderNo) {
+        return Result.success(salesOrderService.getByOrderNo(orderNo));
     }
 
     /**
@@ -93,8 +94,8 @@ public class SalesOrderController {
      */
     @GetMapping("/{id}/details")
     @Permission(code = "read", name = "查看销售订单")
-    public ResponseEntity<List<SalesOrderDetail>> getDetails(@PathVariable Long id) {
-        return ResponseEntity.ok(salesOrderService.getDetails(id));
+    public Result<List<SalesOrderDetail>> getDetails(@PathVariable Long id) {
+        return Result.success(salesOrderService.getDetails(id));
     }
 
     /**
@@ -102,7 +103,7 @@ public class SalesOrderController {
      */
     @GetMapping("/list")
     @Permission(code = "read", name = "查看销售订单")
-    public ResponseEntity<List<SalesOrder>> list(@ModelAttribute SalesOrder query) {
-        return ResponseEntity.ok(salesOrderService.list(query));
+    public Result<List<SalesOrder>> list(@ModelAttribute SalesOrder query) {
+        return Result.success(salesOrderService.list(query));
     }
 }

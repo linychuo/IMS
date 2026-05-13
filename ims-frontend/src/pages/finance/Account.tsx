@@ -12,7 +12,7 @@ import {
   Tag,
 } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
-import { warehouseApi } from '../../api';
+import { financeApi } from '../../api';
 
 interface Account {
   id: number;
@@ -40,7 +40,7 @@ const AccountPage: React.FC = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const res = await warehouseApi.get('/finance/account/page', {
+      const res = await financeApi.get('/finance/account/page', {
         params: { page: pagination.current, pageSize: pagination.size },
       });
       if (res.data.code === 200) {
@@ -69,7 +69,7 @@ const AccountPage: React.FC = () => {
 
   const handleEnable = async (id: number) => {
     try {
-      await warehouseApi.put(`/finance/account/enable/${id}`);
+      await financeApi.put(`/finance/account/enable/${id}`);
       message.success('启用成功');
       fetchData();
     } catch (error) {
@@ -79,7 +79,7 @@ const AccountPage: React.FC = () => {
 
   const handleDisable = async (id: number) => {
     try {
-      await warehouseApi.put(`/finance/account/disable/${id}`);
+      await financeApi.put(`/finance/account/disable/${id}`);
       message.success('停用成功');
       fetchData();
     } catch (error) {
@@ -89,7 +89,7 @@ const AccountPage: React.FC = () => {
 
   const handleDelete = async (id: number) => {
     try {
-      await warehouseApi.delete(`/finance/account/${id}`);
+      await financeApi.delete(`/finance/account/${id}`);
       message.success('删除成功');
       fetchData();
     } catch (error) {
@@ -101,10 +101,10 @@ const AccountPage: React.FC = () => {
     try {
       const values = await form.validateFields();
       if (editingRecord?.id) {
-        await warehouseApi.put(`/finance/account/${editingRecord.id}`, values);
+        await financeApi.put(`/finance/account/${editingRecord.id}`, values);
         message.success('修改成功');
       } else {
-        await warehouseApi.post('/finance/account', values);
+        await financeApi.post('/finance/account', values);
         message.success('新增成功');
       }
       setModalVisible(false);

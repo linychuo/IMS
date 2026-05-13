@@ -14,27 +14,23 @@
         <result column="return_date" property="returnDate"/>
         <result column="warehouse_id" property="warehouseId"/>
         <result column="warehouse_name" property="warehouseName"/>
-        <result column="return_by" property="returnBy"/>
-        <result column="return_by_name" property="returnByName"/>
         <result column="status" property="status"/>
         <result column="total_amount" property="totalAmount"/>
         <result column="refund_amount" property="refundAmount"/>
         <result column="reason" property="reason"/>
         <result column="remark" property="remark"/>
-        <result column="created_by" property="createdBy"/>
-        <result column="created_at" property="createTime"/>
-        <result column="updated_by" property="updatedBy"/>
-        <result column="updated_at" property="updateTime"/>
         <result column="audited_by" property="auditedBy"/>
         <result column="audited_at" property="auditedAt"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
         <result column="deleted" property="deleted"/>
     </resultMap>
 
     <sql id="baseColumns">
         id, return_no, order_id, order_no, out_id, out_no, customer_id, customer_name,
-        return_date, warehouse_id, warehouse_name, return_by, return_by_name, status,
+        return_date, warehouse_id, warehouse_name, status,
         total_amount, refund_amount, reason, remark,
-        created_by, created_at, updated_by, updated_at, audited_by, audited_at, deleted
+        audited_by, audited_at, create_time, update_time, deleted
     </sql>
 
     <select id="selectById" resultMap="BaseResultMap">
@@ -53,35 +49,35 @@
         SELECT <include refid="baseColumns"/>
         FROM sales_return
         WHERE deleted = 0
-        <if test="query.customerId != null">
-            AND customer_id = #{query.customerId}
+        <if test="customerId != null">
+            AND customer_id = #{customerId}
         </if>
-        <if test="query.status != null">
-            AND status = #{query.status}
+        <if test="status != null">
+            AND status = #{status}
         </if>
-        <if test="query.returnNo != null">
-            AND return_no LIKE CONCAT('%', #{query.returnNo}, '%')
+        <if test="returnNo != null">
+            AND return_no LIKE CONCAT('%', #{returnNo}, '%')
         </if>
-        <if test="query.orderNo != null">
-            AND order_no = #{query.orderNo}
+        <if test="orderNo != null">
+            AND order_no = #{orderNo}
         </if>
-        <if test="query.outNo != null">
-            AND out_no = #{query.outNo}
+        <if test="outNo != null">
+            AND out_no = #{outNo}
         </if>
-        ORDER BY created_at DESC
+        ORDER BY create_time DESC
     </select>
 
     <insert id="insert" parameterType="com.ims.sales.entity.SalesReturn">
         INSERT INTO sales_return (
             return_no, order_id, order_no, out_id, out_no, customer_id, customer_name,
-            return_date, warehouse_id, warehouse_name, return_by, return_by_name, status,
+            return_date, warehouse_id, warehouse_name, status,
             total_amount, refund_amount, reason, remark,
-            created_by, create_time, deleted
+            create_time, deleted
         ) VALUES (
             #{returnNo}, #{orderId}, #{orderNo}, #{outId}, #{outNo}, #{customerId}, #{customerName},
-            #{returnDate}, #{warehouseId}, #{warehouseName}, #{returnBy}, #{returnByName}, #{status},
+            #{returnDate}, #{warehouseId}, #{warehouseName}, #{status},
             #{totalAmount}, #{refundAmount}, #{reason}, #{remark},
-            #{createdBy}, #{createTime}, 0
+            #{createTime}, 0
         )
     </insert>
 
@@ -97,17 +93,14 @@
             <if test="returnDate != null">return_date = #{returnDate},</if>
             <if test="warehouseId != null">warehouse_id = #{warehouseId},</if>
             <if test="warehouseName != null">warehouse_name = #{warehouseName},</if>
-            <if test="returnBy != null">return_by = #{returnBy},</if>
-            <if test="returnByName != null">return_by_name = #{returnByName},</if>
             <if test="status != null">status = #{status},</if>
             <if test="totalAmount != null">total_amount = #{totalAmount},</if>
             <if test="refundAmount != null">refund_amount = #{refundAmount},</if>
             <if test="reason != null">reason = #{reason},</if>
             <if test="remark != null">remark = #{remark},</if>
-            <if test="updatedBy != null">updated_by = #{updatedBy},</if>
-            <if test="updateTime != null">updated_at = #{updateTime},</if>
             <if test="auditedBy != null">audited_by = #{auditedBy},</if>
             <if test="auditedAt != null">audited_at = #{auditedAt},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
         </set>
         WHERE id = #{id} AND deleted = 0
     </update>

@@ -18,6 +18,7 @@ public class Customer extends BaseEntity {
     @TableField("customer_name")
     private String name;
 
+    @TableField("customer_type")
     private Integer type;
     private String contact;
     private String phone;

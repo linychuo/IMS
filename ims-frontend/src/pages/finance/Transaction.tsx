@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Button, Select, message } from 'antd';
 import { SearchOutlined } from '@ant-design/icons';
-import { warehouseApi } from '../../api';
+import { financeApi } from '../../api';
 
 interface AccountTransaction {
   id: number;
@@ -40,7 +40,7 @@ const TransactionPage: React.FC = () => {
 
   const fetchAccounts = async () => {
     try {
-      const res = await warehouseApi.get('/finance/account/page', {
+      const res = await financeApi.get('/finance/account/page', {
         params: { page: 1, pageSize: 100 },
       });
       if (res.data.code === 200) {
@@ -61,7 +61,7 @@ const TransactionPage: React.FC = () => {
       if (accountId) {
         params.accountId = accountId;
       }
-      const res = await warehouseApi.get('/finance/account-trans/page', { params });
+      const res = await financeApi.get('/finance/account-trans/page', { params });
       if (res.data.code === 200) {
         setData(res.data.data?.records || []);
         setPagination((prev) => ({ ...prev, total: res.data.data?.total || 0 }));

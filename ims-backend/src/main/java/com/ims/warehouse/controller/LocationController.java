@@ -11,9 +11,12 @@ import com.ims.system.annotation.Permission;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * 库位管理（作为仓库管理的子功能，不单独生成菜单）
+ */
 @RestController
 @RequestMapping("/api/location")
-@Permission(code = "warehouse:location", name = "库位管理")
+@Permission(code = "warehouse:warehouse:location", name = "库位管理")
 public class LocationController {
 
     @Autowired

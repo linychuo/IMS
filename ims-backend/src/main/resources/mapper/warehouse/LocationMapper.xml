@@ -8,26 +8,27 @@
         <result column="location_name" property="name"/>
         <result column="warehouse_id" property="warehouseId"/>
         <result column="shelf_no" property="shelfNo"/>
-        <result column="row" property="row"/>
-        <result column="col" property="col"/>
-        <result column="level" property="level"/>
-        <result column="type" property="type"/>
+        <result column="row_no" property="row"/>
+        <result column="col_no" property="col"/>
+        <result column="level_no" property="level"/>
+        <result column="location_type" property="type"/>
         <result column="status" property="status"/>
         <result column="remark" property="remark"/>
-        <result column="created_at" property="createTime"/>
-        <result column="updated_at" property="updateTime"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="deleted" property="deleted"/>
     </resultMap>
 
     <sql id="Base_Column_List">
-        id, location_code, location_name, warehouse_id, shelf_no, `row`, `col`, `level`, type, status, remark, created_at, updated_at
+        id, location_code, location_name, warehouse_id, shelf_no, row_no, col_no, level_no, location_type, status, remark, create_time, update_time, deleted
     </sql>
 
     <select id="selectByWarehouseId" resultMap="BaseResultMap">
-        SELECT <include refid="Base_Column_List"/> FROM location WHERE warehouse_id = #{warehouseId} ORDER BY location_code ASC
+        SELECT <include refid="Base_Column_List"/> FROM inv_location WHERE warehouse_id = #{warehouseId} AND deleted = 0 ORDER BY location_code ASC
     </select>
 
     <select id="selectByCode" resultMap="BaseResultMap">
-        SELECT <include refid="Base_Column_List"/> FROM location WHERE location_code = #{code} AND warehouse_id = #{warehouseId}
+        SELECT <include refid="Base_Column_List"/> FROM inv_location WHERE location_code = #{code} AND warehouse_id = #{warehouseId} AND deleted = 0
     </select>
 
 </mapper>

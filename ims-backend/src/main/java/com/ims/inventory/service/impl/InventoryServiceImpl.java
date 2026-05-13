@@ -32,8 +32,18 @@ public class InventoryServiceImpl extends ServiceImpl<InventoryMapper, Inventory
     private ProductMapper productMapper;
 
     @Override
+    public List<Inventory> selectPage(Long productId, Long warehouseId, Long pageSize, Long offset) {
+        return baseMapper.selectPage(productId, warehouseId, pageSize, offset);
+    }
+
+    @Override
+    public long selectCount(Long productId, Long warehouseId) {
+        return baseMapper.selectCount(productId, warehouseId);
+    }
+
+    @Override
     @Transactional
-    public boolean addStock(Long productId, Long warehouseId, Long locationId, 
+    public boolean addStock(Long productId, Long warehouseId, Long locationId,
                           BigDecimal quantity, BigDecimal cost,
                           String batchNo, String orderType, Long orderId) {
         // 查询库存台账
@@ -313,7 +323,6 @@ public class InventoryServiceImpl extends ServiceImpl<InventoryMapper, Inventory
         record.setOrderType(orderType);
         record.setOrderId(orderId);
         record.setBatchNo(batchNo);
-        record.setRemark(remark);
         record.setCreateTime(LocalDateTime.now());
         
         recordMapper.insert(record);

@@ -7,7 +7,7 @@ import com.ims.core.entity.BaseEntity;
 /**
  * 库位实体
  */
-@TableName("location")
+@TableName("inv_location")
 public class Location extends BaseEntity {
 
     @TableField("location_code")
@@ -17,13 +17,23 @@ public class Location extends BaseEntity {
     private String name;
 
     @TableField("warehouse_id")
-    private String warehouseId;
+    private Long warehouseId;
 
+    @TableField("shelf_no")
     private String shelfNo;
+
+    @TableField("row_no")
     private Integer row;
+
+    @TableField("col_no")
     private Integer col;
+
+    @TableField("level_no")
     private Integer level;
+
+    @TableField("location_type")
     private Integer type;
+
     private Integer status;
     private String remark;
 
@@ -31,8 +41,8 @@ public class Location extends BaseEntity {
     public void setCode(String code) { this.code = code; }
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
-    public String getWarehouseId() { return warehouseId; }
-    public void setWarehouseId(String warehouseId) { this.warehouseId = warehouseId; }
+    public Long getWarehouseId() { return warehouseId; }
+    public void setWarehouseId(Long warehouseId) { this.warehouseId = warehouseId; }
     public String getShelfNo() { return shelfNo; }
     public void setShelfNo(String shelfNo) { this.shelfNo = shelfNo; }
     public Integer getRow() { return row; }

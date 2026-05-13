@@ -30,14 +30,10 @@ public class InventoryInServiceImpl extends ServiceImpl<InventoryInMapper, Inven
 
     @Override
     public PageResult<InventoryIn> pageIn(Long page, Long pageSize, Long warehouseId, Integer inType, Integer status) {
-        LambdaQueryWrapper<InventoryIn> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(warehouseId != null, InventoryIn::getWarehouseId, warehouseId)
-               .eq(inType != null, InventoryIn::getInType, inType)
-               .eq(status != null, InventoryIn::getStatus, status)
-               .orderByDesc(InventoryIn::getId);
-        
-        Page<InventoryIn> result = this.page(new Page<>(page, pageSize), wrapper);
-        return PageResult.of(result);
+        Long offset = (page - 1) * pageSize;
+        List<InventoryIn> records = baseMapper.selectPage(warehouseId, inType, status, pageSize, offset);
+        long total = baseMapper.selectCount(warehouseId, inType, status);
+        return PageResult.build(records, total, page, pageSize);
     }
 
     @Override
@@ -111,8 +107,8 @@ public class InventoryInServiceImpl extends ServiceImpl<InventoryInMapper, Inven
         
         // 更新状态
         in.setStatus(2);
-        in.setAuditorId(auditorId);
-        in.setAuditTime(LocalDateTime.now());
+        in.setAuditedBy(auditorId);
+        in.setAuditedAt(LocalDateTime.now());
         
         return this.updateById(in);
     }

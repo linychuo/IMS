@@ -24,9 +24,9 @@
     </resultMap>
 
     <sql id="baseColumns">
-        id, in_no, in_type, ref_id, ref_no, warehouse_id, supplier_id, in_date, status,
-        approver_id, approve_time, in_user_id, remark,
-        created_by, created_at, updated_by, updated_at, deleted
+        id, in_no, in_type, order_id, order_no, supplier_id, supplier_name, in_date, warehouse_id,
+        warehouse_name, in_by, in_by_name, status, total_amount, remark,
+        audited_by, audited_at, create_time, update_time, deleted
     </sql>
 
     <select id="selectById" resultMap="BaseResultMap">
@@ -60,15 +60,45 @@
         ORDER BY created_at DESC
     </select>
 
+    <select id="selectPage" resultMap="BaseResultMap">
+        SELECT <include refid="baseColumns"/>
+        FROM inventory_in
+        WHERE deleted = 0
+        <if test="warehouseId != null">
+            AND warehouse_id = #{warehouseId}
+        </if>
+        <if test="inType != null">
+            AND in_type = #{inType}
+        </if>
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+        ORDER BY id DESC
+        LIMIT #{pageSize} OFFSET #{offset}
+    </select>
+
+    <select id="selectCount" resultType="long">
+        SELECT COUNT(*) FROM inventory_in WHERE deleted = 0
+        <if test="warehouseId != null">
+            AND warehouse_id = #{warehouseId}
+        </if>
+        <if test="inType != null">
+            AND in_type = #{inType}
+        </if>
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+    </select>
+
     <insert id="insert" parameterType="com.ims.inventory.entity.InventoryIn">
         INSERT INTO inventory_in (
-            id, in_no, in_type, ref_id, ref_no, warehouse_id, supplier_id, in_date, status,
-            approver_id, approve_time, in_user_id, remark,
-            created_by, created_at, deleted
+            id, in_no, in_type, order_id, order_no, supplier_id, supplier_name, in_date, warehouse_id,
+            warehouse_name, in_by, in_by_name, status, total_amount, remark,
+            audited_by, audited_at, create_time, deleted
         ) VALUES (
-            #{id}, #{inNo}, #{inType}, #{refId}, #{refNo}, #{warehouseId}, #{supplierId}, #{inDate}, #{status},
-            #{approverId}, #{approveTime}, #{inUserId}, #{remark},
-            #{createdBy}, #{createdAt}, 0
+            #{id}, #{inNo}, #{inType}, #{orderId}, #{orderNo}, #{supplierId}, #{supplierName}, #{inDate}, #{warehouseId},
+            #{warehouseName}, #{inBy}, #{inByName}, #{status}, #{totalAmount}, #{remark},
+            #{auditedBy}, #{auditedAt}, #{createTime}, 0
         )
     </insert>
 
@@ -76,11 +106,10 @@
         UPDATE inventory_in
         <set>
             <if test="status != null">status = #{status},</if>
-            <if test="approverId != null">approver_id = #{approverId},</if>
-            <if test="approveTime != null">approve_time = #{approveTime},</if>
+            <if test="auditedBy != null">audited_by = #{auditedBy},</if>
+            <if test="auditedAt != null">audited_at = #{auditedAt},</if>
             <if test="remark != null">remark = #{remark},</if>
-            <if test="updatedBy != null">updated_by = #{updatedBy},</if>
-            <if test="updatedAt != null">updated_at = #{updatedAt},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
         </set>
         WHERE id = #{id} AND deleted = 0
     </update>

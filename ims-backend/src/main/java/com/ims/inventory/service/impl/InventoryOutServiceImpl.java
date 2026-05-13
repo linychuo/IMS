@@ -31,14 +31,10 @@ public class InventoryOutServiceImpl extends ServiceImpl<InventoryOutMapper, Inv
 
     @Override
     public PageResult<InventoryOut> pageOut(Long page, Long pageSize, Long warehouseId, Integer outType, Integer status) {
-        LambdaQueryWrapper<InventoryOut> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(warehouseId != null, InventoryOut::getWarehouseId, warehouseId)
-               .eq(outType != null, InventoryOut::getOutType, outType)
-               .eq(status != null, InventoryOut::getStatus, status)
-               .orderByDesc(InventoryOut::getId);
-        
-        Page<InventoryOut> result = this.page(new Page<>(page, pageSize), wrapper);
-        return PageResult.of(result);
+        Long offset = (page - 1) * pageSize;
+        List<InventoryOut> records = baseMapper.selectPage(warehouseId, outType, status, pageSize, offset);
+        long total = baseMapper.selectCount(warehouseId, outType, status);
+        return PageResult.build(records, total, page, pageSize);
     }
 
     @Override
@@ -111,8 +107,8 @@ public class InventoryOutServiceImpl extends ServiceImpl<InventoryOutMapper, Inv
 
         // 更新状态
         out.setStatus(2);
-        out.setAuditorId(auditorId);
-        out.setAuditTime(LocalDateTime.now());
+        out.setAuditedBy(String.valueOf(auditorId));
+        out.setAuditedAt(LocalDateTime.now());
 
         return this.updateById(out);
     }

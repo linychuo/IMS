@@ -16,10 +16,18 @@ public class Warehouse extends BaseEntity {
     @TableField("warehouse_name")
     private String name;
 
+    @TableField("warehouse_type")
+    private Integer type;
+
+    @TableField("address")
+    private String address;
+
     @TableField("manager")
     private String contact;
+
+    @TableField("phone")
     private String phone;
-    private String address;
+
     private Integer status;
     private String remark;
 
@@ -27,12 +35,14 @@ public class Warehouse extends BaseEntity {
     public void setCode(String code) { this.code = code; }
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
+    public Integer getType() { return type; }
+    public void setType(Integer type) { this.type = type; }
+    public String getAddress() { return address; }
+    public void setAddress(String address) { this.address = address; }
     public String getContact() { return contact; }
     public void setContact(String contact) { this.contact = contact; }
     public String getPhone() { return phone; }
     public void setPhone(String phone) { this.phone = phone; }
-    public String getAddress() { return address; }
-    public void setAddress(String address) { this.address = address; }
     public Integer getStatus() { return status; }
     public void setStatus(Integer status) { this.status = status; }
     public String getRemark() { return remark; }

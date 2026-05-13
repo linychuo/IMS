@@ -5,8 +5,6 @@
     <resultMap id="BaseResultMap" type="com.ims.sales.entity.SalesReturnDetail">
         <id column="id" property="id"/>
         <result column="return_id" property="returnId"/>
-        <result column="return_no" property="returnNo"/>
-        <result column="out_detail_id" property="outDetailId"/>
         <result column="product_id" property="productId"/>
         <result column="product_name" property="productName"/>
         <result column="spec" property="spec"/>
@@ -14,44 +12,41 @@
         <result column="quantity" property="quantity"/>
         <result column="price" property="price"/>
         <result column="amount" property="amount"/>
-        <result column="in_quantity" property="inQuantity"/>
-        <result column="created_at" property="createdAt"/>
+        <result column="create_time" property="createTime"/>
     </resultMap>
 
     <sql id="baseColumns">
-        id, return_id, return_no, out_detail_id, product_id, product_name,
-        spec, unit, quantity, price, amount, in_quantity, created_at
+        id, return_id, product_id, product_name, spec, unit, quantity, price, amount, create_time
     </sql>
 
     <select id="selectById" resultMap="BaseResultMap">
         SELECT <include refid="baseColumns"/>
         FROM sales_return_detail
-        WHERE id = #{id}
+        WHERE id = #{id} AND deleted = 0
     </select>
 
     <select id="selectByReturnId" resultMap="BaseResultMap">
         SELECT <include refid="baseColumns"/>
         FROM sales_return_detail
-        WHERE return_id = #{returnId}
-        ORDER BY created_at
+        WHERE return_id = #{returnId} AND deleted = 0
+        ORDER BY create_time
     </select>
 
     <insert id="batchInsert" parameterType="java.util.List">
         INSERT INTO sales_return_detail (
-            id, return_id, return_no, out_detail_id, product_id, product_name,
-            spec, unit, quantity, price, amount, in_quantity, created_at
+            id, return_id, product_id, product_name,
+            spec, unit, quantity, price, amount, deleted
         ) VALUES
         <foreach collection="list" item="item" separator=",">
             (
-                #{item.id}, #{item.returnId}, #{item.returnNo}, #{item.outDetailId},
-                #{item.productId}, #{item.productName}, #{item.spec}, #{item.unit},
-                #{item.quantity}, #{item.price}, #{item.amount}, #{item.inQuantity}, #{item.createdAt}
+                #{item.id}, #{item.returnId}, #{item.productId}, #{item.productName},
+                #{item.spec}, #{item.unit}, #{item.quantity}, #{item.price}, #{item.amount}, 0
             )
         </foreach>
     </insert>
 
     <delete id="deleteByReturnId">
-        DELETE FROM sales_return_detail WHERE return_id = #{returnId}
+        UPDATE sales_return_detail SET deleted = 1 WHERE return_id = #{returnId}
     </delete>
 
 </mapper>

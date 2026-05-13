@@ -7,7 +7,7 @@ import {
   message,
 } from 'antd';
 import { SearchOutlined } from '@ant-design/icons';
-import { warehouseApi } from '../../api';
+import { inventoryApi, warehouseApi } from '../../api';
 
 interface Inventory {
   id: number;
@@ -42,7 +42,7 @@ const InventoryAccountPage: React.FC = () => {
 
   const fetchWarehouses = async () => {
     try {
-      const res = await warehouseApi.get('/warehouse/list');
+      const res = await inventoryApi.get('/warehouse/list');
       if (res.data.code === 200) {
         setWarehouseList(res.data.data || []);
       }
@@ -64,7 +64,7 @@ const InventoryAccountPage: React.FC = () => {
       if (warehouseId) {
         params.warehouseId = warehouseId;
       }
-      const res = await warehouseApi.get('/inventory/page', { params });
+      const res = await inventoryApi.get('/inventory/page', { params });
       if (res.data.code === 200) {
         setData(res.data.data?.records || []);
         setPagination((prev) => ({ ...prev, total: res.data.data?.total || 0 }));

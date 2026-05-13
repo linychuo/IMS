@@ -1,13 +1,13 @@
 package com.ims.sales.controller;
 
+import com.ims.core.result.Result;
 import com.ims.sales.entity.SalesOut;
 import com.ims.sales.entity.SalesOutDetail;
 import com.ims.sales.service.SalesOutService;
 import com.ims.system.annotation.Permission;
-import jakarta.validation.Valid;
+import com.ims.sales.dto.SalesOutRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -33,9 +33,8 @@ public class SalesOutController {
      */
     @PostMapping
     @Permission(code = "create", name = "创建销售出库")
-    public ResponseEntity<SalesOut> create(@Valid @RequestBody SalesOut salesOut,
-                                            @RequestBody	List<SalesOutDetail> details) {
-        return ResponseEntity.ok(salesOutService.create(salesOut, details));
+    public Result<SalesOut> create(@RequestBody SalesOutRequest request) {
+        return Result.success(salesOutService.create(request.getSalesOut(), request.getDetails()));
     }
 
     /**
@@ -43,10 +42,10 @@ public class SalesOutController {
      */
     @PostMapping("/{id}/approve")
     @Permission(code = "audit", name = "审核销售出库")
-    public ResponseEntity<Void> approve(@PathVariable Long id,
-                                         @RequestParam String userId) {
-        salesOutService.approve(id, userId);
-        return ResponseEntity.ok().build();
+    public Result<Void> approve(@PathVariable Long id, @RequestHeader(value = "X-User-Id", required = false) Long userId) {
+        String userIdStr = userId != null ? String.valueOf(userId) : "system";
+        salesOutService.approve(id, userIdStr);
+        return Result.success(null);
     }
 
     /**
@@ -54,10 +53,9 @@ public class SalesOutController {
      */
     @PostMapping("/{id}/cancel")
     @Permission(code = "cancel", name = "取消销售出库")
-    public ResponseEntity<Void> cancel(@PathVariable Long id,
-                                       @RequestParam String reason) {
-        salesOutService.cancel(id, reason);
-        return ResponseEntity.ok().build();
+    public Result<Void> cancel(@PathVariable Long id, @RequestParam(required = false) String reason) {
+        salesOutService.cancel(id, reason != null ? reason : "用户取消");
+        return Result.success(null);
     }
 
     /**
@@ -65,9 +63,9 @@ public class SalesOutController {
      */
     @PostMapping("/{id}/complete")
     @Permission(code = "complete", name = "完成销售出库")
-    public ResponseEntity<Void> complete(@PathVariable Long id) {
+    public Result<Void> complete(@PathVariable Long id) {
         salesOutService.complete(id);
-        return ResponseEntity.ok().build();
+        return Result.success(null);
     }
 
     /**
@@ -75,8 +73,8 @@ public class SalesOutController {
      */
     @GetMapping("/{id}")
     @Permission(code = "read", name = "查看销售出库")
-    public ResponseEntity<SalesOut> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(salesOutService.getById(id));
+    public Result<SalesOut> getById(@PathVariable Long id) {
+        return Result.success(salesOutService.getById(id));
     }
 
     /**
@@ -84,8 +82,8 @@ public class SalesOutController {
      */
     @GetMapping("/no/{outNo}")
     @Permission(code = "read", name = "查看销售出库")
-    public ResponseEntity<SalesOut> getByOutNo(@PathVariable String outNo) {
-        return ResponseEntity.ok(salesOutService.getByOutNo(outNo));
+    public Result<SalesOut> getByOutNo(@PathVariable String outNo) {
+        return Result.success(salesOutService.getByOutNo(outNo));
     }
 
     /**
@@ -93,8 +91,8 @@ public class SalesOutController {
      */
     @GetMapping("/{id}/details")
     @Permission(code = "read", name = "查看销售出库")
-    public ResponseEntity<List<SalesOutDetail>> getDetails(@PathVariable Long id) {
-        return ResponseEntity.ok(salesOutService.getDetails(id));
+    public Result<List<SalesOutDetail>> getDetails(@PathVariable Long id) {
+        return Result.success(salesOutService.getDetails(id));
     }
 
     /**
@@ -102,7 +100,7 @@ public class SalesOutController {
      */
     @GetMapping("/list")
     @Permission(code = "read", name = "查看销售出库")
-    public ResponseEntity<List<SalesOut>> list(@ModelAttribute SalesOut query) {
-        return ResponseEntity.ok(salesOutService.list(query));
+    public Result<List<SalesOut>> list(@ModelAttribute SalesOut query) {
+        return Result.success(salesOutService.list(query));
     }
 }

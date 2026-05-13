@@ -1,9 +1,9 @@
 package com.ims.system.controller;
 
+import com.ims.core.result.Result;
 import com.ims.procurement.entity.Supplier;
 import com.ims.procurement.service.SupplierService;
 import com.ims.system.annotation.Permission;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -24,34 +24,33 @@ public class ApiSupplierController {
 
     @PostMapping
     @Permission(code = "create", name = "创建供应商")
-    public ResponseEntity<Supplier> create(@RequestBody Supplier supplier) {
-        return ResponseEntity.ok(supplierService.create(supplier));
+    public Result<Supplier> create(@RequestBody Supplier supplier) {
+        return Result.success(supplierService.create(supplier));
     }
 
     @PutMapping("/{id}")
     @Permission(code = "update", name = "更新供应商")
-    public ResponseEntity<Supplier> update(@PathVariable Long id, @RequestBody Supplier supplier) {
+    public Result<Supplier> update(@PathVariable Long id, @RequestBody Supplier supplier) {
         supplier.setId(id);
-        return ResponseEntity.ok(supplierService.update(supplier));
+        return Result.success(supplierService.update(supplier));
     }
 
     @GetMapping("/{id}")
     @Permission(code = "read", name = "查看供应商")
-    public ResponseEntity<Supplier> getById(@PathVariable Long id) {
-        var result = supplierService.getById(id);
-        return result != null ? ResponseEntity.ok(result) : ResponseEntity.notFound().build();
+    public Result<Supplier> getById(@PathVariable Long id) {
+        return Result.success(supplierService.getById(id));
     }
 
     @GetMapping("/list")
     @Permission(code = "list", name = "查看供应商列表")
-    public ResponseEntity<List<Supplier>> list() {
-        return ResponseEntity.ok(supplierService.list(null));
+    public Result<List<Supplier>> list() {
+        return Result.success(supplierService.list(null));
     }
 
     @DeleteMapping("/{id}")
     @Permission(code = "delete", name = "删除供应商")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
+    public Result<Void> delete(@PathVariable Long id) {
         supplierService.delete(id);
-        return ResponseEntity.ok().build();
+        return Result.success(null);
     }
 }

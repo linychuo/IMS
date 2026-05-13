@@ -6,25 +6,27 @@
         <id column="id" property="id"/>
         <result column="warehouse_code" property="code"/>
         <result column="warehouse_name" property="name"/>
-        <result column="contact" property="contact"/>
-        <result column="phone" property="phone"/>
+        <result column="warehouse_type" property="type"/>
         <result column="address" property="address"/>
+        <result column="manager" property="contact"/>
+        <result column="phone" property="phone"/>
         <result column="status" property="status"/>
         <result column="remark" property="remark"/>
-        <result column="created_at" property="createTime"/>
-        <result column="updated_at" property="updateTime"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="deleted" property="deleted"/>
     </resultMap>
 
     <sql id="Base_Column_List">
-        id, warehouse_code, warehouse_name, contact, phone, address, status, remark, created_at, updated_at
+        id, warehouse_code, warehouse_name, warehouse_type, address, manager, phone, status, remark, create_time, update_time, deleted
     </sql>
 
     <select id="selectByCode" resultMap="BaseResultMap">
-        SELECT <include refid="Base_Column_List"/> FROM warehouse WHERE warehouse_code = #{code}
+        SELECT <include refid="Base_Column_List"/> FROM warehouse WHERE warehouse_code = #{code} AND deleted = 0
     </select>
 
     <select id="selectActiveList" resultMap="BaseResultMap">
-        SELECT <include refid="Base_Column_List"/> FROM warehouse WHERE status = 0 ORDER BY warehouse_name ASC
+        SELECT <include refid="Base_Column_List"/> FROM warehouse WHERE status = 0 AND deleted = 0 ORDER BY warehouse_name ASC
     </select>
 
 </mapper>

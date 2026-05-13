@@ -13,7 +13,7 @@ import {
   Descriptions,
 } from 'antd';
 import { PlusOutlined, EyeOutlined } from '@ant-design/icons';
-import { warehouseApi } from '../../api';
+import { inventoryApi, warehouseApi } from '../../api';
 
 interface InventoryTransfer {
   id: number;
@@ -45,7 +45,7 @@ const InventoryTransferPage: React.FC = () => {
 
   const fetchWarehouses = async () => {
     try {
-      const res = await warehouseApi.get('/warehouse/list');
+      const res = await inventoryApi.get('/warehouse/list');
       if (res.data.code === 200) {
         setWarehouseList(res.data.data || []);
       }
@@ -57,7 +57,7 @@ const InventoryTransferPage: React.FC = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const res = await warehouseApi.get('/inventory/transfer/page', {
+      const res = await inventoryApi.get('/inventory/transfer/page', {
         params: { page: pagination.current, pageSize: pagination.size },
       });
       if (res.data.code === 200) {
@@ -74,7 +74,7 @@ const InventoryTransferPage: React.FC = () => {
 
   const handleView = async (record: InventoryTransfer) => {
     try {
-      const res = await warehouseApi.get(`/inventory/transfer/${record.id}`);
+      const res = await inventoryApi.get(`/inventory/transfer/${record.id}`);
       if (res.data) {
         setEditingRecord(res.data);
         setModalVisible(true);
@@ -86,7 +86,7 @@ const InventoryTransferPage: React.FC = () => {
 
   const handleStart = async (id: number) => {
     try {
-      await warehouseApi.put(`/inventory/transfer/${id}/start`);
+      await inventoryApi.put(`/inventory/transfer/${id}/start`);
       message.success('开始调拨成功');
       fetchData();
     } catch (error) {
@@ -96,7 +96,7 @@ const InventoryTransferPage: React.FC = () => {
 
   const handleConfirmOut = async (id: number) => {
     try {
-      await warehouseApi.put(`/inventory/transfer/${id}/confirm-out`);
+      await inventoryApi.put(`/inventory/transfer/${id}/confirm-out`);
       message.success('确认出库成功');
       fetchData();
     } catch (error) {
@@ -106,7 +106,7 @@ const InventoryTransferPage: React.FC = () => {
 
   const handleConfirmIn = async (id: number) => {
     try {
-      await warehouseApi.put(`/inventory/transfer/${id}/confirm-in`);
+      await inventoryApi.put(`/inventory/transfer/${id}/confirm-in`);
       message.success('确认入库成功');
       fetchData();
     } catch (error) {
@@ -116,7 +116,7 @@ const InventoryTransferPage: React.FC = () => {
 
   const handleFinish = async (id: number) => {
     try {
-      await warehouseApi.put(`/inventory/transfer/${id}/finish`);
+      await inventoryApi.put(`/inventory/transfer/${id}/finish`);
       message.success('完成调拨成功');
       fetchData();
     } catch (error) {
@@ -126,7 +126,7 @@ const InventoryTransferPage: React.FC = () => {
 
   const handleCancel = async (id: number) => {
     try {
-      await warehouseApi.put(`/inventory/transfer/${id}/cancel`, null, { params: { reason: '用户取消' } });
+      await inventoryApi.put(`/inventory/transfer/${id}/cancel`, null, { params: { reason: '用户取消' } });
       message.success('取消成功');
       fetchData();
     } catch (error) {
@@ -137,7 +137,7 @@ const InventoryTransferPage: React.FC = () => {
   const handleModalOk = async () => {
     try {
       const values = await form.validateFields();
-      await warehouseApi.post('/inventory/transfer', values);
+      await inventoryApi.post('/inventory/transfer', values);
       message.success('新增成功');
       setModalVisible(false);
       fetchData();

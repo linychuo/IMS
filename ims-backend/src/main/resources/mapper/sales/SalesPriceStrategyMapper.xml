@@ -19,10 +19,8 @@
         <result column="discount_rate" property="discountRate"/>
         <result column="status" property="status"/>
         <result column="remark" property="remark"/>
-        <result column="created_by" property="createdBy"/>
-        <result column="created_at" property="createTime"/>
-        <result column="updated_by" property="updatedBy"/>
-        <result column="updated_at" property="updateTime"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
         <result column="deleted" property="deleted"/>
     </resultMap>
 
@@ -30,7 +28,7 @@
         id, strategy_no, strategy_name, customer_id, customer_name,
         product_id, product_name, product_category_id, product_category_name,
         start_date, end_date, price_type, price, discount_rate, status, remark,
-        created_by, created_at, updated_by, updated_at, deleted
+        create_time, update_time, deleted
     </sql>
 
     <select id="selectById" resultMap="BaseResultMap">
@@ -49,25 +47,25 @@
         SELECT <include refid="baseColumns"/>
         FROM sales_price_strategy
         WHERE deleted = 0
-        <if test="query.customerId != null">
-            AND (customer_id = #{query.customerId} OR customer_id IS NULL)
+        <if test="customerId != null">
+            AND (customer_id = #{customerId} OR customer_id IS NULL)
         </if>
-        <if test="query.productId != null">
-            AND (product_id = #{query.productId} OR product_id IS NULL)
+        <if test="productId != null">
+            AND (product_id = #{productId} OR product_id IS NULL)
         </if>
-        <if test="query.productCategoryId != null">
-            AND product_category_id = #{query.productCategoryId}
+        <if test="productCategoryId != null">
+            AND product_category_id = #{productCategoryId}
         </if>
-        <if test="query.status != null">
-            AND status = #{query.status}
+        <if test="status != null">
+            AND status = #{status}
         </if>
-        <if test="query.strategyNo != null">
-            AND strategy_no LIKE CONCAT('%', #{query.strategyNo}, '%')
+        <if test="strategyNo != null">
+            AND strategy_no LIKE CONCAT('%', #{strategyNo}, '%')
         </if>
-        <if test="query.strategyName != null">
-            AND strategy_name LIKE CONCAT('%', #{query.strategyName}, '%')
+        <if test="strategyName != null">
+            AND strategy_name LIKE CONCAT('%', #{strategyName}, '%')
         </if>
-        ORDER BY customer_id DESC, product_id DESC, created_at DESC
+        ORDER BY customer_id DESC, product_id DESC, create_time DESC
     </select>
 
     <select id="selectEffective" resultMap="BaseResultMap">
@@ -82,7 +80,7 @@
         )
         AND (start_date IS NULL OR start_date &lt;= CURRENT_DATE)
         AND (end_date IS NULL OR end_date &gt;= CURRENT_DATE)
-        ORDER BY 
+        ORDER BY
             CASE WHEN customer_id IS NOT NULL AND product_id IS NOT NULL THEN 0
                  WHEN customer_id IS NOT NULL AND product_id IS NULL THEN 1
                  WHEN customer_id IS NULL AND product_id IS NOT NULL THEN 2
@@ -95,12 +93,12 @@
             strategy_no, strategy_name, customer_id, customer_name,
             product_id, product_name, product_category_id, product_category_name,
             start_date, end_date, price_type, price, discount_rate, status, remark,
-            created_by, created_at, deleted
+            create_time, deleted
         ) VALUES (
             #{strategyNo}, #{strategyName}, #{customerId}, #{customerName},
             #{productId}, #{productName}, #{productCategoryId}, #{productCategoryName},
             #{startDate}, #{endDate}, #{priceType}, #{price}, #{discountRate}, #{status}, #{remark},
-            #{createdBy}, #{createTime}, 0
+            #{createTime}, 0
         )
     </insert>
 
@@ -121,8 +119,7 @@
             <if test="discountRate != null">discount_rate = #{discountRate},</if>
             <if test="status != null">status = #{status},</if>
             <if test="remark != null">remark = #{remark},</if>
-            <if test="updatedBy != null">updated_by = #{updatedBy},</if>
-            <if test="updateTime != null">updated_at = #{updateTime},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
         </set>
         WHERE id = #{id} AND deleted = 0
     </update>

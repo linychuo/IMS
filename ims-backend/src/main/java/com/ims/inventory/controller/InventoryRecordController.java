@@ -33,7 +33,10 @@ public class InventoryRecordController {
             @RequestParam(required = false) Long warehouseId,
             @RequestParam(required = false) String changeType) {
 
-        return Result.success(inventoryRecordService.pageRecord(page, pageSize, productId, warehouseId, changeType));
+        Long offset = (page - 1) * pageSize;
+        List<InventoryRecord> records = inventoryRecordService.selectPage(productId, warehouseId, changeType, pageSize, offset);
+        long total = inventoryRecordService.selectCount(productId, warehouseId, changeType);
+        return Result.success(PageResult.build(records, total, page, pageSize));
     }
 
     /**

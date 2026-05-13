@@ -4,30 +4,62 @@
 
     <resultMap id="BaseResultMap" type="com.ims.inventory.entity.InventoryRecord">
         <id column="id" property="id"/>
-        <result column="inventory_id" property="inventoryId"/>
         <result column="product_id" property="productId"/>
+        <result column="product_name" property="productName"/>
+        <result column="product_code" property="productCode"/>
         <result column="warehouse_id" property="warehouseId"/>
-        <result column="record_type" property="recordType"/>
-        <result column="ref_id" property="refId"/>
-        <result column="ref_no" property="refNo"/>
-        <result column="before_quantity" property="beforeQuantity"/>
+        <result column="warehouse_name" property="warehouseName"/>
+        <result column="location_id" property="locationId"/>
+        <result column="location_name" property="locationName"/>
+        <result column="change_type" property="changeType"/>
         <result column="change_quantity" property="changeQuantity"/>
+        <result column="before_quantity" property="beforeQuantity"/>
         <result column="after_quantity" property="afterQuantity"/>
-        <result column="record_date" property="recordDate"/>
-        <result column="operator_id" property="operatorId"/>
-        <result column="remark" property="remark"/>
-        <result column="created_by" property="createdBy"/>
-        <result column="created_at" property="createdAt"/>
-        <result column="updated_by" property="updatedBy"/>
-        <result column="updated_at" property="updatedAt"/>
+        <result column="order_type" property="orderType"/>
+        <result column="order_id" property="orderId"/>
+        <result column="order_no" property="orderNo"/>
+        <result column="batch_no" property="batchNo"/>
+        <result column="cost" property="cost"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
         <result column="deleted" property="deleted"/>
     </resultMap>
 
     <sql id="baseColumns">
-        id, inventory_id, product_id, warehouse_id, record_type, ref_id, ref_no,
-        before_quantity, change_quantity, after_quantity, record_date, operator_id, remark,
-        created_by, created_at, updated_by, updated_at, deleted
+        id, product_id, product_name, product_code, warehouse_id, warehouse_name,
+        location_id, location_name, change_type, change_quantity, before_quantity, after_quantity,
+        order_type, order_id, order_no, batch_no, cost, create_time, update_time, deleted
     </sql>
+
+    <select id="selectPage" resultMap="BaseResultMap">
+        SELECT <include refid="baseColumns"/>
+        FROM inventory_record
+        WHERE deleted = 0
+        <if test="productId != null">
+            AND product_id = #{productId}
+        </if>
+        <if test="warehouseId != null">
+            AND warehouse_id = #{warehouseId}
+        </if>
+        <if test="changeType != null">
+            AND change_type = #{changeType}
+        </if>
+        ORDER BY id DESC
+        LIMIT #{pageSize} OFFSET #{offset}
+    </select>
+
+    <select id="selectCount" resultType="long">
+        SELECT COUNT(*) FROM inventory_record WHERE deleted = 0
+        <if test="productId != null">
+            AND product_id = #{productId}
+        </if>
+        <if test="warehouseId != null">
+            AND warehouse_id = #{warehouseId}
+        </if>
+        <if test="changeType != null">
+            AND change_type = #{changeType}
+        </if>
+    </select>
 
     <select id="selectById" resultMap="BaseResultMap">
         SELECT <include refid="baseColumns"/>
@@ -39,44 +71,40 @@
         SELECT <include refid="baseColumns"/>
         FROM inventory_record
         WHERE deleted = 0
-        <if test="inventoryId != null">
-            AND inventory_id = #{inventoryId}
-        </if>
         <if test="productId != null">
             AND product_id = #{productId}
         </if>
         <if test="warehouseId != null">
             AND warehouse_id = #{warehouseId}
         </if>
-        <if test="recordType != null">
-            AND record_type = #{recordType}
+        <if test="changeType != null">
+            AND change_type = #{changeType}
         </if>
-        ORDER BY created_at DESC
-    </select>
-
-    <select id="selectByInventoryId" resultMap="BaseResultMap">
-        SELECT <include refid="baseColumns"/>
-        FROM inventory_record
-        WHERE inventory_id = #{inventoryId} AND deleted = 0
-        ORDER BY created_at DESC
+        ORDER BY create_time DESC
     </select>
 
     <select id="selectByProductId" resultMap="BaseResultMap">
         SELECT <include refid="baseColumns"/>
         FROM inventory_record
         WHERE product_id = #{productId} AND deleted = 0
-        ORDER BY created_at DESC
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="selectByOrder" resultMap="BaseResultMap">
+        SELECT <include refid="baseColumns"/>
+        FROM inventory_record
+        WHERE order_type = #{orderType} AND order_id = #{orderId} AND deleted = 0
     </select>
 
     <insert id="insert" parameterType="com.ims.inventory.entity.InventoryRecord">
         INSERT INTO inventory_record (
-            id, inventory_id, product_id, warehouse_id, record_type, ref_id, ref_no,
-            before_quantity, change_quantity, after_quantity, record_date, operator_id, remark,
-            created_by, created_at, deleted
+            id, product_id, product_name, product_code, warehouse_id, warehouse_name,
+            location_id, location_name, change_type, change_quantity, before_quantity, after_quantity,
+            order_type, order_id, order_no, batch_no, cost, create_time, deleted
         ) VALUES (
-            #{id}, #{inventoryId}, #{productId}, #{warehouseId}, #{recordType}, #{refId}, #{refNo},
-            #{beforeQuantity}, #{changeQuantity}, #{afterQuantity}, #{recordDate}, #{operatorId}, #{remark},
-            #{createdBy}, #{createdAt}, 0
+            #{id}, #{productId}, #{productName}, #{productCode}, #{warehouseId}, #{warehouseName},
+            #{locationId}, #{locationName}, #{changeType}, #{changeQuantity}, #{beforeQuantity}, #{afterQuantity},
+            #{orderType}, #{orderId}, #{orderNo}, #{batchNo}, #{cost}, #{createTime}, 0
         )
     </insert>
 

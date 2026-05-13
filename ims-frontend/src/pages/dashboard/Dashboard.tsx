@@ -3,19 +3,35 @@ import { Card, Row, Col, Statistic } from 'antd';
 import { reportApi } from '../../api';
 
 interface DashboardData {
-  todaySales: number;
-  todayPurchases: number;
-  inventoryAmount: number;
-  receivableAmount: number;
+  todaySalesAmount: number;
+  todayPurchaseAmount: number;
+  todayReceiveAmount: number;
+  todayPaymentAmount: number;
+  monthSalesAmount: number;
+  monthPurchaseAmount: number;
+  totalInventoryCount: number;
+  warningInventoryCount: number;
+  pendingPurchaseCount: number;
+  pendingSalesCount: number;
+  pendingReceiveCount: number;
+  pendingPaymentCount: number;
 }
 
 const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<DashboardData>({
-    todaySales: 0,
-    todayPurchases: 0,
-    inventoryAmount: 0,
-    receivableAmount: 0,
+    todaySalesAmount: 0,
+    todayPurchaseAmount: 0,
+    todayReceiveAmount: 0,
+    todayPaymentAmount: 0,
+    monthSalesAmount: 0,
+    monthPurchaseAmount: 0,
+    totalInventoryCount: 0,
+    warningInventoryCount: 0,
+    pendingPurchaseCount: 0,
+    pendingSalesCount: 0,
+    pendingReceiveCount: 0,
+    pendingPaymentCount: 0,
   });
 
   useEffect(() => {
@@ -44,7 +60,7 @@ const Dashboard: React.FC = () => {
           <Card>
             <Statistic
               title="今日销售额"
-              value={data.todaySales}
+              value={data.todaySalesAmount}
               precision={2}
               prefix="¥"
               loading={loading}
@@ -55,7 +71,7 @@ const Dashboard: React.FC = () => {
           <Card>
             <Statistic
               title="今日采购额"
-              value={data.todayPurchases}
+              value={data.todayPurchaseAmount}
               precision={2}
               prefix="¥"
               loading={loading}
@@ -66,7 +82,7 @@ const Dashboard: React.FC = () => {
           <Card>
             <Statistic
               title="库存金额"
-              value={data.inventoryAmount}
+              value={data.totalInventoryCount}
               precision={2}
               prefix="¥"
               loading={loading}
@@ -76,8 +92,8 @@ const Dashboard: React.FC = () => {
         <Col span={6}>
           <Card>
             <Statistic
-              title="应收账款"
-              value={data.receivableAmount}
+              title="今日收款"
+              value={data.todayReceiveAmount}
               precision={2}
               prefix="¥"
               loading={loading}
