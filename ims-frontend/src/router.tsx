@@ -58,6 +58,8 @@ const routePermissionMap: Record<string, string> = {
   '/finance/payable': 'finance:payable',
   '/finance/transaction': 'finance',
   '/system': 'system',
+  '/system/user': 'system',
+  '/role': 'system',
 };
 
 // 带权限控制的路由组件
@@ -109,6 +111,8 @@ export const router = createBrowserRouter([
       { path: 'finance/payable', element: <PermissionRoute path="/finance/payable" element={<PayablePage />} /> },
       { path: 'finance/transaction', element: <PermissionRoute path="/finance/transaction" element={<TransactionPage />} /> },
       { path: 'system', element: <PermissionRoute path="/system" element={<SystemPage />} /> },
+      { path: 'system/user', element: <PermissionRoute path="/system" element={<SystemPage />} /> },
+      { path: 'role', element: <PermissionRoute path="/system" element={<SystemPage />} /> },
       { path: 'report', element: <PermissionRoute path="/report" element={<ReportPage />} /> },
       { path: 'report/dashboard', element: <PermissionRoute path="/report" element={<ReportPage />} /> },
     ],
