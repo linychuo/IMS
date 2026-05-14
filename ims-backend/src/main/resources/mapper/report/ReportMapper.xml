@@ -25,8 +25,8 @@
             COALESCE(SUM(total_amount), 0) as totalSalesAmount,
             COUNT(*) as totalOrderCount,
             COALESCE(AVG(total_amount), 0) as avgOrderAmount,
-            COALESCE(SUM(discount_amount), 0) as discountAmount,
-            COALESCE(SUM(return_amount), 0) as returnAmount
+            0 as discountAmount,
+            0 as returnAmount
         FROM sales_out
         WHERE create_time::date = CURRENT_DATE AND status = 1
     </select>
@@ -39,7 +39,7 @@
             COALESCE(SUM(total_amount), 0) as totalPurchaseAmount,
             COUNT(*) as totalOrderCount,
             COALESCE(AVG(total_amount), 0) as avgOrderAmount,
-            COALESCE(SUM(return_amount), 0) as returnAmount
+            0 as returnAmount
         FROM purchase_in
         WHERE create_time::date = CURRENT_DATE AND status = 1
     </select>
@@ -195,13 +195,13 @@
                 WHEN COALESCE(SUM(so.total_amount), 0) > 0 THEN ROUND(COALESCE(SUM(so.total_amount), 0) / COALESCE(SUM(so.total_amount), 0) * 100, 2)
                 ELSE 0
             END as paymentRate,
-            c.customer_level as customerLevel
+            c.level as customerLevel
         FROM customer c
         LEFT JOIN sales_out so ON c.id = so.customer_id AND so.status = 1
         <if test="startDate != null and endDate != null">
             AND so.create_time::date BETWEEN #{startDate} AND #{endDate}
         </if>
-        GROUP BY c.id, c.customer_name, c.customer_level
+        GROUP BY c.id, c.customer_name, c.level
         ORDER BY totalSalesAmount DESC
     </select>
 
@@ -217,11 +217,11 @@
             0 as pendingAmount,
             MAX(so.create_time) as lastOrderDate,
             100 as paymentRate,
-            c.customer_level as customerLevel
+            c.level as customerLevel
         FROM customer c
         LEFT JOIN sales_out so ON c.id = so.customer_id AND so.status = 1
         WHERE c.id = #{customerId}
-        GROUP BY c.id, c.customer_name, c.customer_level
+        GROUP BY c.id, c.customer_name, c.level
     </select>
 
     <!-- 获取商品分析 -->
@@ -270,13 +270,13 @@
                 WHEN COALESCE(SUM(pi.total_amount), 0) > 0 THEN ROUND(COALESCE(SUM(pi.total_amount), 0) / COALESCE(SUM(pi.total_amount), 0) * 100, 2)
                 ELSE 0
             END as paymentRate,
-            s.supplier_level as supplierLevel
+            0 as supplierLevel
         FROM supplier s
         LEFT JOIN purchase_in pi ON s.id = pi.supplier_id AND pi.status = 1
         <if test="startDate != null and endDate != null">
             AND pi.create_time::date BETWEEN #{startDate} AND #{endDate}
         </if>
-        GROUP BY s.id, s.supplier_name, s.supplier_level
+        GROUP BY s.id, s.supplier_name
         ORDER BY totalPurchaseAmount DESC
     </select>
 
@@ -292,11 +292,11 @@
             0 as pendingAmount,
             MAX(pi.create_time) as lastOrderDate,
             100 as paymentRate,
-            s.supplier_level as supplierLevel
+            0 as supplierLevel
         FROM supplier s
         LEFT JOIN purchase_in pi ON s.id = pi.supplier_id AND pi.status = 1
         WHERE s.id = #{supplierId}
-        GROUP BY s.id, s.supplier_name, s.supplier_level
+        GROUP BY s.id, s.supplier_name
     </select>
 
 </mapper>
