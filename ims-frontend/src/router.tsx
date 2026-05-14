@@ -108,6 +108,7 @@ export const router = createBrowserRouter([
       { path: 'finance/transaction', element: <PermissionRoute path="/finance/transaction" element={<TransactionPage />} /> },
       { path: 'system', element: <PermissionRoute path="/system" element={<SystemPage />} /> },
       { path: 'report', element: <PermissionRoute path="/report" element={<ReportPage />} /> },
+      { path: 'report/dashboard', element: <PermissionRoute path="/report" element={<ReportPage />} /> },
     ],
   },
 ]);
