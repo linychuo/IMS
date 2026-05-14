@@ -94,8 +94,8 @@ const SalesOrderPage: React.FC = () => {
         params.keyword = keyword;
       }
       const res = await salesApi.get('/order/list', { params });
-      setData(res.data || []);
-      setPagination((prev) => ({ ...prev, total: res.data?.length || 0 }));
+      setData(res.data.data || []);
+      setPagination((prev) => ({ ...prev, total: res.data.data?.length || 0 }));
     } catch (error) {
       console.error('Failed to fetch orders:', error);
       message.error('获取销售订单失败');

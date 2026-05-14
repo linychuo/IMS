@@ -64,8 +64,8 @@ const SalesPriceStrategyPage: React.FC = () => {
     setLoading(true);
     try {
       const res = await salesApi.get('/price-strategy/list');
-      setData(res.data || []);
-      setPagination((prev) => ({ ...prev, total: res.data?.length || 0 }));
+      setData(res.data.data || []);
+      setPagination((prev) => ({ ...prev, total: res.data.data?.length || 0 }));
     } catch (error) {
       console.error('Failed to fetch strategies:', error);
       message.error('获取价格策略失败');
