@@ -55,8 +55,12 @@ interface Permission {
   children?: Permission[];
 }
 
-const SystemPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('user');
+interface SystemProps {
+  defaultTab?: 'user' | 'role';
+}
+
+const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
+  const [activeTab, setActiveTab] = useState(defaultTab);
 
   // 用户状态
   const [userLoading, setUserLoading] = useState(false);
