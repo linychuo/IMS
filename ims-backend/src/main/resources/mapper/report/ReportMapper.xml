@@ -231,15 +231,15 @@
             p.product_name as productName,
             pc.category_name as categoryName,
             COALESCE(SUM(sod.quantity), 0) as salesQuantity,
-            COALESCE(SUM(sod.quantity * sod.unit_price), 0) as salesAmount,
+            COALESCE(SUM(sod.quantity * sod.price), 0) as salesAmount,
             COALESCE(SUM(pid.quantity), 0) as purchaseQuantity,
-            COALESCE(SUM(pid.quantity * pid.unit_price), 0) as purchaseAmount,
+            COALESCE(SUM(pid.quantity * pid.price), 0) as purchaseAmount,
             COALESCE(SUM(i.quantity), 0) as stockQuantity,
             COALESCE(SUM(i.quantity * i.cost), 0) as stockAmount,
-            COALESCE(SUM(sod.quantity * sod.unit_price), 0) - COALESCE(SUM(pid.quantity * pid.unit_price), 0) as profit,
+            COALESCE(SUM(sod.quantity * sod.price), 0) - COALESCE(SUM(pid.quantity * pid.price), 0) as profit,
             CASE
-                WHEN COALESCE(SUM(sod.quantity * sod.unit_price), 0) > 0
-                THEN ROUND((COALESCE(SUM(sod.quantity * sod.unit_price), 0) - COALESCE(SUM(pid.quantity * pid.unit_price), 0)) / COALESCE(SUM(sod.quantity * sod.unit_price), 0) * 100, 2)
+                WHEN COALESCE(SUM(sod.quantity * sod.price), 0) > 0
+                THEN ROUND((COALESCE(SUM(sod.quantity * sod.price), 0) - COALESCE(SUM(pid.quantity * pid.price), 0)) / COALESCE(SUM(sod.quantity * sod.price), 0) * 100, 2)
                 ELSE 0
             END as profitRate,
             MAX(sod.create_time) as lastSalesDate
