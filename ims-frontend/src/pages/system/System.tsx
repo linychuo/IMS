@@ -252,7 +252,7 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
   const fetchPermissions = async () => {
     setPermissionLoading(true);
     try {
-      const res = await systemApi.get('/permission/list');
+      const res = await systemApi.get('/system/permission/list');
       if (res.data.code === 200) {
         setPermissionData(res.data.data || []);
       }
