@@ -13,8 +13,6 @@ public class SysPermission {
 
     private String permissionCode;
 
-    private String permissionType;
-
     private Long parentId;
 
     private String path;
@@ -22,8 +20,6 @@ public class SysPermission {
     private String component;
 
     private Integer sortOrder;
-
-    private String icon;
 
     private String description;
 
@@ -63,14 +59,6 @@ public class SysPermission {
         this.permissionCode = permissionCode;
     }
 
-    public String getPermissionType() {
-        return permissionType;
-    }
-
-    public void setPermissionType(String permissionType) {
-        this.permissionType = permissionType;
-    }
-
     public Long getParentId() {
         return parentId;
     }
@@ -101,14 +89,6 @@ public class SysPermission {
 
     public void setSortOrder(Integer sortOrder) {
         this.sortOrder = sortOrder;
-    }
-
-    public String getIcon() {
-        return icon;
-    }
-
-    public void setIcon(String icon) {
-        this.icon = icon;
     }
 
     public String getDescription() {

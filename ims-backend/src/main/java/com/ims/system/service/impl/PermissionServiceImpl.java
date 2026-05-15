@@ -50,9 +50,9 @@ public class PermissionServiceImpl implements PermissionService {
         List<SysPermission> userPermissions = getByUserId(userId);
         List<SysPermission> allActivePermissions = permissionMapper.selectAllActive();
 
-        // 过滤出菜单类型的权限
+        // 过滤出菜单类型的权限（parentId 为 null 的是菜单）
         List<SysPermission> menuPermissions = allActivePermissions.stream()
-                .filter(p -> "menu".equals(p.getPermissionType()))
+                .filter(p -> p.getParentId() == null)
                 .collect(Collectors.toList());
 
         // 构建菜单树
@@ -69,7 +69,6 @@ public class PermissionServiceImpl implements PermissionService {
                 tree.setId(menu.getId());
                 tree.setName(menu.getPermissionName());
                 tree.setPath(menu.getPath());
-                tree.setIcon(menu.getIcon());
                 tree.setPermissionCode(menu.getPermissionCode());
 
                 // 查找子菜单
@@ -82,7 +81,6 @@ public class PermissionServiceImpl implements PermissionService {
                             childTree.setId(child.getId());
                             childTree.setName(child.getPermissionName());
                             childTree.setPath(child.getPath());
-                            childTree.setIcon(child.getIcon());
                             childTree.setPermissionCode(child.getPermissionCode());
                             children.add(childTree);
                         }

@@ -196,7 +196,6 @@ public class PermissionScanner implements ApplicationListener<ContextRefreshedEv
         SysPermission permission = new SysPermission();
         permission.setPermissionCode(fullCode);
         permission.setPermissionName(methodPerm.name());
-        permission.setPermissionType("button");
         permission.setStatus(1);
         permission.setDeleted(0);
         permission.setSortOrder(methodPerm.sortOrder());
@@ -212,7 +211,6 @@ public class PermissionScanner implements ApplicationListener<ContextRefreshedEv
         SysPermission menu = new SysPermission();
         menu.setPermissionCode(topLevelCode);
         menu.setPermissionName(classInfo.name.isEmpty() ? topLevelCode : classInfo.name);
-        menu.setPermissionType("menu");
         menu.setStatus(1);
         menu.setDeleted(0);
         menu.setSortOrder(0);
@@ -228,7 +226,6 @@ public class PermissionScanner implements ApplicationListener<ContextRefreshedEv
         SysPermission menu = new SysPermission();
         menu.setPermissionCode(classInfo.code);
         menu.setPermissionName(classInfo.name.isEmpty() ? classInfo.code : classInfo.name);
-        menu.setPermissionType("menu");
         menu.setStatus(1);
         menu.setDeleted(0);
         menu.setSortOrder(1);

@@ -14,8 +14,6 @@ public class MenuTree implements Serializable {
 
     private String path;
 
-    private String icon;
-
     private String permissionCode;
 
     private List<MenuTree> children;
@@ -42,14 +40,6 @@ public class MenuTree implements Serializable {
 
     public void setPath(String path) {
         this.path = path;
-    }
-
-    public String getIcon() {
-        return icon;
-    }
-
-    public void setIcon(String icon) {
-        this.icon = icon;
     }
 
     public List<MenuTree> getChildren() {

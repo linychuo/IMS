@@ -58,7 +58,6 @@ const AppLayout: React.FC = () => {
     return menuList.map(menu => ({
       key: menu.path || codeToPath(menu.permissionCode),
       label: menu.name,
-      icon: menu.icon && iconMap[menu.icon] ? iconMap[menu.icon] : undefined,
       children: menu.children && menu.children.length > 0 ? buildMenuItems(menu.children) : undefined,
     }));
   };
