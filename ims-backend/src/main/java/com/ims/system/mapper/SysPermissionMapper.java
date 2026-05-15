@@ -66,4 +66,19 @@ public interface SysPermissionMapper {
      * 批量软删除权限
      */
     int batchDelete(@Param("ids") List<Long> ids);
+
+    /**
+     * 根据ID查询
+     */
+    SysPermission selectById(@Param("id") Long id);
+
+    /**
+     * 查询所有菜单
+     */
+    List<SysPermission> selectAllMenus();
+
+    /**
+     * 更新菜单
+     */
+    int updateMenu(SysPermission permission);
 }

@@ -17,12 +17,13 @@
         <result column="update_by" property="updateBy"/>
         <result column="update_time" property="updateTime"/>
         <result column="deleted" property="deleted"/>
+        <result column="source" property="source"/>
     </resultMap>
 
     <sql id="Base_Column_List">
         id, permission_code, permission_name, parent_id,
         path, component, sort_order, description, status,
-        create_by, create_time, update_by, update_time, deleted
+        create_by, create_time, update_by, update_time, deleted, source
     </sql>
 
     <select id="selectByCode" resultMap="BaseResultMap">
@@ -65,7 +66,7 @@
     <select id="selectByUserId" resultMap="BaseResultMap">
         SELECT DISTINCT p.id, p.permission_code, p.permission_name, p.parent_id,
                p.path, p.component, p.sort_order, p.description, p.status,
-               p.create_by, p.create_time, p.update_by, p.update_time, p.deleted
+               p.create_by, p.create_time, p.update_by, p.update_time, p.deleted, p.source
         FROM sys_permission p
         INNER JOIN sys_role_permission rp ON p.id = rp.permission_id
         INNER JOIN sys_user_role ur ON rp.role_id = ur.role_id
@@ -76,11 +77,11 @@
         INSERT INTO sys_permission (
             permission_code, permission_name, parent_id,
             path, component, sort_order, description, status,
-            create_time, update_time, deleted
+            create_time, update_time, deleted, source
         ) VALUES (
             #{permissionCode}, #{permissionName}, #{parentId},
             #{path}, #{component}, #{sortOrder}, #{description}, #{status},
-            CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0
+            CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0, #{source}
         )
     </insert>
 
@@ -110,6 +111,33 @@
         <foreach collection="ids" item="id" open="(" separator="," close=")">
             #{id}
         </foreach>
+    </update>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM sys_permission
+        WHERE id = #{id} AND deleted = 0
+    </select>
+
+    <select id="selectAllMenus" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM sys_permission
+        WHERE deleted = 0
+        ORDER BY sort_order ASC
+    </select>
+
+    <update id="updateMenu">
+        UPDATE sys_permission
+        SET permission_name = #{permissionName},
+            parent_id = #{parentId},
+            path = #{path},
+            component = #{component},
+            sort_order = #{sortOrder},
+            description = #{description},
+            status = #{status},
+            source = #{source},
+            update_time = CURRENT_TIMESTAMP
+        WHERE id = #{id}
     </update>
 
 </mapper>

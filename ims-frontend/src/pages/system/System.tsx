@@ -12,10 +12,13 @@ import {
   Tag,
   Popconfirm,
   Tree,
+  TreeDataNode,
 } from 'antd';
 import {
   PlusOutlined,
   SettingOutlined,
+  EditOutlined,
+  DeleteOutlined,
 } from '@ant-design/icons';
 import { systemApi } from '../../api';
 import type { DataNode } from 'antd/es/tree';
@@ -43,20 +46,23 @@ interface Role {
   createTime?: string;
 }
 
-// ============ 权限 ============
-interface Permission {
+// ============ 菜单 ============
+interface MenuItem {
   id: number;
   permissionName: string;
   permissionCode: string;
-  permissionType: string;
   parentId?: number;
   path?: string;
-  icon?: string;
-  children?: Permission[];
+  component?: string;
+  sortOrder: number;
+  description?: string;
+  status: number;
+  source?: string;
+  children?: MenuItem[];
 }
 
 interface SystemProps {
-  defaultTab?: 'user' | 'role';
+  defaultTab?: 'user' | 'role' | 'menu';
 }
 
 const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
@@ -78,9 +84,17 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
   const [editingRole, setEditingRole] = useState<Role | null>(null);
   const [roleForm] = Form.useForm();
 
-  // 权限状态
+  // 菜单状态
+  const [menuLoading, setMenuLoading] = useState(false);
+  const [menuData, setMenuData] = useState<MenuItem[]>([]);
+  const [menuModalVisible, setMenuModalVisible] = useState(false);
+  const [editingMenu, setEditingMenu] = useState<MenuItem | null>(null);
+  const [menuForm] = Form.useForm();
+  const [menuTreeData, setMenuTreeData] = useState<DataNode[]>([]);
+
+  // 权限状态(角色权限分配)
   const [permissionLoading, setPermissionLoading] = useState(false);
-  const [permissionData, setPermissionData] = useState<Permission[]>([]);
+  const [permissionData, setPermissionData] = useState<MenuItem[]>([]);
   const [permissionModalVisible, setPermissionModalVisible] = useState(false);
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
   const [selectedPermissions, setSelectedPermissions] = useState<number[]>([]);
@@ -90,6 +104,8 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
       fetchUsers();
     } else if (activeTab === 'role') {
       fetchRoles();
+    } else if (activeTab === 'menu') {
+      fetchMenus();
     } else if (activeTab === 'permission') {
       fetchPermissions();
     }
@@ -248,6 +264,127 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
     }
   };
 
+  // ============ 菜单操作 ============
+  const fetchMenus = async () => {
+    setMenuLoading(true);
+    try {
+      const res = await systemApi.get('/system/menu/list');
+      if (res.data.code === 200) {
+        const menus = res.data.data || [];
+        setMenuData(menus);
+        setMenuTreeData(convertToTreeData(menus));
+      }
+    } catch (error) {
+      console.error('Failed to fetch menus:', error);
+      message.error('获取菜单列表失败');
+    } finally {
+      setMenuLoading(false);
+    }
+  };
+
+  const convertToTreeData = (menus: MenuItem[]): DataNode[] => {
+    const map: Record<number, MenuItem> = {};
+    const roots: MenuItem[] = [];
+
+    menus.forEach(m => {
+      map[m.id] = { ...m, children: [] };
+    });
+
+    menus.forEach(m => {
+      if (m.parentId && map[m.parentId]) {
+        map[m.parentId].children!.push(map[m.id]);
+      } else {
+        roots.push(map[m.id]);
+      }
+    });
+
+    const buildTree = (items: MenuItem[]): DataNode[] => {
+      return items.map(item => ({
+        title: (
+          <span>
+            {item.permissionName}
+            <span style={{ color: '#999', marginLeft: 8, fontSize: 12 }}>
+              {item.path || '-'}
+            </span>
+          </span>
+        ),
+        key: item.id,
+        children: item.children && item.children.length > 0 ? buildTree(item.children) : undefined,
+      }));
+    };
+
+    return buildTree(roots);
+  };
+
+  const handleAddMenu = () => {
+    setEditingMenu(null);
+    menuForm.resetFields();
+    setMenuModalVisible(true);
+  };
+
+  const handleEditMenu = (record: MenuItem) => {
+    setEditingMenu(record);
+    menuForm.setFieldsValue({
+      ...record,
+    });
+    setMenuModalVisible(true);
+  };
+
+  const handleDeleteMenu = async (id: number) => {
+    try {
+      const res = await systemApi.delete(`/system/menu/${id}`);
+      if (res.data.code === 200) {
+        message.success('删除成功');
+        fetchMenus();
+      } else {
+        message.error(res.data.message || '删除失败');
+      }
+    } catch (error) {
+      message.error('删除失败');
+    }
+  };
+
+  const handleMenuModalOk = async () => {
+    try {
+      const values = await menuForm.validateFields();
+      if (editingMenu?.id) {
+        const res = await systemApi.put('/system/menu', { ...values, id: editingMenu.id });
+        if (res.data.code === 200) {
+          message.success('修改成功');
+          setMenuModalVisible(false);
+          fetchMenus();
+        } else {
+          message.error(res.data.message || '修改失败');
+        }
+      } else {
+        const res = await systemApi.post('/system/menu', values);
+        if (res.data.code === 200) {
+          message.success('新增成功');
+          setMenuModalVisible(false);
+          fetchMenus();
+        } else {
+          message.error(res.data.message || '新增失败');
+        }
+      }
+    } catch (error) {
+      console.error('Failed to save menu:', error);
+    }
+  };
+
+  const handleStatusChange = async (id: number, status: number) => {
+    try {
+      const res = await systemApi.put(`/system/menu/${id}/status`, null, { params: { status } });
+      if (res.data.code === 200) {
+        message.success(status === 1 ? '已启用' : '已禁用');
+        fetchMenus();
+      } else {
+        message.error(res.data.message || '操作失败');
+      }
+    } catch (error) {
+      message.error('操作失败');
+    }
+  };
+
   // ============ 权限操作 ============
   const fetchPermissions = async () => {
     setPermissionLoading(true);
@@ -298,11 +435,11 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
     setSelectedPermissions(checkedKeys);
   };
 
-  const convertToTreeData = (permissions: Permission[]): DataNode[] => {
+  const convertPermToTreeData = (permissions: MenuItem[]): DataNode[] => {
     return permissions.map(perm => ({
       title: perm.permissionName,
       key: perm.id,
-      children: perm.children ? convertToTreeData(perm.children) : undefined,
+      children: perm.children ? convertPermToTreeData(perm.children) : undefined,
     }));
   };
 
@@ -312,6 +449,10 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
   };
 
   const renderRoleStatus = (status: number) => {
+    return <Tag color={status === 1 ? 'green' : 'red'}>{status === 1 ? '启用' : '禁用'}</Tag>;
+  };
+
+  const renderMenuStatus = (status: number) => {
     return <Tag color={status === 1 ? 'green' : 'red'}>{status === 1 ? '启用' : '禁用'}</Tag>;
   };
 
@@ -364,10 +505,24 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
   const permissionColumns = [
     { title: '权限名称', dataIndex: 'permissionName', key: 'permissionName', width: 200 },
     { title: '权限编码', dataIndex: 'permissionCode', key: 'permissionCode', width: 200 },
-    { title: '类型', dataIndex: 'permissionType', key: 'permissionType', width: 100 },
     { title: '路由', dataIndex: 'path', key: 'path', ellipsis: true },
-    { title: '图标', dataIndex: 'icon', key: 'icon', width: 80 },
+    { title: '状态', dataIndex: 'status', key: 'status', width: 80, render: renderMenuStatus },
   ];
+
+  // ============ Parent menu options for form ============
+  const getParentMenuOptions = () => {
+    const options: { label: string; value: number }[] = [];
+    const addOptions = (menus: MenuItem[], level: number) => {
+      menus.forEach(m => {
+        options.push({ label: '　'.repeat(level) + m.permissionName, value: m.id });
+        if (m.children) {
+          addOptions(m.children, level + 1);
+        }
+      });
+    };
+    addOptions(menuData, 0);
+    return options;
+  };
 
   return (
     <div>
@@ -414,6 +569,32 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
               onChange: (current, size) => setRolePagination({ current, size, total: rolePagination.total }),
             }}
             scroll={{ x: 1000 }}
+          />
+        </TabPane>
+
+        <TabPane tab="菜单管理" key="menu">
+          <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-end' }}>
+            <Button type="primary" icon={<PlusOutlined />} onClick={handleAddMenu}>新建菜单</Button>
+          </div>
+          <Tree
+            treeData={menuTreeData}
+            loading={menuLoading}
+            defaultExpandAll
+            titleRender={(nodeData) => {
+              const menu = menuData.find(m => m.id === nodeData.key);
+              if (!menu) return nodeData.title;
+              return (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                  <span>{menu.permissionName} <span style={{ color: '#999', fontSize: 12 }}>{menu.path || '-'}</span></span>
+                  <Space size="small">
+                    <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEditMenu(menu)} />
+                    <Popconfirm title="确定删除？" onConfirm={() => handleDeleteMenu(menu.id)}>
+                      <Button type="link" size="small" danger icon={<DeleteOutlined />} />
+                    </Popconfirm>
+                  </Space>
+                </div>
+              );
+            }}
           />
         </TabPane>
 
@@ -513,6 +694,53 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
         </Form>
       </Modal>
 
+      {/* 菜单弹窗 */}
+      <Modal
+        title={editingMenu ? '编辑菜单' : '新建菜单'}
+        open={menuModalVisible}
+        onOk={handleMenuModalOk}
+        onCancel={() => setMenuModalVisible(false)}
+        width={500}
+      >
+        <Form form={menuForm} layout="vertical">
+          <Form.Item
+            name="permissionName"
+            label="菜单名称"
+            rules={[{ required: true, message: '请输入菜单名称' }]}
+          >
+            <Input placeholder="请输入菜单名称" />
+          </Form.Item>
+          <Form.Item
+            name="permissionCode"
+            label="权限编码"
+            rules={[{ required: true, message: '请输入权限编码' }]}
+          >
+            <Input placeholder="如: system:user" disabled={!!editingMenu} />
+          </Form.Item>
+          <Form.Item name="parentId" label="父级菜单">
+            <Select allowClear placeholder="请选择父级菜单" options={getParentMenuOptions()} />
+          </Form.Item>
+          <Form.Item name="path" label="路由路径">
+            <Input placeholder="如: /system/user" />
+          </Form.Item>
+          <Form.Item name="component" label="组件路径">
+            <Input placeholder="如: pages/system/System" />
+          </Form.Item>
+          <Form.Item name="sortOrder" label="排序">
+            <Input type="number" placeholder="数字越小越靠前" defaultValue={0} />
+          </Form.Item>
+          <Form.Item name="description" label="描述">
+            <Input.TextArea rows={2} placeholder="请输入描述" />
+          </Form.Item>
+          <Form.Item name="status" label="状态" initialValue={1}>
+            <Select>
+              <Select.Option value={1}>启用</Select.Option>
+              <Select.Option value={0}>禁用</Select.Option>
+            </Select>
+          </Form.Item>
+        </Form>
+      </Modal>
+
       {/* 权限分配弹窗 */}
       <Modal
         title={`权限分配 - ${selectedRole?.roleName || ''}`}
@@ -526,7 +754,7 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
           defaultExpandAll
           checkedKeys={selectedPermissions}
           onCheck={(checked) => handlePermissionCheck(checked as number[])}
-          treeData={convertToTreeData(permissionData)}
+          treeData={convertPermToTreeData(permissionData)}
           style={{ maxHeight: 400, overflow: 'auto' }}
         />
       </Modal>

@@ -120,6 +120,10 @@ public class PermissionScanner implements ApplicationListener<ContextRefreshedEv
             if (existing == null) {
                 permissionMapper.insert(menu);
             } else {
+                // Skip MANUAL source menus - they are manually maintained
+                if ("MANUAL".equals(existing.getSource())) {
+                    continue;
+                }
                 // Only update menu if parent_id is not already set
                 // This preserves manually configured parent_id values
                 if (existing.getParentId() == null && menu.getParentId() != null) {
@@ -200,6 +204,7 @@ public class PermissionScanner implements ApplicationListener<ContextRefreshedEv
         permission.setDeleted(0);
         permission.setSortOrder(methodPerm.sortOrder());
         permission.setParentId(findParentIdByCode(classInfo.code));
+        permission.setSource("AUTO");
 
         return permission;
     }
@@ -215,6 +220,7 @@ public class PermissionScanner implements ApplicationListener<ContextRefreshedEv
         menu.setDeleted(0);
         menu.setSortOrder(0);
         menu.setParentId(null);
+        menu.setSource("AUTO");
 
         return menu;
     }
@@ -232,6 +238,7 @@ public class PermissionScanner implements ApplicationListener<ContextRefreshedEv
         // 通过 code 前缀匹配来确定父子关系，先查询一级菜单的 ID
         Long parentId = findParentIdByCode(topLevelCode);
         menu.setParentId(parentId);
+        menu.setSource("AUTO");
 
         return menu;
     }
