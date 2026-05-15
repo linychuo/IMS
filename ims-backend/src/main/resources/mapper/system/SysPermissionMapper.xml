@@ -6,12 +6,10 @@
         <id column="id" property="id"/>
         <result column="permission_code" property="permissionCode"/>
         <result column="permission_name" property="permissionName"/>
-        <result column="permission_type" property="permissionType"/>
         <result column="parent_id" property="parentId"/>
         <result column="path" property="path"/>
         <result column="component" property="component"/>
         <result column="sort_order" property="sortOrder"/>
-        <result column="icon" property="icon"/>
         <result column="description" property="description"/>
         <result column="status" property="status"/>
         <result column="create_by" property="createBy"/>
@@ -22,8 +20,8 @@
     </resultMap>
 
     <sql id="Base_Column_List">
-        id, permission_code, permission_name, permission_type, parent_id,
-        path, component, sort_order, icon, description, status,
+        id, permission_code, permission_name, parent_id,
+        path, component, sort_order, description, status,
         create_by, create_time, update_by, update_time, deleted
     </sql>
 
@@ -65,8 +63,8 @@
     </select>
 
     <select id="selectByUserId" resultMap="BaseResultMap">
-        SELECT DISTINCT p.id, p.permission_code, p.permission_name, p.permission_type, p.parent_id,
-               p.path, p.component, p.sort_order, p.icon, p.description, p.status,
+        SELECT DISTINCT p.id, p.permission_code, p.permission_name, p.parent_id,
+               p.path, p.component, p.sort_order, p.description, p.status,
                p.create_by, p.create_time, p.update_by, p.update_time, p.deleted
         FROM sys_permission p
         INNER JOIN sys_role_permission rp ON p.id = rp.permission_id
@@ -76,12 +74,12 @@
 
     <insert id="insert" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO sys_permission (
-            permission_code, permission_name, permission_type, parent_id,
-            path, component, sort_order, icon, description, status,
+            permission_code, permission_name, parent_id,
+            path, component, sort_order, description, status,
             create_time, update_time, deleted
         ) VALUES (
-            #{permissionCode}, #{permissionName}, #{permissionType}, #{parentId},
-            #{path}, #{component}, #{sortOrder}, #{icon}, #{description}, #{status},
+            #{permissionCode}, #{permissionName}, #{parentId},
+            #{path}, #{component}, #{sortOrder}, #{description}, #{status},
             CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0
         )
     </insert>
@@ -89,12 +87,10 @@
     <update id="update">
         UPDATE sys_permission
         SET permission_name = #{permissionName},
-            permission_type = #{permissionType},
             parent_id = #{parentId},
             path = #{path},
             component = #{component},
             sort_order = #{sortOrder},
-            icon = #{icon},
             description = #{description},
             status = #{status},
             update_time = CURRENT_TIMESTAMP
