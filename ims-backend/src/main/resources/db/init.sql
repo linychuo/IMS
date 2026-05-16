@@ -836,13 +836,6 @@ INSERT INTO sys_menu (name, path, parent_id, component, sort_order, status, dele
 ('财务管理', '/finance', NULL, NULL, 9, 1, 0),
 ('系统管理', '/system', NULL, NULL, 10, 1, 0);
 
--- 仓库管理子菜单
-INSERT INTO sys_menu (name, path, parent_id, component, sort_order, status, deleted)
-SELECT '仓库管理', '/warehouse/warehouse', id, '/pages/warehouse/Warehouse', 0, 1, 0 FROM sys_menu WHERE path = '/warehouse';
-
-INSERT INTO sys_menu (name, path, parent_id, component, sort_order, status, deleted)
-SELECT '库位管理', '/warehouse/location', id, '/pages/warehouse/Location', 1, 1, 0 FROM sys_menu WHERE path = '/warehouse';
-
 -- 销售管理子菜单
 INSERT INTO sys_menu (name, path, parent_id, component, sort_order, status, deleted)
 SELECT '销售订单', '/sales/order', id, '/pages/sales/Order', 0, 1, 0 FROM sys_menu WHERE path = '/sales';
