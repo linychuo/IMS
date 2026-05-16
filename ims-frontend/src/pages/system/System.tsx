@@ -33,6 +33,8 @@ interface User {
   email?: string;
   mobile?: string;
   status: number;
+  roleId?: number;
+  roleName?: string;
   createTime?: string;
 }
 
@@ -622,6 +624,7 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
   const userColumns = [
     { title: '用户名', dataIndex: 'username', key: 'username', width: 150 },
     { title: '真实姓名', dataIndex: 'realName', key: 'realName', width: 120 },
+    { title: '角色', dataIndex: 'roleName', key: 'roleName', width: 100 },
     { title: '邮箱', dataIndex: 'email', key: 'email', width: 180 },
     { title: '手机号', dataIndex: 'mobile', key: 'mobile', width: 130 },
     { title: '状态', dataIndex: 'status', key: 'status', width: 80, render: renderUserStatus },

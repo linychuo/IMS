@@ -87,10 +87,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public List<UserDTO> listAll() {
-        List<SysUser> users = userMapper.selectAll();
-        return users.stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+        return userMapper.selectAllWithRole();
     }
 
     @Override

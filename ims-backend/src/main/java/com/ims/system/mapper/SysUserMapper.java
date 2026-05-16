@@ -1,5 +1,6 @@
 package com.ims.system.mapper;
 
+import com.ims.system.dto.UserDTO;
 import com.ims.system.entity.SysUser;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -26,6 +27,11 @@ public interface SysUserMapper {
      * 查询所有用户
      */
     List<SysUser> selectAll();
+
+    /**
+     * 查询所有用户（带角色信息）
+     */
+    List<UserDTO> selectAllWithRole();
 
     /**
      * 根据ID查询

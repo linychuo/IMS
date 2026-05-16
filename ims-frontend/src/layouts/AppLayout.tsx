@@ -106,7 +106,17 @@ const AppLayout: React.FC = () => {
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      <Sider trigger={null} collapsible collapsed={collapsed}>
+      <Sider
+        trigger={null}
+        collapsible
+        collapsed={collapsed}
+        style={{
+          position: 'sticky',
+          top: 0,
+          height: '100vh',
+          zIndex: 100,
+        }}
+      >
         <div style={{
           height: 64,
           display: 'flex',
@@ -115,6 +125,11 @@ const AppLayout: React.FC = () => {
           color: 'white',
           fontSize: collapsed ? 14 : 18,
           fontWeight: 'bold',
+          position: 'sticky',
+          top: 0,
+          zIndex: 101,
+          background: '#001529',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
         }}>
           {collapsed ? 'IMS' : '进销存系统'}
         </div>
