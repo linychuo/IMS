@@ -4,6 +4,7 @@ import com.ims.core.result.Result;
 import com.ims.system.annotation.Permission;
 import com.ims.system.dto.MenuDTO;
 import com.ims.system.dto.MenuTree;
+import com.ims.system.entity.SysMenu;
 import com.ims.system.entity.SysPermission;
 import com.ims.system.service.MenuService;
 import com.ims.system.service.PermissionService;
@@ -12,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 /**
- * 栏目管理控制器（独立于权限管理）
+ * 栏目管理控制器
  * 栏目数据手工维护，每个栏目关联权限点
  */
 @RestController
@@ -42,7 +43,7 @@ public class MenuController {
      */
     @GetMapping("/list")
     @Permission(code = "list", name = "查看栏目")
-    public Result<List<SysPermission>> listMenus() {
+    public Result<List<SysMenu>> listMenus() {
         return Result.success(menuService.listAllMenus());
     }
 
@@ -51,8 +52,8 @@ public class MenuController {
      */
     @GetMapping("/{id}")
     @Permission(code = "get", name = "获取栏目")
-    public Result<SysPermission> getMenu(@PathVariable Long id) {
-        SysPermission menu = menuService.getMenuById(id);
+    public Result<SysMenu> getMenu(@PathVariable Long id) {
+        SysMenu menu = menuService.getMenuById(id);
         if (menu == null) {
             return Result.error("栏目不存在");
         }

@@ -1,7 +1,11 @@
 package com.ims.system.service.impl;
 
 import com.ims.system.dto.MenuTree;
+import com.ims.system.entity.SysMenu;
+import com.ims.system.entity.SysMenuPermission;
 import com.ims.system.entity.SysPermission;
+import com.ims.system.mapper.SysMenuMapper;
+import com.ims.system.mapper.SysMenuPermissionMapper;
 import com.ims.system.mapper.SysPermissionMapper;
 import com.ims.system.mapper.SysRolePermissionMapper;
 import com.ims.system.mapper.SysUserRoleMapper;
@@ -9,8 +13,7 @@ import com.ims.system.service.PermissionService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -20,14 +23,20 @@ import java.util.stream.Collectors;
 public class PermissionServiceImpl implements PermissionService {
 
     private final SysPermissionMapper permissionMapper;
+    private final SysMenuMapper menuMapper;
+    private final SysMenuPermissionMapper menuPermissionMapper;
     private final SysUserRoleMapper userRoleMapper;
     private final SysRolePermissionMapper rolePermissionMapper;
 
     public PermissionServiceImpl(
             SysPermissionMapper permissionMapper,
+            SysMenuMapper menuMapper,
+            SysMenuPermissionMapper menuPermissionMapper,
             SysUserRoleMapper userRoleMapper,
             SysRolePermissionMapper rolePermissionMapper) {
         this.permissionMapper = permissionMapper;
+        this.menuMapper = menuMapper;
+        this.menuPermissionMapper = menuPermissionMapper;
         this.userRoleMapper = userRoleMapper;
         this.rolePermissionMapper = rolePermissionMapper;
     }
@@ -47,60 +56,81 @@ public class PermissionServiceImpl implements PermissionService {
 
     @Override
     public List<MenuTree> getMenuTreeByUserId(Long userId) {
+        // 获取用户的所有权限
         List<SysPermission> userPermissions = getByUserId(userId);
-        List<SysPermission> allActivePermissions = permissionMapper.selectAllActive();
+        Set<String> userPermissionCodes = userPermissions.stream()
+                .map(SysPermission::getPermissionCode)
+                .collect(Collectors.toSet());
 
-        // 构建菜单树（allActivePermissions 包含所有父子菜单）
-        return buildMenuTree(allActivePermissions, userPermissions);
-    }
+        // 获取所有栏目（启用状态）
+        List<SysMenu> allMenus = menuMapper.selectAllActive();
 
-    private List<MenuTree> buildMenuTree(List<SysPermission> allMenus, List<SysPermission> userPermissions) {
+        // 获取所有栏目-权限关联
+        Map<Long, List<Long>> menuPermissionMap = new HashMap<>();
+        List<SysMenuPermission> allMenuPermissions = menuPermissionMapper.selectAll();
+        for (SysMenuPermission mp : allMenuPermissions) {
+            menuPermissionMap.computeIfAbsent(mp.getMenuId(), k -> new ArrayList<>()).add(mp.getPermissionId());
+        }
+
+        // 构建菜单树（只包含用户有权限访问的栏目）
         List<MenuTree> result = new ArrayList<>();
 
-        // 先找出所有顶级菜单（parentId 为 null）
-        for (SysPermission menu : allMenus) {
-            if (menu.getParentId() == null) {
-                MenuTree tree = new MenuTree();
-                tree.setId(menu.getId());
-                tree.setName(menu.getPermissionName());
-                tree.setPath(menu.getPath());
-                tree.setPermissionCode(menu.getPermissionCode());
+        // 获取顶级栏目(parentId == null)
+        List<SysMenu> topMenus = allMenus.stream()
+                .filter(m -> m.getParentId() == null)
+                .collect(Collectors.toList());
 
-                // 查找子菜单
-                List<MenuTree> children = new ArrayList<>();
-                for (SysPermission child : allMenus) {
-                    if (menu.getId().equals(child.getParentId())) {
-                        // 检查用户是否有该菜单或子菜单的权限
-                        if (hasMenuAccess(userPermissions, child)) {
-                            MenuTree childTree = new MenuTree();
-                            childTree.setId(child.getId());
-                            childTree.setName(child.getPermissionName());
-                            childTree.setPath(child.getPath());
-                            childTree.setPermissionCode(child.getPermissionCode());
-                            children.add(childTree);
-                        }
-                    }
-                }
-
-                if (!children.isEmpty() || hasMenuAccess(userPermissions, menu)) {
-                    tree.setChildren(children.isEmpty() ? null : children);
-                    result.add(tree);
-                }
+        for (SysMenu menu : topMenus) {
+            MenuTree tree = buildMenuTreeRecursive(menu, allMenus, menuPermissionMap, userPermissionCodes);
+            if (tree != null) {
+                result.add(tree);
             }
         }
 
         return result;
     }
 
-    private boolean hasMenuAccess(List<SysPermission> userPermissions, SysPermission menu) {
-        // 检查用户是否有该菜单或任何子菜单的权限
-        for (SysPermission up : userPermissions) {
-            if (up.getPermissionCode().equals(menu.getPermissionCode()) ||
-                up.getPermissionCode().startsWith(menu.getPermissionCode() + ":")) {
-                return true;
+    private MenuTree buildMenuTreeRecursive(SysMenu menu, List<SysMenu> allMenus,
+                                           Map<Long, List<Long>> menuPermissionMap,
+                                           Set<String> userPermissionCodes) {
+        // 检查用户是否有该菜单的权限
+        List<Long> menuPermIds = menuPermissionMap.get(menu.getId());
+        boolean hasAccess = false;
+        if (menuPermIds != null) {
+            for (Long permId : menuPermIds) {
+                SysPermission perm = permissionMapper.selectById(permId);
+                if (perm != null && userPermissionCodes.contains(perm.getPermissionCode())) {
+                    hasAccess = true;
+                    break;
+                }
             }
         }
-        return false;
+
+        // 如果用户没有该菜单的权限，且没有子菜单有权限，返回null
+        List<MenuTree> accessibleChildren = new ArrayList<>();
+        for (SysMenu child : allMenus) {
+            if (menu.getId().equals(child.getParentId())) {
+                MenuTree childTree = buildMenuTreeRecursive(child, allMenus, menuPermissionMap, userPermissionCodes);
+                if (childTree != null) {
+                    accessibleChildren.add(childTree);
+                }
+            }
+        }
+
+        if (!hasAccess && accessibleChildren.isEmpty()) {
+            return null;
+        }
+
+        MenuTree tree = new MenuTree();
+        tree.setId(menu.getId());
+        tree.setName(menu.getName());
+        tree.setPath(menu.getPath());
+
+        if (!accessibleChildren.isEmpty()) {
+            tree.setChildren(accessibleChildren);
+        }
+
+        return tree;
     }
 
     @Override

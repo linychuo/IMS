@@ -9,9 +9,7 @@ public class MenuDTO implements Serializable {
 
     private Long id;
 
-    private String permissionName;
-
-    private String permissionCode;
+    private String name;
 
     private Long parentId;
 
@@ -25,8 +23,6 @@ public class MenuDTO implements Serializable {
 
     private Integer status;
 
-    private String source;
-
     public Long getId() {
         return id;
     }
@@ -35,20 +31,12 @@ public class MenuDTO implements Serializable {
         this.id = id;
     }
 
-    public String getPermissionName() {
-        return permissionName;
+    public String getName() {
+        return name;
     }
 
-    public void setPermissionName(String permissionName) {
-        this.permissionName = permissionName;
-    }
-
-    public String getPermissionCode() {
-        return permissionCode;
-    }
-
-    public void setPermissionCode(String permissionCode) {
-        this.permissionCode = permissionCode;
+    public void setName(String name) {
+        this.name = name;
     }
 
     public Long getParentId() {
@@ -97,13 +85,5 @@ public class MenuDTO implements Serializable {
 
     public void setStatus(Integer status) {
         this.status = status;
-    }
-
-    public String getSource() {
-        return source;
-    }
-
-    public void setSource(String source) {
-        this.source = source;
     }
 }

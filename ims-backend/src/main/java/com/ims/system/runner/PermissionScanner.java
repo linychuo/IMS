@@ -33,6 +33,9 @@ public class PermissionScanner implements ApplicationListener<ContextRefreshedEv
     // 缓存类级别的 @Permission 信息
     private final Map<Class<?>, ClassPermissionInfo> classPermissionCache = new HashMap<>();
 
+    // 扫描过程中正在构建的权限缓存，用于在插入数据库前解析父子关系
+    private final Map<String, Long> pendingPermissionIds = new HashMap<>();
+
     public PermissionScanner(
             RequestMappingHandlerMapping handlerMapping,
             SysPermissionMapper permissionMapper,
@@ -72,14 +75,14 @@ public class PermissionScanner implements ApplicationListener<ContextRefreshedEv
             }
 
             // 类上的 @Permission 创建一级菜单
-            menuPermissions.add(buildMenuPermission(classInfo));
+            menuPermissions.add(buildMenuPermission(classInfo, menuPermissions));
 
             // 方法上的 @Permission 是按钮权限
             Permission methodPerm = AnnotationUtils.findAnnotation(method, Permission.class);
             if (methodPerm != null && !methodPerm.code().isEmpty()) {
                 buttonPermissions.add(buildButtonPermission(methodPerm, classInfo));
-                // 创建二级菜单（如 system:user）
-                menuPermissions.add(buildSecondLevelMenu(classInfo));
+                // 创建中间级菜单（如 finance:in）
+                buildChildMenus(classInfo, methodPerm.code(), menuPermissions);
             }
         }
 
@@ -104,28 +107,44 @@ public class PermissionScanner implements ApplicationListener<ContextRefreshedEv
         List<SysPermission> existingPermissions = permissionMapper.selectAllIncludingDeleted();
         log.info("数据库已有 {} 个权限点", existingPermissions.size());
 
-        // 4. 同步权限
-        for (SysPermission permission : buttonPermissions) {
-            SysPermission existing = findByCode(existingPermissions, permission.getPermissionCode());
-            if (existing == null) {
-                permissionMapper.insert(permission);
-            } else {
-                permission.setId(existing.getId());
-                permissionMapper.update(permission);
+        // 4. 构建待插入菜单的ID映射（用于解析父子关系）
+        // 对于数据库已存在的菜单，使用其现有ID；对于新菜单，先临时用负数占位
+        Map<String, Long> codeToIdMap = new HashMap<>();
+        Map<String, SysPermission> codeToMenuMap = new LinkedHashMap<>();
+        int tempId = -1;
+
+        // 首先将数据库中已存在的一级菜单（没有冒号的）加入映射（作为父级）
+        for (SysPermission existing : existingPermissions) {
+            if (existing.getParentId() == null && !existing.getPermissionCode().contains(":")) {
+                codeToIdMap.put(existing.getPermissionCode(), existing.getId());
             }
         }
 
         for (SysPermission menu : menuPermissions) {
             SysPermission existing = findByCode(existingPermissions, menu.getPermissionCode());
+            if (existing != null) {
+                codeToIdMap.put(menu.getPermissionCode(), existing.getId());
+                // 保留现有的 parentId
+                if (existing.getParentId() != null) {
+                    menu.setParentId(existing.getParentId());
+                }
+            } else {
+                codeToIdMap.put(menu.getPermissionCode(), (long) tempId--);
+            }
+            codeToMenuMap.put(menu.getPermissionCode(), menu);
+        }
+
+        // 解析所有菜单的父子关系（基于 code 前缀）
+        resolveMenuParentIds(codeToIdMap, codeToMenuMap);
+
+        // 5. 先同步所有菜单权限（插入数据库获取真实ID）
+        for (SysPermission menu : menuPermissions) {
+            SysPermission existing = findByCode(existingPermissions, menu.getPermissionCode());
             if (existing == null) {
                 permissionMapper.insert(menu);
+                codeToIdMap.put(menu.getPermissionCode(), menu.getId());
             } else {
-                // Skip MANUAL source menus - they are manually maintained
-                if ("MANUAL".equals(existing.getSource())) {
-                    continue;
-                }
-                // Only update menu if parent_id is not already set
-                // This preserves manually configured parent_id values
+                // Update existing menu, preserving parent_id if already set
                 if (existing.getParentId() == null && menu.getParentId() != null) {
                     menu.setId(existing.getId());
                     permissionMapper.update(menu);
@@ -141,7 +160,45 @@ public class PermissionScanner implements ApplicationListener<ContextRefreshedEv
             }
         }
 
-        // 5. 清理失效的权限
+        // 第二阶段：再次解析父子关系（此时codeToIdMap已包含本次插入的菜单ID）
+        resolveMenuParentIds(codeToIdMap, codeToMenuMap);
+
+        // 6. 重新更新所有需要更新parentId的菜单
+        for (SysPermission menu : menuPermissions) {
+            String menuCode = menu.getPermissionCode();
+            Long menuId = menu.getId();
+            Long currentParentId = menu.getParentId();
+            // 从 codeToIdMap 中查找当前应该有的 parentId
+            String parentCode = extractParentCode(menuCode);
+            Long expectedParentId = parentCode != null ? codeToIdMap.get(parentCode) : null;
+
+            // 如果当前parentId和预期不符，需要更新
+            if (menuId != null && menuId > 0 && !java.util.Objects.equals(currentParentId, expectedParentId)) {
+                SysPermission existing = findByCode(existingPermissions, menuCode);
+                if (existing != null) {
+                    menu.setParentId(expectedParentId);
+                    permissionMapper.update(menu);
+                }
+            }
+        }
+
+        // 7. 再同步按钮权限（使用已解析的父子关系）
+        for (SysPermission permission : buttonPermissions) {
+            // 从已构建的菜单映射中解析 parentId
+            String parentCode = extractParentCode(permission.getPermissionCode());
+            if (parentCode != null && codeToIdMap.containsKey(parentCode)) {
+                permission.setParentId(codeToIdMap.get(parentCode));
+            }
+            SysPermission existing = findByCode(existingPermissions, permission.getPermissionCode());
+            if (existing == null) {
+                permissionMapper.insert(permission);
+            } else {
+                permission.setId(existing.getId());
+                permissionMapper.update(permission);
+            }
+        }
+
+        // 8. 清理失效的权限
         Set<String> allCodes = new HashSet<>();
         for (SysPermission p : buttonPermissions) {
             allCodes.add(p.getPermissionCode());
@@ -166,6 +223,33 @@ public class PermissionScanner implements ApplicationListener<ContextRefreshedEv
         }
 
         log.info("========== 权限同步完成 ==========");
+    }
+
+    /**
+     * 解析菜单的父子关系。
+     * 例如 system:user 的父级是 system，system:user:add 的父级是 system:user。
+     */
+    private void resolveMenuParentIds(Map<String, Long> codeToIdMap, Map<String, SysPermission> codeToMenuMap) {
+        for (Map.Entry<String, SysPermission> entry : codeToMenuMap.entrySet()) {
+            String code = entry.getKey();
+            SysPermission menu = entry.getValue();
+            String parentCode = extractParentCode(code);
+            if (parentCode != null && codeToIdMap.containsKey(parentCode)) {
+                menu.setParentId(codeToIdMap.get(parentCode));
+            }
+        }
+    }
+
+    /**
+     * 从权限码提取父级码。
+     * 例如 "system:user:add" -> "system:user", "system:user" -> "system", "system" -> null
+     */
+    private String extractParentCode(String code) {
+        int lastColon = code.lastIndexOf(':');
+        if (lastColon > 0) {
+            return code.substring(0, lastColon);
+        }
+        return null;
     }
 
     private void scanClassPermissions() {
@@ -203,13 +287,12 @@ public class PermissionScanner implements ApplicationListener<ContextRefreshedEv
         permission.setStatus(1);
         permission.setDeleted(0);
         permission.setSortOrder(methodPerm.sortOrder());
-        permission.setParentId(findParentIdByCode(classInfo.code));
-        permission.setSource("AUTO");
+        // parentId 稍后通过 resolveMenuParentIds 统一解析
 
         return permission;
     }
 
-    private SysPermission buildMenuPermission(ClassPermissionInfo classInfo) {
+    private SysPermission buildMenuPermission(ClassPermissionInfo classInfo, List<SysPermission> menuPermissions) {
         // 一级菜单：从 code 提取第一段，如 "system" from "system:user"
         String topLevelCode = extractTopLevel(classInfo.code);
 
@@ -220,27 +303,55 @@ public class PermissionScanner implements ApplicationListener<ContextRefreshedEv
         menu.setDeleted(0);
         menu.setSortOrder(0);
         menu.setParentId(null);
-        menu.setSource("AUTO");
+
+        // 如果类级别的 code 包含多个段（如 "finance:payable"），也需要创建二级菜单
+        if (classInfo.code.contains(":")) {
+            SysPermission secondMenu = new SysPermission();
+            secondMenu.setPermissionCode(classInfo.code);
+            secondMenu.setPermissionName(classInfo.name.isEmpty() ? classInfo.code : classInfo.name);
+            secondMenu.setStatus(1);
+            secondMenu.setDeleted(0);
+            secondMenu.setSortOrder(1);
+            // parentId 稍后通过 resolveMenuParentIds 统一解析
+            menuPermissions.add(secondMenu);
+        }
 
         return menu;
     }
 
-    private SysPermission buildSecondLevelMenu(ClassPermissionInfo classInfo) {
-        // 二级菜单：如 "system:user"
-        String topLevelCode = extractTopLevel(classInfo.code);
+    /**
+     * 为方法权限创建中间级菜单。
+     * 例如 FinanceController 的方法 @Permission(code="in:read") 会创建 "finance" -> "finance:in" 这样的二级和三级菜单。
+     */
+    private void buildChildMenus(ClassPermissionInfo classInfo, String methodCode, List<SysPermission> menuPermissions) {
+        // methodCode 可能是 "in:read" 或 "read" 等形式
+        // 需要构建完整的菜单层级: "finance" -> "finance:in" -> "finance:in:read"
+        String[] segments = methodCode.split(":");
+        String parentCode = classInfo.code; // 如 "finance"
 
-        SysPermission menu = new SysPermission();
-        menu.setPermissionCode(classInfo.code);
-        menu.setPermissionName(classInfo.name.isEmpty() ? classInfo.code : classInfo.name);
-        menu.setStatus(1);
-        menu.setDeleted(0);
-        menu.setSortOrder(1);
-        // 通过 code 前缀匹配来确定父子关系，先查询一级菜单的 ID
-        Long parentId = findParentIdByCode(topLevelCode);
-        menu.setParentId(parentId);
-        menu.setSource("AUTO");
-
-        return menu;
+        for (int i = 0; i < segments.length; i++) {
+            String childCode = parentCode + ":" + segments[i];
+            // 检查是否已经存在同级的菜单
+            boolean exists = false;
+            for (SysPermission existing : menuPermissions) {
+                if (existing.getPermissionCode().equals(childCode)) {
+                    exists = true;
+                    break;
+                }
+            }
+            if (!exists) {
+                SysPermission menu = new SysPermission();
+                menu.setPermissionCode(childCode);
+                // 名称用最后一段或整个 methodCode
+                menu.setPermissionName(i == segments.length - 1 ? methodCode : segments[i]);
+                menu.setStatus(1);
+                menu.setDeleted(0);
+                menu.setSortOrder(i + 1);
+                // parentId 稍后通过 resolveMenuParentIds 统一解析
+                menuPermissions.add(menu);
+            }
+            parentCode = childCode;
+        }
     }
 
     private String extractTopLevel(String code) {

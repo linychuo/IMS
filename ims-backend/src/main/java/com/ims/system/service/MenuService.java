@@ -2,6 +2,7 @@ package com.ims.system.service;
 
 import com.ims.system.dto.MenuDTO;
 import com.ims.system.dto.MenuTree;
+import com.ims.system.entity.SysMenu;
 import com.ims.system.entity.SysPermission;
 
 import java.util.List;
@@ -14,7 +15,7 @@ public interface MenuService {
     /**
      * 获取所有栏目(平铺)
      */
-    List<SysPermission> listAllMenus();
+    List<SysMenu> listAllMenus();
 
     /**
      * 获取栏目树（用于前端菜单渲染）
@@ -24,7 +25,7 @@ public interface MenuService {
     /**
      * 根据ID获取栏目
      */
-    SysPermission getMenuById(Long id);
+    SysMenu getMenuById(Long id);
 
     /**
      * 创建栏目

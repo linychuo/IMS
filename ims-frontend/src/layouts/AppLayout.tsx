@@ -43,8 +43,8 @@ const AppLayout: React.FC = () => {
 
   // permission_code 转路由路径
   // customer:customer -> /customer, sales:order -> /sales/order
-  const codeToPath = (code: string): string => {
-    if (!code) return '/';
+  const codeToPath = (code: string): string | null => {
+    if (!code) return null;
     const segments = code.split(':');
     // 如果第二段和第一段相同，只取第一段，如 customer:customer -> /customer
     if (segments.length === 2 && segments[0] === segments[1]) {
@@ -56,20 +56,20 @@ const AppLayout: React.FC = () => {
   // 直接使用后端返回的菜单树
   const buildMenuItems = (menuList: any[], parentPath?: string): any[] => {
     return menuList.map((menu, idx) => {
-      // 优先用path，如果没有path则用code转路径，但如果生成的路径和父级相同则用id
+      // 优先用path
       let effectivePath = menu.path;
+      // 如果没有path，用code转路径
       if (!effectivePath && menu.permissionCode) {
-        const codePath = codeToPath(menu.permissionCode);
-        // 如果子级路径和父级相同，说明是同类菜单（如销售出库的销售订单），不再复用
-        effectivePath = (parentPath && codePath === parentPath) ? `menu-${menu.id}` : codePath;
+        effectivePath = codeToPath(menu.permissionCode);
       }
+      // 如果还是没有有效路径，用id
       if (!effectivePath) {
         effectivePath = `menu-${menu.id || idx}`;
       }
       return {
         key: effectivePath,
         label: menu.name,
-        children: menu.children && menu.children.length > 0 ? buildMenuItems(menu.children, effectivePath) : undefined,
+        children: menu.children && menu.children.length > 0 ? buildMenuItems(menu.children, menu.path || effectivePath) : undefined,
       };
     });
   };

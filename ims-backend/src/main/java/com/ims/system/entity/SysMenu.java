@@ -3,19 +3,17 @@ package com.ims.system.entity;
 import java.time.LocalDateTime;
 
 /**
- * 系统权限实体
+ * 栏目实体
  */
-public class SysPermission {
+public class SysMenu {
 
     private Long id;
 
-    private String permissionName;
-
-    private String permissionCode;
-
-    private Long parentId;
+    private String name;
 
     private String path;
+
+    private Long parentId;
 
     private String component;
 
@@ -25,11 +23,7 @@ public class SysPermission {
 
     private Integer status;
 
-    private Long createBy;
-
     private LocalDateTime createTime;
-
-    private Long updateBy;
 
     private LocalDateTime updateTime;
 
@@ -43,28 +37,12 @@ public class SysPermission {
         this.id = id;
     }
 
-    public String getPermissionName() {
-        return permissionName;
+    public String getName() {
+        return name;
     }
 
-    public void setPermissionName(String permissionName) {
-        this.permissionName = permissionName;
-    }
-
-    public String getPermissionCode() {
-        return permissionCode;
-    }
-
-    public void setPermissionCode(String permissionCode) {
-        this.permissionCode = permissionCode;
-    }
-
-    public Long getParentId() {
-        return parentId;
-    }
-
-    public void setParentId(Long parentId) {
-        this.parentId = parentId;
+    public void setName(String name) {
+        this.name = name;
     }
 
     public String getPath() {
@@ -73,6 +51,14 @@ public class SysPermission {
 
     public void setPath(String path) {
         this.path = path;
+    }
+
+    public Long getParentId() {
+        return parentId;
+    }
+
+    public void setParentId(Long parentId) {
+        this.parentId = parentId;
     }
 
     public String getComponent() {
@@ -107,28 +93,12 @@ public class SysPermission {
         this.status = status;
     }
 
-    public Long getCreateBy() {
-        return createBy;
-    }
-
-    public void setCreateBy(Long createBy) {
-        this.createBy = createBy;
-    }
-
     public LocalDateTime getCreateTime() {
         return createTime;
     }
 
     public void setCreateTime(LocalDateTime createTime) {
         this.createTime = createTime;
-    }
-
-    public Long getUpdateBy() {
-        return updateBy;
-    }
-
-    public void setUpdateBy(Long updateBy) {
-        this.updateBy = updateBy;
     }
 
     public LocalDateTime getUpdateTime() {

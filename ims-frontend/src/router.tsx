@@ -33,9 +33,9 @@ import { RequirePermission } from './components/RequirePermission';
 const routePermissionMap: Record<string, string> = {
   '/dashboard': 'report:dashboard',
   '/report': 'report:dashboard',
-  '/warehouse': 'warehouse:warehouse',
+  '/warehouse': 'warehouse',
   '/warehouse/location': 'warehouse:warehouse:location',
-  '/product': 'product:product',
+  '/product': 'product',
   '/customer': 'customer:customer',
   '/supplier': 'supplier',
   '/sales/order': 'sales:order',

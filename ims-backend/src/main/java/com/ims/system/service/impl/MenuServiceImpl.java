@@ -2,8 +2,10 @@ package com.ims.system.service.impl;
 
 import com.ims.system.dto.MenuDTO;
 import com.ims.system.dto.MenuTree;
+import com.ims.system.entity.SysMenu;
 import com.ims.system.entity.SysMenuPermission;
 import com.ims.system.entity.SysPermission;
+import com.ims.system.mapper.SysMenuMapper;
 import com.ims.system.mapper.SysMenuPermissionMapper;
 import com.ims.system.mapper.SysPermissionMapper;
 import com.ims.system.service.MenuService;
@@ -20,29 +22,31 @@ import java.util.stream.Collectors;
 @Service
 public class MenuServiceImpl implements MenuService {
 
+    private final SysMenuMapper menuMapper;
     private final SysPermissionMapper permissionMapper;
     private final SysMenuPermissionMapper menuPermissionMapper;
 
-    public MenuServiceImpl(SysPermissionMapper permissionMapper, SysMenuPermissionMapper menuPermissionMapper) {
+    public MenuServiceImpl(SysMenuMapper menuMapper, SysPermissionMapper permissionMapper, SysMenuPermissionMapper menuPermissionMapper) {
+        this.menuMapper = menuMapper;
         this.permissionMapper = permissionMapper;
         this.menuPermissionMapper = menuPermissionMapper;
     }
 
     @Override
-    public List<SysPermission> listAllMenus() {
-        return permissionMapper.selectAllMenus();
+    public List<SysMenu> listAllMenus() {
+        return menuMapper.selectAll();
     }
 
     @Override
     public List<MenuTree> getMenuTree() {
-        List<SysPermission> allMenus = permissionMapper.selectAllMenus();
+        List<SysMenu> allMenus = menuMapper.selectAll();
         // 获取顶级栏目(parentId == null)
-        List<SysPermission> topMenus = allMenus.stream()
+        List<SysMenu> topMenus = allMenus.stream()
                 .filter(p -> p.getParentId() == null)
                 .collect(Collectors.toList());
 
         List<MenuTree> tree = new ArrayList<>();
-        for (SysPermission menu : topMenus) {
+        for (SysMenu menu : topMenus) {
             MenuTree node = convertToMenuTree(menu);
             List<MenuTree> children = buildChildren(menu.getId(), allMenus);
             if (!children.isEmpty()) {
@@ -53,9 +57,9 @@ public class MenuServiceImpl implements MenuService {
         return tree;
     }
 
-    private List<MenuTree> buildChildren(Long parentId, List<SysPermission> allMenus) {
+    private List<MenuTree> buildChildren(Long parentId, List<SysMenu> allMenus) {
         List<MenuTree> children = new ArrayList<>();
-        for (SysPermission menu : allMenus) {
+        for (SysMenu menu : allMenus) {
             if (parentId.equals(menu.getParentId())) {
                 MenuTree node = convertToMenuTree(menu);
                 List<MenuTree> subChildren = buildChildren(menu.getId(), allMenus);
@@ -68,34 +72,31 @@ public class MenuServiceImpl implements MenuService {
         return children;
     }
 
-    private MenuTree convertToMenuTree(SysPermission permission) {
+    private MenuTree convertToMenuTree(SysMenu menu) {
         MenuTree tree = new MenuTree();
-        tree.setId(permission.getId());
-        tree.setName(permission.getPermissionName());
-        tree.setPath(permission.getPath());
-        tree.setPermissionCode(permission.getPermissionCode());
+        tree.setId(menu.getId());
+        tree.setName(menu.getName());
+        tree.setPath(menu.getPath());
         return tree;
     }
 
     @Override
-    public SysPermission getMenuById(Long id) {
-        return permissionMapper.selectById(id);
+    public SysMenu getMenuById(Long id) {
+        return menuMapper.selectById(id);
     }
 
     @Override
     public void createMenu(MenuDTO dto) {
-        SysPermission permission = new SysPermission();
-        permission.setPermissionCode(dto.getPermissionCode());
-        permission.setPermissionName(dto.getPermissionName());
-        permission.setParentId(dto.getParentId());
-        permission.setPath(dto.getPath());
-        permission.setComponent(dto.getComponent());
-        permission.setSortOrder(dto.getSortOrder() != null ? dto.getSortOrder() : 0);
-        permission.setDescription(dto.getDescription());
-        permission.setStatus(dto.getStatus() != null ? dto.getStatus() : 1);
-        permission.setSource("MANUAL");
-        permission.setDeleted(0);
-        permissionMapper.insert(permission);
+        SysMenu menu = new SysMenu();
+        menu.setName(dto.getName());
+        menu.setParentId(dto.getParentId());
+        menu.setPath(dto.getPath());
+        menu.setComponent(dto.getComponent());
+        menu.setSortOrder(dto.getSortOrder() != null ? dto.getSortOrder() : 0);
+        menu.setDescription(dto.getDescription());
+        menu.setStatus(dto.getStatus() != null ? dto.getStatus() : 1);
+        menu.setDeleted(0);
+        menuMapper.insert(menu);
     }
 
     @Override
@@ -103,33 +104,31 @@ public class MenuServiceImpl implements MenuService {
         if (dto.getId() == null) {
             throw new IllegalArgumentException("Menu id cannot be null");
         }
-        SysPermission permission = new SysPermission();
-        permission.setId(dto.getId());
-        permission.setPermissionName(dto.getPermissionName());
-        permission.setParentId(dto.getParentId());
-        permission.setPath(dto.getPath());
-        permission.setComponent(dto.getComponent());
-        permission.setSortOrder(dto.getSortOrder());
-        permission.setDescription(dto.getDescription());
-        permission.setStatus(dto.getStatus());
-        permission.setSource("MANUAL");
-        permissionMapper.updateMenu(permission);
+        SysMenu menu = new SysMenu();
+        menu.setId(dto.getId());
+        menu.setName(dto.getName());
+        menu.setParentId(dto.getParentId());
+        menu.setPath(dto.getPath());
+        menu.setComponent(dto.getComponent());
+        menu.setSortOrder(dto.getSortOrder());
+        menu.setDescription(dto.getDescription());
+        menu.setStatus(dto.getStatus());
+        menuMapper.update(menu);
     }
 
     @Override
     public void deleteMenu(Long id) {
         // 删除栏目前先删除权限关联
         menuPermissionMapper.deleteByMenuId(id);
-        permissionMapper.deleteById(id);
+        menuMapper.deleteById(id);
     }
 
     @Override
     public void updateMenuStatus(Long id, Integer status) {
-        SysPermission permission = new SysPermission();
-        permission.setId(id);
-        permission.setStatus(status);
-        permission.setSource("MANUAL");
-        permissionMapper.updateMenu(permission);
+        SysMenu menu = new SysMenu();
+        menu.setId(id);
+        menu.setStatus(status);
+        menuMapper.update(menu);
     }
 
     @Override

@@ -13,6 +13,11 @@ import java.util.List;
 public interface SysMenuPermissionMapper {
 
     /**
+     * 获取所有栏目-权限关联
+     */
+    List<SysMenuPermission> selectAll();
+
+    /**
      * 根据栏目ID删除所有关联
      */
     int deleteByMenuId(@Param("menuId") Long menuId);

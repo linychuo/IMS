@@ -49,15 +49,13 @@ interface Role {
 // ============ 栏目 ============
 interface MenuItem {
   id: number;
-  permissionName: string;
-  permissionCode: string;
+  name: string;
   parentId?: number;
   path?: string;
   component?: string;
   sortOrder: number;
   description?: string;
   status: number;
-  source?: string;
   children?: MenuItem[];
 }
 
@@ -66,6 +64,7 @@ interface Permission {
   id: number;
   permissionName: string;
   permissionCode: string;
+  parentId?: number;
   path?: string;
   status: number;
 }
@@ -110,6 +109,7 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
   // 权限点状态
   const [permissionLoading, setPermissionLoading] = useState(false);
   const [permissionData, setPermissionData] = useState<Permission[]>([]);
+  const [expandedPermIds, setExpandedPermIds] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     if (activeTab === 'user') {
@@ -407,9 +407,9 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
                 <FileTextOutlined style={{ fontSize: 18, color: '#1890ff' }} />
               )}
               <div>
-                <div style={{ fontWeight: 600, fontSize: 14, color: '#262626' }}>{menu.permissionName}</div>
+                <div style={{ fontWeight: 600, fontSize: 14, color: '#262626' }}>{menu.name}</div>
                 <div style={{ fontSize: 12, color: '#8c8c8c', marginTop: 2 }}>
-                  {menu.path || menu.permissionCode}
+                  {menu.path}
                 </div>
               </div>
             </div>
@@ -545,6 +545,79 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
     return <Tag color={status === 1 ? 'green' : 'red'}>{status === 1 ? '启用' : '禁用'}</Tag>;
   };
 
+  // ============ 权限点树渲染 ============
+  const togglePermExpand = (id: number) => {
+    const newSet = new Set(expandedPermIds);
+    if (newSet.has(id)) {
+      newSet.delete(id);
+    } else {
+      newSet.add(id);
+    }
+    setExpandedPermIds(newSet);
+  };
+
+  const renderPermissionTree = () => {
+    // 按parentId分组
+    const topPermissions = permissionData.filter(p => !p.parentId);
+    const childrenMap: Record<number, Permission[]> = {};
+    permissionData.forEach(p => {
+      if (p.parentId) {
+        if (!childrenMap[p.parentId]) childrenMap[p.parentId] = [];
+        childrenMap[p.parentId].push(p);
+      }
+    });
+
+    const renderItem = (perm: Permission, level: number): React.ReactNode => {
+      const children = childrenMap[perm.id] || [];
+      const hasChildren = children.length > 0;
+      const isExpanded = expandedPermIds.has(perm.id);
+
+      return (
+        <div key={perm.id}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              padding: '10px 16px',
+              marginLeft: level * 24,
+              background: '#fff',
+              borderRadius: 8,
+              border: '1px solid #e8e8e8',
+              marginBottom: 4,
+              cursor: hasChildren ? 'pointer' : 'default',
+            }}
+            onClick={() => hasChildren && togglePermExpand(perm.id)}
+          >
+            {hasChildren ? (
+              <span style={{ marginRight: 8, color: '#1890ff', fontSize: 12 }}>
+                {isExpanded ? '▼' : '▶'}
+              </span>
+            ) : (
+              <span style={{ marginRight: 8, color: '#d9d9d9', fontSize: 12 }}>●</span>
+            )}
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Tag color="blue">{perm.permissionCode}</Tag>
+              <span style={{ fontWeight: 500 }}>{perm.permissionName}</span>
+              {perm.path && <span style={{ color: '#999', fontSize: 12 }}>{perm.path}</span>}
+            </div>
+            {renderMenuStatus(perm.status)}
+          </div>
+          {hasChildren && isExpanded && (
+            <div style={{ borderLeft: '2px solid #d9d9d9', marginLeft: level * 24 + 8 }}>
+              {children.map(child => renderItem(child, level + 1))}
+            </div>
+          )}
+        </div>
+      );
+    };
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        {topPermissions.map(p => renderItem(p, 0))}
+      </div>
+    );
+  };
+
   // ============ 表格列定义 ============
   const userColumns = [
     { title: '用户名', dataIndex: 'username', key: 'username', width: 150 },
@@ -613,19 +686,12 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
     },
   ];
 
-  const permissionColumns = [
-    { title: '权限名称', dataIndex: 'permissionName', key: 'permissionName', width: 200 },
-    { title: '权限编码', dataIndex: 'permissionCode', key: 'permissionCode', width: 250 },
-    { title: '路由', dataIndex: 'path', key: 'path', ellipsis: true },
-    { title: '状态', dataIndex: 'status', key: 'status', width: 80, render: renderMenuStatus },
-  ];
-
-  // ============ Parent menu options for form ============
+  // ============ 表格列定义 ============
   const getParentMenuOptions = () => {
     const options: { label: string; value: number }[] = [];
     const addOptions = (menus: MenuItem[], level: number) => {
       menus.forEach(m => {
-        options.push({ label: '　'.repeat(level) + m.permissionName, value: m.id });
+        options.push({ label: '　'.repeat(level) + m.name, value: m.id });
         if (m.children) {
           addOptions(m.children, level + 1);
         }
@@ -741,16 +807,17 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
             children: (
               <>
                 <div style={{ marginBottom: 16, color: '#999' }}>
-                  权限点由代码扫描生成，不可手动编辑
+                  权限点由代码扫描生成，按父子关系树形展示
                 </div>
-                <Table
-                  columns={permissionColumns}
-                  dataSource={permissionData}
-                  rowKey="id"
-                  loading={permissionLoading}
-                  pagination={{ pageSize: 20 }}
-                  scroll={{ x: 800 }}
-                />
+                <div style={{ background: '#fafafa', borderRadius: 8, padding: 16, minHeight: 400 }}>
+                  {permissionLoading ? (
+                    <div style={{ textAlign: 'center', padding: 40 }}>加载中...</div>
+                  ) : permissionData.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: 40, color: '#999' }}>暂无权限点数据</div>
+                  ) : (
+                    renderPermissionTree()
+                  )}
+                </div>
               </>
             ),
           },
@@ -851,18 +918,11 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
       >
         <Form form={menuForm} layout="vertical">
           <Form.Item
-            name="permissionName"
+            name="name"
             label="栏目名称"
             rules={[{ required: true, message: '请输入栏目名称' }]}
           >
             <Input placeholder="请输入栏目名称" />
-          </Form.Item>
-          <Form.Item
-            name="permissionCode"
-            label="权限编码"
-            rules={[{ required: true, message: '请输入权限编码' }]}
-          >
-            <Input placeholder="如: system:user" disabled={!!editingMenu} />
           </Form.Item>
           <Form.Item name="parentId" label="父级栏目">
             <Select allowClear placeholder="请选择父级栏目" options={getParentMenuOptions()} />
@@ -908,7 +968,7 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
 
       {/* 栏目权限点分配弹窗 */}
       <Modal
-        title={`分配权限点 - ${editingMenu?.permissionName || ''}`}
+        title={`分配权限点 - ${editingMenu?.name || ''}`}
         open={menuPermissionModalVisible}
         onOk={handleMenuPermissionOk}
         onCancel={() => setMenuPermissionModalVisible(false)}

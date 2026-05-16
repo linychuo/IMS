@@ -20,8 +20,6 @@ import {
 } from '@ant-design/icons';
 import { warehouseApi } from '../../api';
 
-const { TabPane } = Tabs;
-
 // ============ 仓库管理 ============
 interface Warehouse {
   id?: number;
@@ -448,11 +446,12 @@ const WarehousePage: React.FC = () => {
     },
   ];
 
-  return (
-    <div>
-      <h2 style={{ marginBottom: 16 }}>仓库管理</h2>
-      <Tabs activeKey={activeTab} onChange={setActiveTab}>
-        <TabPane tab="仓库管理" key="warehouse">
+  const tabItems = [
+    {
+      key: 'warehouse',
+      label: '仓库管理',
+      children: (
+        <div>
           <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between' }}>
             <Space>
               <Input.Search
@@ -467,7 +466,6 @@ const WarehousePage: React.FC = () => {
               新增仓库
             </Button>
           </div>
-
           <Table
             columns={warehouseColumns}
             dataSource={warehouseData}
@@ -484,9 +482,14 @@ const WarehousePage: React.FC = () => {
             }}
             scroll={{ x: 1200 }}
           />
-        </TabPane>
-
-        <TabPane tab="库位管理" key="location">
+        </div>
+      ),
+    },
+    {
+      key: 'location',
+      label: '库位管理',
+      children: (
+        <div>
           <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between' }}>
             <Space>
               <span>仓库筛选：</span>
@@ -508,7 +511,6 @@ const WarehousePage: React.FC = () => {
               新增库位
             </Button>
           </div>
-
           <Table
             columns={locationColumns}
             dataSource={locationData}
@@ -525,8 +527,15 @@ const WarehousePage: React.FC = () => {
             }}
             scroll={{ x: 1200 }}
           />
-        </TabPane>
-      </Tabs>
+        </div>
+      ),
+    },
+  ];
+
+  return (
+    <div>
+      <h2 style={{ marginBottom: 16 }}>仓库管理</h2>
+      <Tabs activeKey={activeTab} onChange={setActiveTab} items={tabItems} />
 
       {/* 仓库弹窗 */}
       <Modal
