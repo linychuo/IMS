@@ -915,18 +915,18 @@ VALUES ('admin', '$2a$10$TJVeU7ICPLNSniCpH.trOe7lvr5mStSUU3A63J34Ti/X0Okb3DsQO',
 INSERT INTO sys_user_role (user_id, role_id)
 SELECT u.id, r.id FROM sys_user u, sys_role r WHERE u.username = 'admin' AND r.role_code = 'admin';
 
--- 分配权限（将所有权限分配给管理员角色）
-INSERT INTO sys_role_permission (role_id, permission_id)
-SELECT r.id, p.id FROM sys_role r, sys_permission p WHERE r.role_code = 'admin' AND p.deleted = 0;
+-- 分配权限（将所有权限分配给管理员角色）- PermissionScanner 启动后自动补充
+-- INSERT INTO sys_role_permission (role_id, permission_id)
+-- SELECT r.id, p.id FROM sys_role r, sys_permission p WHERE r.role_code = 'admin' AND p.deleted = 0;
 
--- 分配栏目权限关联（基于路径匹配）
-INSERT INTO sys_menu_permission (menu_id, permission_id)
-SELECT m.id, p.id FROM sys_menu m
-JOIN sys_permission p ON (
-    p.permission_code = SUBSTRING(m.path FROM 2)
-    OR p.permission_code = REPLACE(SUBSTRING(m.path FROM 2), '/', ':')
-)
-WHERE m.deleted = 0 AND p.deleted = 0;
+-- 分配栏目权限关联 - PermissionScanner 启动后自动补充
+-- INSERT INTO sys_menu_permission (menu_id, permission_id)
+-- SELECT m.id, p.id FROM sys_menu m
+-- JOIN sys_permission p ON (
+--     p.permission_code = SUBSTRING(m.path FROM 2)
+--     OR p.permission_code = REPLACE(SUBSTRING(m.path FROM 2), '/', ':')
+-- )
+-- WHERE m.deleted = 0 AND p.deleted = 0;
 
 COMMIT;
 
