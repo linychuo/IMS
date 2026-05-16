@@ -136,6 +136,9 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void delete(Long id) {
+        if (id == 1) {
+            throw new RuntimeException("不能删除管理员用户");
+        }
         SysUser user = userMapper.selectById(id);
         if (user == null) {
             throw new RuntimeException("用户不存在");

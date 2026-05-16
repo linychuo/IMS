@@ -155,6 +155,10 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
   };
 
   const handleDeleteUser = async (id: number) => {
+    if (id === 1) {
+      message.error('不能删除管理员用户');
+      return;
+    }
     try {
       const res = await systemApi.delete(`/user/${id}`);
       if (res.data.code === 200) {
