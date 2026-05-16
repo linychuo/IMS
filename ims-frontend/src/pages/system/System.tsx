@@ -13,12 +13,14 @@ import {
   Popconfirm,
   Tree,
   TreeDataNode,
+  Transfer,
 } from 'antd';
 import {
   PlusOutlined,
   SettingOutlined,
   EditOutlined,
   DeleteOutlined,
+  LinkOutlined,
 } from '@ant-design/icons';
 import { systemApi } from '../../api';
 import type { DataNode } from 'antd/es/tree';
@@ -46,7 +48,7 @@ interface Role {
   createTime?: string;
 }
 
-// ============ 菜单 ============
+// ============ 栏目 ============
 interface MenuItem {
   id: number;
   permissionName: string;
@@ -61,8 +63,17 @@ interface MenuItem {
   children?: MenuItem[];
 }
 
+// ============ 权限点 ============
+interface Permission {
+  id: number;
+  permissionName: string;
+  permissionCode: string;
+  path?: string;
+  status: number;
+}
+
 interface SystemProps {
-  defaultTab?: 'user' | 'role' | 'menu';
+  defaultTab?: 'user' | 'role' | 'menu' | 'permission';
 }
 
 const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
@@ -83,21 +94,24 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
   const [roleModalVisible, setRoleModalVisible] = useState(false);
   const [editingRole, setEditingRole] = useState<Role | null>(null);
   const [roleForm] = Form.useForm();
+  const [rolePermissionModalVisible, setRolePermissionModalVisible] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<Role | null>(null);
+  const [rolePermissionData, setRolePermissionData] = useState<Permission[]>([]);
+  const [selectedPermissionKeys, setSelectedPermissionKeys] = useState<number[]>([]);
 
-  // 菜单状态
+  // 栏目状态
   const [menuLoading, setMenuLoading] = useState(false);
   const [menuData, setMenuData] = useState<MenuItem[]>([]);
   const [menuModalVisible, setMenuModalVisible] = useState(false);
   const [editingMenu, setEditingMenu] = useState<MenuItem | null>(null);
   const [menuForm] = Form.useForm();
   const [menuTreeData, setMenuTreeData] = useState<DataNode[]>([]);
+  const [menuPermissionModalVisible, setMenuPermissionModalVisible] = useState(false);
+  const [menuPermissionData, setMenuPermissionData] = useState<Permission[]>([]);
 
-  // 权限状态(角色权限分配)
+  // 权限点状态
   const [permissionLoading, setPermissionLoading] = useState(false);
-  const [permissionData, setPermissionData] = useState<MenuItem[]>([]);
-  const [permissionModalVisible, setPermissionModalVisible] = useState(false);
-  const [selectedRole, setSelectedRole] = useState<Role | null>(null);
-  const [selectedPermissions, setSelectedPermissions] = useState<number[]>([]);
+  const [permissionData, setPermissionData] = useState<Permission[]>([]);
 
   useEffect(() => {
     if (activeTab === 'user') {
@@ -264,7 +278,39 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
     }
   };
 
-  // ============ 菜单操作 ============
+  // ============ 角色权限分配 ============
+  const handleAssignPermissions = async (record: Role) => {
+    setSelectedRole(record);
+    setRolePermissionModalVisible(true);
+    setRolePermissionData(permissionData);
+    try {
+      const res = await systemApi.get(`/role/${record.id}/permissions`);
+      if (res.data.code === 200) {
+        setSelectedPermissionKeys(res.data.data || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch role permissions:', error);
+      message.error('获取角色权限失败');
+    }
+  };
+
+  const handleRolePermissionOk = async () => {
+    if (!selectedRole) return;
+    try {
+      const res = await systemApi.post(`/role/${selectedRole.id}/permissions`, selectedPermissionKeys);
+      if (res.data.code === 200) {
+        message.success('权限分配成功');
+        setRolePermissionModalVisible(false);
+      } else {
+        message.error(res.data.message || '分配失败');
+      }
+    } catch (error) {
+      console.error('Failed to assign permissions:', error);
+      message.error('权限分配失败');
+    }
+  };
+
+  // ============ 栏目操作 ============
   const fetchMenus = async () => {
     setMenuLoading(true);
     try {
@@ -276,7 +322,7 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
       }
     } catch (error) {
       console.error('Failed to fetch menus:', error);
-      message.error('获取菜单列表失败');
+      message.error('获取栏目列表失败');
     } finally {
       setMenuLoading(false);
     }
@@ -385,7 +431,44 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
     }
   };
 
-  // ============ 权限操作 ============
+  // ============ 栏目权限点关联 ============
+  const handleAssignMenuPermissions = async (record: MenuItem) => {
+    setEditingMenu(record);
+    setMenuPermissionModalVisible(true);
+    try {
+      const res = await systemApi.get(`/system/menu/permission-options`);
+      if (res.data.code === 200) {
+        setMenuPermissionData(res.data.data || []);
+      }
+      const permRes = await systemApi.get(`/system/menu/${record.id}/permissions`);
+      if (permRes.data.code === 200) {
+        setSelectedPermissionKeys(permRes.data.data.map((p: Permission) => p.id));
+      } else {
+        setSelectedPermissionKeys([]);
+      }
+    } catch (error) {
+      console.error('Failed to fetch menu permissions:', error);
+      message.error('获取栏目权限失败');
+    }
+  };
+
+  const handleMenuPermissionOk = async () => {
+    if (!editingMenu) return;
+    try {
+      const res = await systemApi.put(`/system/menu/${editingMenu.id}/permissions`, selectedPermissionKeys);
+      if (res.data.code === 200) {
+        message.success('权限点分配成功');
+        setMenuPermissionModalVisible(false);
+      } else {
+        message.error(res.data.message || '分配失败');
+      }
+    } catch (error) {
+      console.error('Failed to assign menu permissions:', error);
+      message.error('权限点分配失败');
+    }
+  };
+
+  // ============ 权限点操作（只读，来自代码扫描） ============
   const fetchPermissions = async () => {
     setPermissionLoading(true);
     try {
@@ -395,52 +478,10 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
       }
     } catch (error) {
       console.error('Failed to fetch permissions:', error);
-      message.error('获取权限列表失败');
+      message.error('获取权限点列表失败');
     } finally {
       setPermissionLoading(false);
     }
-  };
-
-  const handleAssignPermissions = async (record: Role) => {
-    setSelectedRole(record);
-    setPermissionModalVisible(true);
-    try {
-      const res = await systemApi.get(`/role/${record.id}/permissions`);
-      if (res.data.code === 200) {
-        setSelectedPermissions(res.data.data || []);
-      }
-    } catch (error) {
-      console.error('Failed to fetch role permissions:', error);
-      message.error('获取角色权限失败');
-    }
-  };
-
-  const handlePermissionModalOk = async () => {
-    if (!selectedRole) return;
-    try {
-      const res = await systemApi.post(`/role/${selectedRole.id}/permissions`, selectedPermissions);
-      if (res.data.code === 200) {
-        message.success('权限分配成功');
-        setPermissionModalVisible(false);
-      } else {
-        message.error(res.data.message || '分配失败');
-      }
-    } catch (error) {
-      console.error('Failed to assign permissions:', error);
-      message.error('权限分配失败');
-    }
-  };
-
-  const handlePermissionCheck = (checkedKeys: number[]) => {
-    setSelectedPermissions(checkedKeys);
-  };
-
-  const convertPermToTreeData = (permissions: MenuItem[]): DataNode[] => {
-    return permissions.map(perm => ({
-      title: perm.permissionName,
-      key: perm.id,
-      children: perm.children ? convertPermToTreeData(perm.children) : undefined,
-    }));
   };
 
   // ============ 状态渲染 ============
@@ -489,11 +530,11 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
     {
       title: '操作',
       key: 'action',
-      width: 250,
+      width: 280,
       render: (_: any, record: Role) => (
         <Space>
           <Button type="link" size="small" onClick={() => handleEditRole(record)}>编辑</Button>
-          <Button type="link" size="small" icon={<SettingOutlined />} onClick={() => handleAssignPermissions(record)}>权限</Button>
+          <Button type="link" size="small" icon={<SettingOutlined />} onClick={() => handleAssignPermissions(record)}>分配权限</Button>
           <Popconfirm title="确定删除？" onConfirm={() => handleDeleteRole(record.id)}>
             <Button type="link" size="small" danger>删除</Button>
           </Popconfirm>
@@ -502,9 +543,31 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
     },
   ];
 
+  const menuColumns = [
+    { title: '栏目名称', dataIndex: 'permissionName', key: 'permissionName', width: 200 },
+    { title: '权限编码', dataIndex: 'permissionCode', key: 'permissionCode', width: 180 },
+    { title: '路由路径', dataIndex: 'path', key: 'path', ellipsis: true },
+    { title: '排序', dataIndex: 'sortOrder', key: 'sortOrder', width: 80 },
+    { title: '状态', dataIndex: 'status', key: 'status', width: 80, render: renderMenuStatus },
+    {
+      title: '操作',
+      key: 'action',
+      width: 280,
+      render: (_: any, record: MenuItem) => (
+        <Space>
+          <Button type="link" size="small" icon={<LinkOutlined />} onClick={() => handleAssignMenuPermissions(record)}>权限点</Button>
+          <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEditMenu(record)}>编辑</Button>
+          <Popconfirm title="确定删除？" onConfirm={() => handleDeleteMenu(record.id)}>
+            <Button type="link" size="small" danger icon={<DeleteOutlined />} />
+          </Popconfirm>
+        </Space>
+      ),
+    },
+  ];
+
   const permissionColumns = [
     { title: '权限名称', dataIndex: 'permissionName', key: 'permissionName', width: 200 },
-    { title: '权限编码', dataIndex: 'permissionCode', key: 'permissionCode', width: 200 },
+    { title: '权限编码', dataIndex: 'permissionCode', key: 'permissionCode', width: 250 },
     { title: '路由', dataIndex: 'path', key: 'path', ellipsis: true },
     { title: '状态', dataIndex: 'status', key: 'status', width: 80, render: renderMenuStatus },
   ];
@@ -522,6 +585,22 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
     };
     addOptions(menuData, 0);
     return options;
+  };
+
+  // ============ Transfer 数据源 ============
+  const getTransferData = () => {
+    return menuPermissionData.map(p => ({
+      key: p.id,
+      title: `${p.permissionName} (${p.permissionCode})`,
+    }));
+  };
+
+  const getTransferTargetKeys = () => {
+    return selectedPermissionKeys;
+  };
+
+  const handleTransferChange = (targetKeys: string[]) => {
+    setSelectedPermissionKeys(targetKeys.map(k => parseInt(k)));
   };
 
   return (
@@ -572,33 +651,24 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
           />
         </TabPane>
 
-        <TabPane tab="菜单管理" key="menu">
+        <TabPane tab="栏目管理" key="menu">
           <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-end' }}>
-            <Button type="primary" icon={<PlusOutlined />} onClick={handleAddMenu}>新建菜单</Button>
+            <Button type="primary" icon={<PlusOutlined />} onClick={handleAddMenu}>新建栏目</Button>
           </div>
-          <Tree
-            treeData={menuTreeData}
+          <Table
+            columns={menuColumns}
+            dataSource={menuData}
+            rowKey="id"
             loading={menuLoading}
-            defaultExpandAll
-            titleRender={(nodeData) => {
-              const menu = menuData.find(m => m.id === nodeData.key);
-              if (!menu) return nodeData.title;
-              return (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                  <span>{menu.permissionName} <span style={{ color: '#999', fontSize: 12 }}>{menu.path || '-'}</span></span>
-                  <Space size="small">
-                    <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEditMenu(menu)} />
-                    <Popconfirm title="确定删除？" onConfirm={() => handleDeleteMenu(menu.id)}>
-                      <Button type="link" size="small" danger icon={<DeleteOutlined />} />
-                    </Popconfirm>
-                  </Space>
-                </div>
-              );
-            }}
+            pagination={{ pageSize: 20 }}
+            scroll={{ x: 900 }}
           />
         </TabPane>
 
         <TabPane tab="权限管理" key="permission">
+          <div style={{ marginBottom: 16, color: '#999' }}>
+            权限点由代码扫描生成，不可手动编辑
+          </div>
           <Table
             columns={permissionColumns}
             dataSource={permissionData}
@@ -694,9 +764,9 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
         </Form>
       </Modal>
 
-      {/* 菜单弹窗 */}
+      {/* 栏目弹窗 */}
       <Modal
-        title={editingMenu ? '编辑菜单' : '新建菜单'}
+        title={editingMenu ? '编辑栏目' : '新建栏目'}
         open={menuModalVisible}
         onOk={handleMenuModalOk}
         onCancel={() => setMenuModalVisible(false)}
@@ -705,10 +775,10 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
         <Form form={menuForm} layout="vertical">
           <Form.Item
             name="permissionName"
-            label="菜单名称"
-            rules={[{ required: true, message: '请输入菜单名称' }]}
+            label="栏目名称"
+            rules={[{ required: true, message: '请输入栏目名称' }]}
           >
-            <Input placeholder="请输入菜单名称" />
+            <Input placeholder="请输入栏目名称" />
           </Form.Item>
           <Form.Item
             name="permissionCode"
@@ -717,8 +787,8 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
           >
             <Input placeholder="如: system:user" disabled={!!editingMenu} />
           </Form.Item>
-          <Form.Item name="parentId" label="父级菜单">
-            <Select allowClear placeholder="请选择父级菜单" options={getParentMenuOptions()} />
+          <Form.Item name="parentId" label="父级栏目">
+            <Select allowClear placeholder="请选择父级栏目" options={getParentMenuOptions()} />
           </Form.Item>
           <Form.Item name="path" label="路由路径">
             <Input placeholder="如: /system/user" />
@@ -741,21 +811,42 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
         </Form>
       </Modal>
 
-      {/* 权限分配弹窗 */}
+      {/* 角色权限分配弹窗 */}
       <Modal
         title={`权限分配 - ${selectedRole?.roleName || ''}`}
-        open={permissionModalVisible}
-        onOk={handlePermissionModalOk}
-        onCancel={() => setPermissionModalVisible(false)}
-        width={500}
+        open={rolePermissionModalVisible}
+        onOk={handleRolePermissionOk}
+        onCancel={() => setRolePermissionModalVisible(false)}
+        width={600}
       >
-        <Tree
-          checkable
-          defaultExpandAll
-          checkedKeys={selectedPermissions}
-          onCheck={(checked) => handlePermissionCheck(checked as number[])}
-          treeData={convertPermToTreeData(permissionData)}
-          style={{ maxHeight: 400, overflow: 'auto' }}
+        <Transfer
+          dataSource={getTransferData()}
+          targetKeys={getTransferTargetKeys()}
+          onChange={handleTransferChange}
+          render={(item) => item.title}
+          titles={['可分配权限', '已分配权限']}
+          listStyle={{ width: 250, height: 400 }}
+        />
+      </Modal>
+
+      {/* 栏目权限点分配弹窗 */}
+      <Modal
+        title={`分配权限点 - ${editingMenu?.permissionName || ''}`}
+        open={menuPermissionModalVisible}
+        onOk={handleMenuPermissionOk}
+        onCancel={() => setMenuPermissionModalVisible(false)}
+        width={600}
+      >
+        <div style={{ marginBottom: 16, color: '#999' }}>
+          选择该栏目关联的权限点（来自权限管理中的权限点数据）
+        </div>
+        <Transfer
+          dataSource={getTransferData()}
+          targetKeys={getTransferTargetKeys().map(k => k.toString())}
+          onChange={(keys) => handleTransferChange(keys)}
+          render={(item) => item.title}
+          titles={['可用权限点', '已选权限点']}
+          listStyle={{ width: 250, height: 400 }}
         />
       </Modal>
     </div>

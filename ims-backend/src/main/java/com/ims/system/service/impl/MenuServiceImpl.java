@@ -2,25 +2,30 @@ package com.ims.system.service.impl;
 
 import com.ims.system.dto.MenuDTO;
 import com.ims.system.dto.MenuTree;
+import com.ims.system.entity.SysMenuPermission;
 import com.ims.system.entity.SysPermission;
+import com.ims.system.mapper.SysMenuPermissionMapper;
 import com.ims.system.mapper.SysPermissionMapper;
 import com.ims.system.service.MenuService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * 菜单服务实现
+ * 栏目服务实现
  */
 @Service
 public class MenuServiceImpl implements MenuService {
 
     private final SysPermissionMapper permissionMapper;
+    private final SysMenuPermissionMapper menuPermissionMapper;
 
-    public MenuServiceImpl(SysPermissionMapper permissionMapper) {
+    public MenuServiceImpl(SysPermissionMapper permissionMapper, SysMenuPermissionMapper menuPermissionMapper) {
         this.permissionMapper = permissionMapper;
+        this.menuPermissionMapper = menuPermissionMapper;
     }
 
     @Override
@@ -31,7 +36,7 @@ public class MenuServiceImpl implements MenuService {
     @Override
     public List<MenuTree> getMenuTree() {
         List<SysPermission> allMenus = permissionMapper.selectAllMenus();
-        // 获取顶级菜单(parentId == null)
+        // 获取顶级栏目(parentId == null)
         List<SysPermission> topMenus = allMenus.stream()
                 .filter(p -> p.getParentId() == null)
                 .collect(Collectors.toList());
@@ -113,6 +118,8 @@ public class MenuServiceImpl implements MenuService {
 
     @Override
     public void deleteMenu(Long id) {
+        // 删除栏目前先删除权限关联
+        menuPermissionMapper.deleteByMenuId(id);
         permissionMapper.deleteById(id);
     }
 
@@ -123,5 +130,34 @@ public class MenuServiceImpl implements MenuService {
         permission.setStatus(status);
         permission.setSource("MANUAL");
         permissionMapper.updateMenu(permission);
+    }
+
+    @Override
+    public List<SysPermission> getMenuPermissions(Long menuId) {
+        List<Long> permissionIds = menuPermissionMapper.selectPermissionIdsByMenuId(menuId);
+        if (permissionIds.isEmpty()) {
+            return new ArrayList<>();
+        }
+        List<SysPermission> allPermissions = permissionMapper.selectAll();
+        return allPermissions.stream()
+                .filter(p -> permissionIds.contains(p.getId()))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public void updateMenuPermissions(Long menuId, List<Long> permissionIds) {
+        menuPermissionMapper.deleteByMenuId(menuId);
+        if (permissionIds != null && !permissionIds.isEmpty()) {
+            List<SysMenuPermission> list = permissionIds.stream()
+                    .map(permId -> {
+                        SysMenuPermission mp = new SysMenuPermission();
+                        mp.setMenuId(menuId);
+                        mp.setPermissionId(permId);
+                        return mp;
+                    })
+                    .collect(Collectors.toList());
+            menuPermissionMapper.batchInsert(list);
+        }
     }
 }
