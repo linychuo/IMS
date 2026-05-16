@@ -1,7 +1,12 @@
 package com.ims.system.runner;
 
 import com.ims.system.annotation.Permission;
+import com.ims.system.entity.SysMenu;
+import com.ims.system.entity.SysMenuPermission;
 import com.ims.system.entity.SysPermission;
+import com.ims.system.entity.SysRolePermission;
+import com.ims.system.mapper.SysMenuMapper;
+import com.ims.system.mapper.SysMenuPermissionMapper;
 import com.ims.system.mapper.SysPermissionMapper;
 import com.ims.system.mapper.SysRolePermissionMapper;
 import org.slf4j.Logger;
@@ -29,6 +34,8 @@ public class PermissionScanner implements ApplicationListener<ContextRefreshedEv
     private final RequestMappingHandlerMapping handlerMapping;
     private final SysPermissionMapper permissionMapper;
     private final SysRolePermissionMapper rolePermissionMapper;
+    private final SysMenuMapper menuMapper;
+    private final SysMenuPermissionMapper menuPermissionMapper;
 
     // 缓存类级别的 @Permission 信息
     private final Map<Class<?>, ClassPermissionInfo> classPermissionCache = new HashMap<>();
@@ -39,10 +46,14 @@ public class PermissionScanner implements ApplicationListener<ContextRefreshedEv
     public PermissionScanner(
             RequestMappingHandlerMapping handlerMapping,
             SysPermissionMapper permissionMapper,
-            SysRolePermissionMapper rolePermissionMapper) {
+            SysRolePermissionMapper rolePermissionMapper,
+            SysMenuMapper menuMapper,
+            SysMenuPermissionMapper menuPermissionMapper) {
         this.handlerMapping = handlerMapping;
         this.permissionMapper = permissionMapper;
         this.rolePermissionMapper = rolePermissionMapper;
+        this.menuMapper = menuMapper;
+        this.menuPermissionMapper = menuPermissionMapper;
     }
 
     @Override
@@ -219,6 +230,51 @@ public class PermissionScanner implements ApplicationListener<ContextRefreshedEv
         }
 
         log.info("========== 权限同步完成 ==========");
+
+        // 9. 填充角色权限关联（管理员角色拥有所有权限）
+        Long adminRoleId = 1L; // 管理员角色ID
+        List<SysPermission> allPermissions = permissionMapper.selectAllActive();
+
+        // 获取当前已有的角色权限关联
+        List<Long> existingRolePermIds = rolePermissionMapper.selectPermissionIdsByRoleId(adminRoleId);
+        List<SysRolePermission> toAddRolePerms = new ArrayList<>();
+        for (SysPermission perm : allPermissions) {
+            if (!existingRolePermIds.contains(perm.getId())) {
+                SysRolePermission rp = new SysRolePermission();
+                rp.setRoleId(adminRoleId);
+                rp.setPermissionId(perm.getId());
+                toAddRolePerms.add(rp);
+            }
+        }
+        if (!toAddRolePerms.isEmpty()) {
+            rolePermissionMapper.batchInsert(toAddRolePerms);
+        }
+
+        // 10. 填充栏目权限关联（基于路径匹配）
+        List<SysMenu> allMenus = menuMapper.selectAllActive();
+        for (SysMenu menu : allMenus) {
+            String path = menu.getPath();
+            if (path == null || path.isEmpty()) continue;
+
+            String code1 = path.substring(1);
+            String code2 = code1.replace("/", ":");
+
+            List<Long> existingMenuPerms = menuPermissionMapper.selectPermissionIdsByMenuId(menu.getId());
+            List<SysMenuPermission> toAddMenuPerms = new ArrayList<>();
+
+            for (SysPermission perm : allPermissions) {
+                if ((perm.getPermissionCode().equals(code1) || perm.getPermissionCode().equals(code2))
+                        && !existingMenuPerms.contains(perm.getId())) {
+                    SysMenuPermission mp = new SysMenuPermission();
+                    mp.setMenuId(menu.getId());
+                    mp.setPermissionId(perm.getId());
+                    toAddMenuPerms.add(mp);
+                }
+            }
+            if (!toAddMenuPerms.isEmpty()) {
+                menuPermissionMapper.batchInsert(toAddMenuPerms);
+            }
+        }
     }
 
     /**
