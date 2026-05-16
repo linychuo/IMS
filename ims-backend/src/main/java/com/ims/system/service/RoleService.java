@@ -44,4 +44,9 @@ public interface RoleService {
      * 分配权限
      */
     void assignPermissions(Long roleId, List<Long> permissionIds);
+
+    /**
+     * 获取角色权限ID列表
+     */
+    List<Long> getPermissionIds(Long roleId);
 }

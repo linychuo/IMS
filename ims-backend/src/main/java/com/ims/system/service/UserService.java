@@ -55,4 +55,9 @@ public interface UserService {
      * 重置密码
      */
     void resetPassword(Long userId, String newPassword);
+
+    /**
+     * 分配角色
+     */
+    void assignRole(Long userId, Long roleId);
 }

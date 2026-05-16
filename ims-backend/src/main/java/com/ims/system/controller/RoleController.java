@@ -65,4 +65,10 @@ public class RoleController {
         roleService.assignPermissions(id, permissionIds);
         return Result.success(null);
     }
+
+    @GetMapping("/{id}/permissions")
+    @Permission(code = "list", name = "查看角色权限")
+    public Result<List<Long>> getPermissions(@PathVariable Long id) {
+        return Result.success(roleService.getPermissionIds(id));
+    }
 }

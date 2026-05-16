@@ -6,4 +6,12 @@
         SELECT role_id FROM sys_user_role WHERE user_id = #{userId}
     </select>
 
+    <insert id="insert">
+        INSERT INTO sys_user_role (user_id, role_id) VALUES (#{userId}, #{roleId})
+    </insert>
+
+    <delete id="deleteByUserId">
+        DELETE FROM sys_user_role WHERE user_id = #{userId}
+    </delete>
+
 </mapper>

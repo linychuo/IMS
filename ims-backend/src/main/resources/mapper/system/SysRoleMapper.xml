@@ -8,16 +8,14 @@
         <result column="role_name" property="roleName"/>
         <result column="description" property="description"/>
         <result column="status" property="status"/>
-        <result column="create_by" property="createBy"/>
         <result column="create_time" property="createTime"/>
-        <result column="update_by" property="updateBy"/>
         <result column="update_time" property="updateTime"/>
         <result column="deleted" property="deleted"/>
     </resultMap>
 
     <sql id="Base_Column_List">
-        id, role_code, role_name, description, status, 
-        create_by, create_time, update_by, update_time, deleted
+        id, role_code, role_name, description, status,
+        create_time, update_time, deleted
     </sql>
 
     <select id="selectByUserId" resultMap="BaseResultMap">
@@ -25,6 +23,13 @@
         FROM sys_role r
         INNER JOIN sys_user_role ur ON r.id = ur.role_id
         WHERE ur.user_id = #{userId} AND r.deleted = 0
+    </select>
+
+    <select id="selectAll" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM sys_role
+        WHERE deleted = 0
+        ORDER BY id ASC
     </select>
 
 </mapper>

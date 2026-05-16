@@ -104,6 +104,11 @@ public class RoleServiceImpl implements RoleService {
         }
     }
 
+    @Override
+    public List<Long> getPermissionIds(Long roleId) {
+        return rolePermissionMapper.selectPermissionIdsByRoleId(roleId);
+    }
+
     private RoleDTO convertToDTO(SysRole role) {
         RoleDTO dto = new RoleDTO();
         BeanUtils.copyProperties(role, dto);

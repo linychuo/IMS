@@ -5,6 +5,7 @@ import com.ims.system.dto.MenuTree;
 import com.ims.system.dto.UserDTO;
 import com.ims.system.entity.SysUser;
 import com.ims.system.mapper.SysUserMapper;
+import com.ims.system.mapper.SysUserRoleMapper;
 import com.ims.system.service.PermissionService;
 import com.ims.system.service.UserService;
 import com.ims.system.util.JWTUtil;
@@ -24,11 +25,13 @@ import java.util.stream.Collectors;
 public class UserServiceImpl implements UserService {
 
     private final SysUserMapper userMapper;
+    private final SysUserRoleMapper userRoleMapper;
     private final JWTUtil jwtUtil;
     private final PermissionService permissionService;
 
-    public UserServiceImpl(SysUserMapper userMapper, JWTUtil jwtUtil, PermissionService permissionService) {
+    public UserServiceImpl(SysUserMapper userMapper, SysUserRoleMapper userRoleMapper, JWTUtil jwtUtil, PermissionService permissionService) {
         this.userMapper = userMapper;
+        this.userRoleMapper = userRoleMapper;
         this.jwtUtil = jwtUtil;
         this.permissionService = permissionService;
     }
@@ -176,6 +179,21 @@ public class UserServiceImpl implements UserService {
         user.setPassword(SecurityUtil.encode(newPassword));
         user.setUpdateTime(LocalDateTime.now());
         userMapper.update(user);
+    }
+
+    @Override
+    @Transactional
+    public void assignRole(Long userId, Long roleId) {
+        SysUser user = userMapper.selectById(userId);
+        if (user == null) {
+            throw new RuntimeException("用户不存在");
+        }
+        // 先删除用户的所有角色关联
+        userRoleMapper.deleteByUserId(userId);
+        // 再插入新的角色关联
+        if (roleId != null) {
+            userRoleMapper.insert(userId, roleId);
+        }
     }
 
     private UserDTO convertToDTO(SysUser user) {

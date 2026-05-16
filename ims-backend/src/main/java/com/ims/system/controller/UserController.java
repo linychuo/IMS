@@ -77,6 +77,13 @@ public class UserController {
         return Result.success(null);
     }
 
+    @PostMapping("/{id}/role")
+    @Permission(code = "assignRole", name = "分配角色")
+    public Result<Void> assignRole(@PathVariable Long id, @RequestBody AssignRoleRequest request) {
+        userService.assignRole(id, request.getRoleId());
+        return Result.success(null);
+    }
+
     public static class ChangePasswordRequest {
         private String oldPassword;
         private String newPassword;
@@ -84,5 +91,11 @@ public class UserController {
         public void setOldPassword(String oldPassword) { this.oldPassword = oldPassword; }
         public String getNewPassword() { return newPassword; }
         public void setNewPassword(String newPassword) { this.newPassword = newPassword; }
+    }
+
+    public static class AssignRoleRequest {
+        private Long roleId;
+        public Long getRoleId() { return roleId; }
+        public void setRoleId(Long roleId) { this.roleId = roleId; }
     }
 }
