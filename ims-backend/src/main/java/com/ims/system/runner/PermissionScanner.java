@@ -21,7 +21,7 @@ import java.util.*;
  * 权限扫描器
  * 应用启动时扫描所有 Controller 的 @Permission 注解，同步权限数据
  */
-//@Component
+@Component
 public class PermissionScanner implements ApplicationListener<ContextRefreshedEvent> {
 
     private static final Logger log = LoggerFactory.getLogger(PermissionScanner.class);
@@ -139,24 +139,21 @@ public class PermissionScanner implements ApplicationListener<ContextRefreshedEv
 
         // 5. 先同步所有菜单权限（插入数据库获取真实ID）
         for (SysPermission menu : menuPermissions) {
-            SysPermission existing = findByCode(existingPermissions, menu.getPermissionCode());
+            // 先检查数据库中是否真的存在
+            SysPermission existing = permissionMapper.selectByCode(menu.getPermissionCode());
             if (existing == null) {
                 permissionMapper.insert(menu);
                 codeToIdMap.put(menu.getPermissionCode(), menu.getId());
             } else {
-                // Update existing menu, preserving parent_id if already set
-                if (existing.getParentId() == null && menu.getParentId() != null) {
-                    menu.setId(existing.getId());
-                    permissionMapper.update(menu);
-                } else if (existing.getParentId() != null && menu.getParentId() == null) {
-                    // Keep existing parent_id
-                    menu.setId(existing.getId());
+                // 保留现有的 parentId
+                menu.setId(existing.getId());
+                if (existing.getParentId() != null && menu.getParentId() == null) {
                     menu.setParentId(existing.getParentId());
-                    permissionMapper.update(menu);
-                } else {
-                    menu.setId(existing.getId());
-                    permissionMapper.update(menu);
+                } else if (menu.getParentId() == null && existing.getParentId() == null) {
+                    menu.setParentId(null);
                 }
+                permissionMapper.update(menu);
+                codeToIdMap.put(menu.getPermissionCode(), existing.getId());
             }
         }
 
@@ -168,14 +165,13 @@ public class PermissionScanner implements ApplicationListener<ContextRefreshedEv
             String menuCode = menu.getPermissionCode();
             Long menuId = menu.getId();
             Long currentParentId = menu.getParentId();
-            // 从 codeToIdMap 中查找当前应该有的 parentId
             String parentCode = extractParentCode(menuCode);
             Long expectedParentId = parentCode != null ? codeToIdMap.get(parentCode) : null;
 
-            // 如果当前parentId和预期不符，需要更新
             if (menuId != null && menuId > 0 && !java.util.Objects.equals(currentParentId, expectedParentId)) {
-                SysPermission existing = findByCode(existingPermissions, menuCode);
-                if (existing != null) {
+                // 直接查数据库确认当前值
+                SysPermission dbMenu = permissionMapper.selectByCode(menuCode);
+                if (dbMenu != null && !java.util.Objects.equals(dbMenu.getParentId(), expectedParentId)) {
                     menu.setParentId(expectedParentId);
                     permissionMapper.update(menu);
                 }
@@ -184,12 +180,12 @@ public class PermissionScanner implements ApplicationListener<ContextRefreshedEv
 
         // 7. 再同步按钮权限（使用已解析的父子关系）
         for (SysPermission permission : buttonPermissions) {
-            // 从已构建的菜单映射中解析 parentId
             String parentCode = extractParentCode(permission.getPermissionCode());
             if (parentCode != null && codeToIdMap.containsKey(parentCode)) {
                 permission.setParentId(codeToIdMap.get(parentCode));
             }
-            SysPermission existing = findByCode(existingPermissions, permission.getPermissionCode());
+            // 直接查数据库，不依赖内存中的 existingPermissions
+            SysPermission existing = permissionMapper.selectByCode(permission.getPermissionCode());
             if (existing == null) {
                 permissionMapper.insert(permission);
             } else {

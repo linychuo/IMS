@@ -37,12 +37,15 @@ psql -U postgres -d ims -f init.sql
 ### 1.3 验证初始化
 
 ```bash
-psql -U postgres -d ims -c "SELECT COUNT(*) FROM sys_menu; SELECT COUNT(*) FROM sys_user;"
+psql -U postgres -d ims -c "SELECT COUNT(*) FROM sys_menu; SELECT COUNT(*) FROM sys_user; SELECT COUNT(*) FROM sys_permission;"
 ```
 
 预期结果：
 - sys_menu: 32 条记录
 - sys_user: 1 条记录
+- sys_permission: 172 条记录（PermissionScanner 启动时自动扫描生成）
+
+**注意**：PermissionScanner 会根据 Controller 的 `@Permission` 注解自动创建权限数据，首次启动后端后会自动生成。
 
 ---
 
@@ -100,8 +103,8 @@ curl -X POST http://localhost:8080/auth/login \
     "userId": 1,
     "username": "admin",
     "realName": "系统管理员",
-    "menus": [],
-    "permissions": []
+    "menus": [{"id":2,"name":"报表中心","path":"/report","children":[...]}, ...],
+    "permissions": ["system:user:read", "system:user:create", ...]
   }
 }
 ```
@@ -138,14 +141,28 @@ ims-frontend/
 psql -U postgres -d ims -c "UPDATE sys_user SET password = '\$2a\$10\$TJVeU7ICPLNSniCpH.trOe7lvr5mStSUU3A63J34Ti/X0Okb3DsQO' WHERE username = 'admin';"
 ```
 
-### 6.2 PermissionScanner 报 duplicate key 错误
+### 6.2 权限数据丢失或 menus 为空
+
+**原因**：sys_role_permission 或 sys_menu_permission 表未初始化
 
 **解决方法**：
 ```sql
-psql -U postgres -d ims -c "DELETE FROM sys_role_permission;"
-psql -U postgres -d ims -c "DELETE FROM sys_permission;"
+-- 分配所有权限给管理员角色
+INSERT INTO sys_role_permission (role_id, permission_id)
+SELECT r.id, p.id FROM sys_role r, sys_permission p WHERE r.role_code = 'admin' AND p.deleted = 0;
+
+-- 分配栏目权限关联
+INSERT INTO sys_menu_permission (menu_id, permission_id)
+SELECT m.id, p.id FROM sys_menu m
+JOIN sys_permission p ON (
+    p.permission_code = SUBSTRING(m.path FROM 2)
+    OR p.permission_code = REPLACE(SUBSTRING(m.path FROM 2), '/', ':')
+)
+WHERE m.deleted = 0 AND p.deleted = 0;
 ```
 然后重启后端。
+
+**说明**：init.sql 已包含上述初始化语句，如启动后仍有问题可手动执行。
 
 ### 6.3 端口被占用
 
