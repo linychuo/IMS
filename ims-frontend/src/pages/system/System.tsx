@@ -654,13 +654,35 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
           <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-end' }}>
             <Button type="primary" icon={<PlusOutlined />} onClick={handleAddMenu}>新建栏目</Button>
           </div>
-          <Table
-            columns={menuColumns}
-            dataSource={menuData}
-            rowKey="id"
+          <Tree
+            treeData={menuTreeData}
             loading={menuLoading}
-            pagination={{ pageSize: 20 }}
-            scroll={{ x: 900 }}
+            defaultExpandAll
+            blockNode
+            titleRender={(nodeData) => {
+              const menu = menuData.find(m => m.id === nodeData.key);
+              if (!menu) return nodeData.title as React.ReactNode;
+              return (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', paddingRight: 16 }}>
+                  <div>
+                    <span style={{ fontWeight: 500 }}>{menu.permissionName}</span>
+                    <span style={{ color: '#999', marginLeft: 8, fontSize: 12 }}>
+                      {menu.path || menu.permissionCode}
+                    </span>
+                  </div>
+                  <Space size="small">
+                    <Tag color={menu.status === 1 ? 'green' : 'red'}>
+                      {menu.status === 1 ? '启用' : '禁用'}
+                    </Tag>
+                    <Button type="link" size="small" icon={<LinkOutlined />} onClick={() => handleAssignMenuPermissions(menu)} />
+                    <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEditMenu(menu)} />
+                    <Popconfirm title="确定删除？" onConfirm={() => handleDeleteMenu(menu.id)}>
+                      <Button type="link" size="small" danger icon={<DeleteOutlined />} />
+                    </Popconfirm>
+                  </Space>
+                </div>
+              );
+            }}
           />
         </TabPane>
 
