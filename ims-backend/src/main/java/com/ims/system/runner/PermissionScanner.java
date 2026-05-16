@@ -21,7 +21,7 @@ import java.util.*;
  * 权限扫描器
  * 应用启动时扫描所有 Controller 的 @Permission 注解，同步权限数据
  */
-@Component
+//@Component
 public class PermissionScanner implements ApplicationListener<ContextRefreshedEvent> {
 
     private static final Logger log = LoggerFactory.getLogger(PermissionScanner.class);
