@@ -122,7 +122,7 @@
     <select id="selectAllMenus" resultMap="BaseResultMap">
         SELECT <include refid="Base_Column_List"/>
         FROM sys_permission
-        WHERE deleted = 0
+        WHERE deleted = 0 AND source = 'MANUAL'
         ORDER BY sort_order ASC
     </select>
 
