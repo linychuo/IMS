@@ -47,7 +47,7 @@
     <select id="selectAllActive" resultMap="BaseResultMap">
         SELECT <include refid="Base_Column_List"/>
         FROM sys_permission
-        WHERE deleted = 0 AND status = 1
+        WHERE deleted = 0 AND status = 1 AND source = 'MANUAL'
     </select>
 
     <select id="selectByParentCode" resultMap="BaseResultMap">
