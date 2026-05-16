@@ -12,7 +12,6 @@ import {
   Tag,
   Popconfirm,
   Tree,
-  TreeDataNode,
   Transfer,
 } from 'antd';
 import {
