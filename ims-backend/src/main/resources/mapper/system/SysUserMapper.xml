@@ -35,4 +35,17 @@
         WHERE username = #{username} AND password = #{password} AND deleted = 0
     </select>
 
+    <select id="selectAll" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM sys_user
+        WHERE deleted = 0
+        ORDER BY id ASC
+    </select>
+
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM sys_user
+        WHERE id = #{id} AND deleted = 0
+    </select>
+
 </mapper>

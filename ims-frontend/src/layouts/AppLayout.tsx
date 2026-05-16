@@ -38,6 +38,7 @@ const defaultMenuItems = [
 
 const AppLayout: React.FC = () => {
   const [collapsed, setCollapsed] = useState(false);
+  const [openKeys, setOpenKeys] = useState<string[]>([]);
   const navigate = useNavigate();
   const { username, realName, menus, logout } = useAuthStore();
 
@@ -93,6 +94,16 @@ const AppLayout: React.FC = () => {
     }
   };
 
+  // 手风琴效果：只保留一个展开的子菜单
+  const handleOpenChange = (keys: string[]) => {
+    // 如果要打开的子菜单已展开，则保持；否则只保留最新打开的
+    if (keys.length > 0 && openKeys.includes(keys[keys.length - 1])) {
+      setOpenKeys(keys);
+    } else {
+      setOpenKeys(keys.slice(-1)); // 只保留最后一个
+    }
+  };
+
   return (
     <Layout style={{ minHeight: '100vh' }}>
       <Sider trigger={null} collapsible collapsed={collapsed}>
@@ -111,12 +122,24 @@ const AppLayout: React.FC = () => {
           theme="dark"
           mode="inline"
           defaultSelectedKeys={['/dashboard']}
+          openKeys={openKeys}
+          onOpenChange={handleOpenChange}
           items={menuItems}
           onClick={handleMenuClick}
         />
       </Sider>
       <Layout>
-        <Header style={{ padding: '0 16px', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Header style={{
+          padding: '0 16px',
+          background: '#fff',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          position: 'sticky',
+          top: 0,
+          zIndex: 100,
+          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+        }}>
           <Button
             type="text"
             icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
@@ -134,7 +157,7 @@ const AppLayout: React.FC = () => {
         </Content>
       </Layout>
     </Layout>
-  );
+    );
 };
 
 export default AppLayout;
