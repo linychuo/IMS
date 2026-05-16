@@ -11,7 +11,6 @@ import {
   Tabs,
   Tag,
   Popconfirm,
-  Tree,
   Transfer,
 } from 'antd';
 import {
@@ -20,11 +19,11 @@ import {
   EditOutlined,
   DeleteOutlined,
   LinkOutlined,
+  FolderOutlined,
+  FolderOpenOutlined,
+  FileTextOutlined,
 } from '@ant-design/icons';
 import { systemApi } from '../../api';
-import type { DataNode } from 'antd/es/tree';
-
-const { TabPane } = Tabs;
 
 // ============ 用户 ============
 interface User {
@@ -104,9 +103,9 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
   const [menuModalVisible, setMenuModalVisible] = useState(false);
   const [editingMenu, setEditingMenu] = useState<MenuItem | null>(null);
   const [menuForm] = Form.useForm();
-  const [menuTreeData, setMenuTreeData] = useState<DataNode[]>([]);
   const [menuPermissionModalVisible, setMenuPermissionModalVisible] = useState(false);
   const [menuPermissionData, setMenuPermissionData] = useState<Permission[]>([]);
+  const [expandedMenuIds, setExpandedMenuIds] = useState<Set<number>>(new Set());
 
   // 权限点状态
   const [permissionLoading, setPermissionLoading] = useState(false);
@@ -317,7 +316,6 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
       if (res.data.code === 200) {
         const menus = res.data.data || [];
         setMenuData(menus);
-        setMenuTreeData(convertToTreeData(menus));
       }
     } catch (error) {
       console.error('Failed to fetch menus:', error);
@@ -325,40 +323,6 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
     } finally {
       setMenuLoading(false);
     }
-  };
-
-  const convertToTreeData = (menus: MenuItem[]): DataNode[] => {
-    const map: Record<number, MenuItem> = {};
-    const roots: MenuItem[] = [];
-
-    menus.forEach(m => {
-      map[m.id] = { ...m, children: [] };
-    });
-
-    menus.forEach(m => {
-      if (m.parentId && map[m.parentId]) {
-        map[m.parentId].children!.push(map[m.id]);
-      } else {
-        roots.push(map[m.id]);
-      }
-    });
-
-    const buildTree = (items: MenuItem[]): DataNode[] => {
-      return items.map(item => ({
-        title: (
-          <span>
-            {item.permissionName}
-            <span style={{ color: '#999', marginLeft: 8, fontSize: 12 }}>
-              {item.path || '-'}
-            </span>
-          </span>
-        ),
-        key: item.id,
-        children: item.children && item.children.length > 0 ? buildTree(item.children) : undefined,
-      }));
-    };
-
-    return buildTree(roots);
   };
 
   const handleAddMenu = () => {
@@ -387,6 +351,87 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
     } catch (error) {
       message.error('删除失败');
     }
+  };
+
+  // ============ 栏目树渲染 ============
+  const toggleExpand = (menuId: number) => {
+    const newSet = new Set(expandedMenuIds);
+    if (newSet.has(menuId)) {
+      newSet.delete(menuId);
+    } else {
+      newSet.add(menuId);
+    }
+    setExpandedMenuIds(newSet);
+  };
+
+  const renderMenuTreeItems = (menus: MenuItem[], parentId: number | null, level: number): React.ReactNode => {
+    const filteredMenus = menus.filter(m => m.parentId === parentId);
+    return filteredMenus.map(menu => {
+      const children = menus.filter(m => m.parentId === menu.id);
+      const hasChildren = children.length > 0;
+      const isExpanded = expandedMenuIds.has(menu.id);
+      const indentWidth = level * 24;
+      return (
+        <div key={menu.id}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              padding: '12px 16px',
+              marginLeft: indentWidth,
+              background: '#fff',
+              borderRadius: 8,
+              border: '1px solid #e8e8e8',
+              marginBottom: 4,
+              transition: 'all 0.2s',
+              cursor: 'pointer',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = '#1890ff';
+              e.currentTarget.style.boxShadow = '0 2px 8px rgba(24,144,255,0.15)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = '#e8e8e8';
+              e.currentTarget.style.boxShadow = 'none';
+            }}
+            onClick={() => hasChildren && toggleExpand(menu.id)}
+          >
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 10 }}>
+              {hasChildren ? (
+                isExpanded ? (
+                  <FolderOpenOutlined style={{ fontSize: 18, color: '#fa8c16' }} />
+                ) : (
+                  <FolderOutlined style={{ fontSize: 18, color: '#fa8c16' }} />
+                )
+              ) : (
+                <FileTextOutlined style={{ fontSize: 18, color: '#1890ff' }} />
+              )}
+              <div>
+                <div style={{ fontWeight: 600, fontSize: 14, color: '#262626' }}>{menu.permissionName}</div>
+                <div style={{ fontSize: 12, color: '#8c8c8c', marginTop: 2 }}>
+                  {menu.path || menu.permissionCode}
+                </div>
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }} onClick={(e) => e.stopPropagation()}>
+              <Tag color={menu.status === 1 ? 'green' : 'red'}>
+                {menu.status === 1 ? '启用' : '禁用'}
+              </Tag>
+              <Button type="link" size="small" icon={<LinkOutlined />} onClick={() => handleAssignMenuPermissions(menu)}>权限点</Button>
+              <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEditMenu(menu)}>编辑</Button>
+              <Popconfirm title="确定删除？" onConfirm={() => handleDeleteMenu(menu.id)}>
+                <Button type="link" size="small" danger icon={<DeleteOutlined />} />
+              </Popconfirm>
+            </div>
+          </div>
+          {hasChildren && isExpanded && (
+            <div style={{ borderLeft: '2px solid #d9d9d9', marginLeft: indentWidth + 8 }}>
+              {renderMenuTreeItems(menus, menu.id, level + 1)}
+            </div>
+          )}
+        </div>
+      );
+    });
   };
 
   const handleMenuModalOk = async () => {
@@ -438,10 +483,13 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
       const res = await systemApi.get(`/system/menu/permission-options`);
       if (res.data.code === 200) {
         setMenuPermissionData(res.data.data || []);
+        console.log('Permission options loaded:', res.data.data?.length || 0);
       }
       const permRes = await systemApi.get(`/system/menu/${record.id}/permissions`);
       if (permRes.data.code === 200) {
-        setSelectedPermissionKeys(permRes.data.data.map((p: Permission) => p.id));
+        const ids = permRes.data.data.map((p: Permission) => p.id);
+        console.log('Menu permissions for', record.id, ':', ids);
+        setSelectedPermissionKeys(ids);
       } else {
         setSelectedPermissionKeys([]);
       }
@@ -453,6 +501,7 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
 
   const handleMenuPermissionOk = async () => {
     if (!editingMenu) return;
+    console.log('Saving permissions for menu', editingMenu.id, ':', selectedPermissionKeys);
     try {
       const res = await systemApi.put(`/system/menu/${editingMenu.id}/permissions`, selectedPermissionKeys);
       if (res.data.code === 200) {
@@ -589,117 +638,124 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
   // ============ Transfer 数据源 ============
   const getTransferData = () => {
     return menuPermissionData.map(p => ({
-      key: p.id,
+      key: String(p.id),
       title: `${p.permissionName} (${p.permissionCode})`,
     }));
   };
 
   const getTransferTargetKeys = () => {
-    return selectedPermissionKeys;
+    return selectedPermissionKeys.map(k => String(k));
   };
 
-  const handleTransferChange = (targetKeys: string[]) => {
-    setSelectedPermissionKeys(targetKeys.map(k => parseInt(k)));
+  const handleTransferChange = (targetKeys: any, direction: any, moveKeys: any) => {
+    const keys = targetKeys as (string | number)[];
+    setSelectedPermissionKeys(keys.map(k => typeof k === 'string' ? parseInt(k) : k));
   };
 
   return (
     <div>
       <h2 style={{ marginBottom: 16 }}>系统管理</h2>
-      <Tabs activeKey={activeTab} onChange={setActiveTab}>
-        <TabPane tab="用户管理" key="user">
-          <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-end' }}>
-            <Button type="primary" icon={<PlusOutlined />} onClick={handleAddUser}>新建用户</Button>
-          </div>
-          <Table
-            columns={userColumns}
-            dataSource={userData}
-            rowKey="id"
-            loading={userLoading}
-            pagination={{
-              current: userPagination.current,
-              pageSize: userPagination.size,
-              total: userPagination.total,
-              showSizeChanger: true,
-              showQuickJumper: true,
-              showTotal: (total) => `共 ${total} 条`,
-              onChange: (current, size) => setUserPagination({ current, size, total: userPagination.total }),
-            }}
-            scroll={{ x: 1000 }}
-          />
-        </TabPane>
-
-        <TabPane tab="角色管理" key="role">
-          <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-end' }}>
-            <Button type="primary" icon={<PlusOutlined />} onClick={handleAddRole}>新建角色</Button>
-          </div>
-          <Table
-            columns={roleColumns}
-            dataSource={roleData}
-            rowKey="id"
-            loading={roleLoading}
-            pagination={{
-              current: rolePagination.current,
-              pageSize: rolePagination.size,
-              total: rolePagination.total,
-              showSizeChanger: true,
-              showQuickJumper: true,
-              showTotal: (total) => `共 ${total} 条`,
-              onChange: (current, size) => setRolePagination({ current, size, total: rolePagination.total }),
-            }}
-            scroll={{ x: 1000 }}
-          />
-        </TabPane>
-
-        <TabPane tab="栏目管理" key="menu">
-          <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-end' }}>
-            <Button type="primary" icon={<PlusOutlined />} onClick={handleAddMenu}>新建栏目</Button>
-          </div>
-          <Tree
-            treeData={menuTreeData}
-            loading={menuLoading}
-            defaultExpandAll
-            blockNode
-            titleRender={(nodeData) => {
-              const menu = menuData.find(m => m.id === nodeData.key);
-              if (!menu) return nodeData.title as React.ReactNode;
-              return (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', paddingRight: 16 }}>
-                  <div>
-                    <span style={{ fontWeight: 500 }}>{menu.permissionName}</span>
-                    <span style={{ color: '#999', marginLeft: 8, fontSize: 12 }}>
-                      {menu.path || menu.permissionCode}
-                    </span>
-                  </div>
-                  <Space size="small">
-                    <Tag color={menu.status === 1 ? 'green' : 'red'}>
-                      {menu.status === 1 ? '启用' : '禁用'}
-                    </Tag>
-                    <Button type="link" size="small" icon={<LinkOutlined />} onClick={() => handleAssignMenuPermissions(menu)} />
-                    <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEditMenu(menu)} />
-                    <Popconfirm title="确定删除？" onConfirm={() => handleDeleteMenu(menu.id)}>
-                      <Button type="link" size="small" danger icon={<DeleteOutlined />} />
-                    </Popconfirm>
-                  </Space>
+      <Tabs
+        activeKey={activeTab}
+        onChange={(key) => setActiveTab(key as any)}
+        items={[
+          {
+            key: 'user',
+            label: '用户管理',
+            children: (
+              <>
+                <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-end' }}>
+                  <Button type="primary" icon={<PlusOutlined />} onClick={handleAddUser}>新建用户</Button>
                 </div>
-              );
-            }}
-          />
-        </TabPane>
-
-        <TabPane tab="权限管理" key="permission">
-          <div style={{ marginBottom: 16, color: '#999' }}>
-            权限点由代码扫描生成，不可手动编辑
-          </div>
-          <Table
-            columns={permissionColumns}
-            dataSource={permissionData}
-            rowKey="id"
-            loading={permissionLoading}
-            pagination={{ pageSize: 20 }}
-            scroll={{ x: 800 }}
-          />
-        </TabPane>
-      </Tabs>
+                <Table
+                  columns={userColumns}
+                  dataSource={userData}
+                  rowKey="id"
+                  loading={userLoading}
+                  pagination={{
+                    current: userPagination.current,
+                    pageSize: userPagination.size,
+                    total: userPagination.total,
+                    showSizeChanger: true,
+                    showQuickJumper: true,
+                    showTotal: (total) => `共 ${total} 条`,
+                    onChange: (current, size) => setUserPagination({ current, size, total: userPagination.total }),
+                  }}
+                  scroll={{ x: 1000 }}
+                />
+              </>
+            ),
+          },
+          {
+            key: 'role',
+            label: '角色管理',
+            children: (
+              <>
+                <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-end' }}>
+                  <Button type="primary" icon={<PlusOutlined />} onClick={handleAddRole}>新建角色</Button>
+                </div>
+                <Table
+                  columns={roleColumns}
+                  dataSource={roleData}
+                  rowKey="id"
+                  loading={roleLoading}
+                  pagination={{
+                    current: rolePagination.current,
+                    pageSize: rolePagination.size,
+                    total: rolePagination.total,
+                    showSizeChanger: true,
+                    showQuickJumper: true,
+                    showTotal: (total) => `共 ${total} 条`,
+                    onChange: (current, size) => setRolePagination({ current, size, total: rolePagination.total }),
+                  }}
+                  scroll={{ x: 1000 }}
+                />
+              </>
+            ),
+          },
+          {
+            key: 'menu',
+            label: '栏目管理',
+            children: (
+              <>
+                <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-end' }}>
+                  <Button type="primary" icon={<PlusOutlined />} onClick={handleAddMenu}>新建栏目</Button>
+                </div>
+                <div style={{ background: '#fafafa', borderRadius: 8, padding: 16, minHeight: 400 }}>
+                  {menuLoading ? (
+                    <div style={{ textAlign: 'center', padding: 40 }}>加载中...</div>
+                  ) : menuData.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: 40, color: '#999' }}>暂无栏目数据</div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      {renderMenuTreeItems(menuData, null, 0)}
+                    </div>
+                  )}
+                </div>
+              </>
+            ),
+          },
+          {
+            key: 'permission',
+            label: '权限管理',
+            children: (
+              <>
+                <div style={{ marginBottom: 16, color: '#999' }}>
+                  权限点由代码扫描生成，不可手动编辑
+                </div>
+                <Table
+                  columns={permissionColumns}
+                  dataSource={permissionData}
+                  rowKey="id"
+                  loading={permissionLoading}
+                  pagination={{ pageSize: 20 }}
+                  scroll={{ x: 800 }}
+                />
+              </>
+            ),
+          },
+        ]}
+      />
 
       {/* 用户弹窗 */}
       <Modal
@@ -843,7 +899,7 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
         <Transfer
           dataSource={getTransferData()}
           targetKeys={getTransferTargetKeys()}
-          onChange={handleTransferChange}
+          onChange={handleTransferChange as any}
           render={(item) => item.title}
           titles={['可分配权限', '已分配权限']}
           listStyle={{ width: 250, height: 400 }}
@@ -864,7 +920,7 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
         <Transfer
           dataSource={getTransferData()}
           targetKeys={getTransferTargetKeys().map(k => k.toString())}
-          onChange={(keys) => handleTransferChange(keys)}
+          onChange={handleTransferChange as any}
           render={(item) => item.title}
           titles={['可用权限点', '已选权限点']}
           listStyle={{ width: 250, height: 400 }}

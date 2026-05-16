@@ -54,12 +54,24 @@ const AppLayout: React.FC = () => {
   };
 
   // 直接使用后端返回的菜单树
-  const buildMenuItems = (menuList: any[]): any[] => {
-    return menuList.map(menu => ({
-      key: menu.path || codeToPath(menu.permissionCode),
-      label: menu.name,
-      children: menu.children && menu.children.length > 0 ? buildMenuItems(menu.children) : undefined,
-    }));
+  const buildMenuItems = (menuList: any[], parentPath?: string): any[] => {
+    return menuList.map((menu, idx) => {
+      // 优先用path，如果没有path则用code转路径，但如果生成的路径和父级相同则用id
+      let effectivePath = menu.path;
+      if (!effectivePath && menu.permissionCode) {
+        const codePath = codeToPath(menu.permissionCode);
+        // 如果子级路径和父级相同，说明是同类菜单（如销售出库的销售订单），不再复用
+        effectivePath = (parentPath && codePath === parentPath) ? `menu-${menu.id}` : codePath;
+      }
+      if (!effectivePath) {
+        effectivePath = `menu-${menu.id || idx}`;
+      }
+      return {
+        key: effectivePath,
+        label: menu.name,
+        children: menu.children && menu.children.length > 0 ? buildMenuItems(menu.children, effectivePath) : undefined,
+      };
+    });
   };
 
   const menuItems = menus && menus.length > 0
