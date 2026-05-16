@@ -148,7 +148,7 @@ public class PermissionScanner implements ApplicationListener<ContextRefreshedEv
         // 解析所有菜单的父子关系（基于 code 前缀）
         resolveMenuParentIds(codeToIdMap, codeToMenuMap);
 
-        // 5. 先同步所有菜单权限（插入数据库获取真实ID）
+        // 5. 先同步所有菜单权限（插入数据库获取真实ID），并立即更新codeToIdMap
         for (SysPermission menu : menuPermissions) {
             // 先检查数据库中是否真的存在
             SysPermission existing = permissionMapper.selectByCode(menu.getPermissionCode());
@@ -171,20 +171,20 @@ public class PermissionScanner implements ApplicationListener<ContextRefreshedEv
         // 第二阶段：再次解析父子关系（此时codeToIdMap已包含本次插入的菜单ID）
         resolveMenuParentIds(codeToIdMap, codeToMenuMap);
 
-        // 6. 重新更新所有需要更新parentId的菜单
+        // 6. 重新更新所有需要更新parentId的菜单（从数据库查实际值）
         for (SysPermission menu : menuPermissions) {
             String menuCode = menu.getPermissionCode();
             Long menuId = menu.getId();
-            Long currentParentId = menu.getParentId();
             String parentCode = extractParentCode(menuCode);
             Long expectedParentId = parentCode != null ? codeToIdMap.get(parentCode) : null;
 
-            if (menuId != null && menuId > 0 && !java.util.Objects.equals(currentParentId, expectedParentId)) {
+            if (menuId != null && menuId > 0) {
                 // 直接查数据库确认当前值
                 SysPermission dbMenu = permissionMapper.selectByCode(menuCode);
                 if (dbMenu != null && !java.util.Objects.equals(dbMenu.getParentId(), expectedParentId)) {
-                    menu.setParentId(expectedParentId);
-                    permissionMapper.update(menu);
+                    dbMenu.setParentId(expectedParentId);
+                    permissionMapper.update(dbMenu);
+                    codeToIdMap.put(menuCode, dbMenu.getId());
                 }
             }
         }
