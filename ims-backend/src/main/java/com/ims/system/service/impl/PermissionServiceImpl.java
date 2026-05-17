@@ -105,6 +105,22 @@ public class PermissionServiceImpl implements PermissionService {
                 }
             }
         }
+        // 如果精确匹配未命中，检查是否有子级权限（如 system:menu 意味着有 system 的访问权）
+        if (!hasAccess && menuPermIds != null) {
+            for (Long permId : menuPermIds) {
+                SysPermission perm = permissionMapper.selectById(permId);
+                if (perm != null) {
+                    String prefix = perm.getPermissionCode() + ":";
+                    for (String code : userPermissionCodes) {
+                        if (code.startsWith(prefix)) {
+                            hasAccess = true;
+                            break;
+                        }
+                    }
+                }
+                if (hasAccess) break;
+            }
+        }
 
         // 如果用户没有该菜单的权限，且没有子菜单有权限，返回null
         List<MenuTree> accessibleChildren = new ArrayList<>();
