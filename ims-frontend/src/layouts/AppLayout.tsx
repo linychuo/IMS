@@ -30,6 +30,56 @@ const iconMap: Record<string, React.ReactNode> = {
   ContainerOutlined: <ContainerOutlined />,
 };
 
+// 菜单路径对应的图标名称映射（自动分配，不需要在栏目管理中维护）
+const pathIconMap: Record<string, string> = {
+  '/dashboard': 'BarChartOutlined',
+  '/report': 'PieChartOutlined',
+  '/warehouse': 'ContainerOutlined',
+  '/product': 'ShoppingCartOutlined',
+  '/customer': 'UserOutlined',
+  '/supplier': 'ShopOutlined',
+  '/sales': 'ShoppingCartOutlined',
+  '/purchase': 'InboxOutlined',
+  '/inventory': 'InboxOutlined',
+  '/finance': 'DollarOutlined',
+  '/system': 'SettingOutlined',
+  '/sales/order': 'ShoppingCartOutlined',
+  '/sales/out': 'ShoppingCartOutlined',
+  '/sales/return': 'ShoppingCartOutlined',
+  '/sales/price-strategy': 'DollarOutlined',
+  '/purchase/order': 'InboxOutlined',
+  '/purchase/in': 'InboxOutlined',
+  '/purchase/return': 'InboxOutlined',
+  '/inventory/account': 'BarChartOutlined',
+  '/inventory/in': 'InboxOutlined',
+  '/inventory/out': 'InboxOutlined',
+  '/inventory/transfer': 'ContainerOutlined',
+  '/inventory/check': 'BarChartOutlined',
+  '/inventory/record': 'BarChartOutlined',
+  '/finance/in': 'DollarOutlined',
+  '/finance/out': 'DollarOutlined',
+  '/finance/account': 'DollarOutlined',
+  '/finance/receivable': 'DollarOutlined',
+  '/finance/payable': 'DollarOutlined',
+  '/finance/transaction': 'BarChartOutlined',
+};
+
+const getIconForPath = (path: string): React.ReactNode | undefined => {
+  // 先精确匹配
+  if (pathIconMap[path]) {
+    return iconMap[pathIconMap[path]];
+  }
+  // 再匹配前缀
+  const segments = path.split('/');
+  if (segments.length >= 2) {
+    const parentPath = '/' + segments[1];
+    if (pathIconMap[parentPath]) {
+      return iconMap[pathIconMap[parentPath]];
+    }
+  }
+  return undefined;
+};
+
 // 默认菜单
 const defaultMenuItems = [
   { key: '/dashboard', icon: <BarChartOutlined />, label: '仪表盘' },
@@ -70,6 +120,7 @@ const AppLayout: React.FC = () => {
       return {
         key: effectivePath,
         label: menu.name,
+        icon: getIconForPath(menu.path || effectivePath),
         children: menu.children && menu.children.length > 0 ? buildMenuItems(menu.children, menu.path || effectivePath) : undefined,
       };
     });
