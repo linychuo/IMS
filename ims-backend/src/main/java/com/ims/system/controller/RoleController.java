@@ -12,7 +12,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/role")
-@Permission(code = "role", name = "系统管理")
+@Permission(code = "system:role", name = "角色管理")
 public class RoleController {
 
     private final RoleService roleService;

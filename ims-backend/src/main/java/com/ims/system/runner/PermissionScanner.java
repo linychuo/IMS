@@ -149,22 +149,28 @@ public class PermissionScanner implements ApplicationListener<ContextRefreshedEv
         resolveMenuParentIds(codeToIdMap, codeToMenuMap);
 
         // 5. 先同步所有菜单权限（插入数据库获取真实ID），并立即更新codeToIdMap
+        // 一级菜单优先使用数据库中已有的 name，只有新菜单才用扫描到的 name
+        Map<String, String> codeToNameMap = new LinkedHashMap<>();
         for (SysPermission menu : menuPermissions) {
-            // 先检查数据库中是否真的存在
             SysPermission existing = permissionMapper.selectByCode(menu.getPermissionCode());
             if (existing == null) {
                 permissionMapper.insert(menu);
                 codeToIdMap.put(menu.getPermissionCode(), menu.getId());
+                codeToNameMap.put(menu.getPermissionCode(), menu.getPermissionName());
             } else {
-                // 保留现有的 parentId
+                // 已存在：保留数据库中的 name
                 menu.setId(existing.getId());
-                if (existing.getParentId() != null && menu.getParentId() == null) {
+                // 父级关系以数据库为准
+                if (existing.getParentId() != null) {
                     menu.setParentId(existing.getParentId());
-                } else if (menu.getParentId() == null && existing.getParentId() == null) {
+                } else if (menu.getParentId() == null) {
                     menu.setParentId(null);
                 }
+                // 关键：保留数据库中的 name
+                menu.setPermissionName(existing.getPermissionName());
                 permissionMapper.update(menu);
                 codeToIdMap.put(menu.getPermissionCode(), existing.getId());
+                codeToNameMap.put(menu.getPermissionCode(), existing.getPermissionName());
             }
         }
 
@@ -353,13 +359,31 @@ public class PermissionScanner implements ApplicationListener<ContextRefreshedEv
         return permission;
     }
 
+    // 已知顶级权限码对应的中文名称（覆盖从 controller 注解采样的 name）
+    private static final Map<String, String> TOP_LEVEL_NAMES = Map.ofEntries(
+            Map.entry("system", "系统管理"),
+            Map.entry("product", "商品管理"),
+            Map.entry("sales", "销售管理"),
+            Map.entry("purchase", "采购管理"),
+            Map.entry("inventory", "库存管理"),
+            Map.entry("finance", "财务管理"),
+            Map.entry("warehouse", "仓库管理"),
+            Map.entry("customer", "客户管理"),
+            Map.entry("supplier", "供应商管理"),
+            Map.entry("report", "报表中心")
+    );
+
     private SysPermission buildMenuPermission(ClassPermissionInfo classInfo, List<SysPermission> menuPermissions) {
         // 一级菜单：从 code 提取第一段，如 "system" from "system:user"
         String topLevelCode = extractTopLevel(classInfo.code);
 
+        // 顶级菜单用预置名称，不依赖 controller 注解的 name
+        String menuName = TOP_LEVEL_NAMES.getOrDefault(topLevelCode,
+                classInfo.name.isEmpty() ? topLevelCode : classInfo.name);
+
         SysPermission menu = new SysPermission();
         menu.setPermissionCode(topLevelCode);
-        menu.setPermissionName(classInfo.name.isEmpty() ? topLevelCode : classInfo.name);
+        menu.setPermissionName(menuName);
         menu.setStatus(1);
         menu.setDeleted(0);
         menu.setSortOrder(0);

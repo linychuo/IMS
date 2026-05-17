@@ -352,11 +352,13 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
 
   const handlePermissionModalOk = async () => {
     if (!permissionModalTargetId) return;
-    const apiPath = permissionModalType === 'role'
-      ? `/role/${permissionModalTargetId}/permissions`
-      : `/system/menu/${permissionModalTargetId}/permissions`;
     try {
-      const res = await systemApi.post(apiPath, selectedPermissionKeys);
+      const apiPath = permissionModalType === 'role'
+        ? `/role/${permissionModalTargetId}/permissions`
+        : `/system/menu/${permissionModalTargetId}/permissions`;
+      const res = permissionModalType === 'role'
+        ? await systemApi.post(apiPath, selectedPermissionKeys)
+        : await systemApi.put(apiPath, selectedPermissionKeys);
       if (res.data.code === 200) {
         message.success('权限分配成功');
         setPermissionModalVisible(false);

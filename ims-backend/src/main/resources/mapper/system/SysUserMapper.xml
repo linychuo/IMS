@@ -81,7 +81,6 @@
     <update id="update">
         UPDATE sys_user
         SET username = #{username},
-            password = #{password},
             real_name = #{realName},
             email = #{email},
             mobile = #{mobile},
