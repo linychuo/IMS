@@ -81,8 +81,8 @@ const WarehousePage: React.FC = () => {
     if (requiredPerms.length === 0) return true;
     return requiredPerms.some(perm => {
       if (permissions.includes(perm)) return true;
-      const prefix = perm.replace(/:[^:]*$/, '');
-      return permissions.some(p => p.startsWith(prefix + ':') || p === prefix);
+      if (permissions.some(p => p.startsWith(perm + ':') || p === perm)) return true;
+      return false;
     });
   };
 
