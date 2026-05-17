@@ -21,6 +21,7 @@ import {
 } from '@ant-design/icons';
 import { productApi } from '../../api';
 import { PermissionWrapper } from '../../components/PermissionWrapper';
+import { useAuthStore } from '../../stores/authStore';
 import type { PageResult } from '../../types';
 
 // ============ 分类 ============
@@ -53,6 +54,33 @@ interface Product {
 
 const ProductPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('product');
+  const { permissions } = useAuthStore();
+
+  const tabPermissionMap: Record<string, string[]> = {
+    product: ['product:product', 'product:product:list', 'product:product:read', 'product:product:create'],
+    category: ['product:category', 'product:category:list', 'product:category:read', 'product:category:create'],
+  };
+
+  const hasTabPermission = (tab: string): boolean => {
+    const requiredPerms = tabPermissionMap[tab] || [];
+    if (requiredPerms.length === 0) return true;
+    return requiredPerms.some(perm => {
+      if (permissions.includes(perm)) return true;
+      const prefix = perm.replace(/:[^:]*$/, '');
+      return permissions.some(p => p.startsWith(prefix + ':') || p === prefix);
+    });
+  };
+
+  const visibleTabs = [
+    { key: 'product', label: '商品列表' },
+    { key: 'category', label: '商品分类' },
+  ].filter(tab => hasTabPermission(tab.key));
+
+  useEffect(() => {
+    if (!hasTabPermission(activeTab) && visibleTabs.length > 0) {
+      setActiveTab(visibleTabs[0].key);
+    }
+  }, [activeTab, visibleTabs]);
 
   // 商品状态
   const [loading, setLoading] = useState(false);
@@ -305,50 +333,47 @@ const ProductPage: React.FC = () => {
     </div>
   );
 
-  const tabsItems = [
-    {
+  const tabsItems = visibleTabs.map(tab => {
+    if (tab.key === 'product') return {
       key: 'product',
       label: '商品列表',
-      children: (
-        <>
-          {productTab}
-          <Table
-            columns={productColumns}
-            dataSource={data}
-            rowKey="id"
-            loading={loading}
-            pagination={{
-              current: pagination.current,
-              pageSize: pagination.size,
-              total: pagination.total,
-              showSizeChanger: true,
-              showQuickJumper: true,
-              showTotal: (total) => `共 ${total} 条`,
-              onChange: (current, size) => setPagination({ current, size, total: pagination.total }),
-            }}
-            scroll={{ x: 1200 }}
-          />
-        </>
-      ),
-    },
-    {
+      children: (<>
+        {productTab}
+        <Table
+          columns={productColumns}
+          dataSource={data}
+          rowKey="id"
+          loading={loading}
+          pagination={{
+            current: pagination.current,
+            pageSize: pagination.size,
+            total: pagination.total,
+            showSizeChanger: true,
+            showQuickJumper: true,
+            showTotal: (total) => `共 ${total} 条`,
+            onChange: (current, size) => setPagination({ current, size, total: pagination.total }),
+          }}
+          scroll={{ x: 1200 }}
+        />
+      </>),
+    };
+    if (tab.key === 'category') return {
       key: 'category',
       label: '商品分类',
-      children: (
-        <>
-          {categoryTab}
-          <Table
-            columns={categoryColumns}
-            dataSource={categoryData}
-            rowKey="id"
-            loading={categoryLoading}
-            pagination={false}
-            scroll={{ y: 500 }}
-          />
-        </>
-      ),
-    },
-  ];
+      children: (<>
+        {categoryTab}
+        <Table
+          columns={categoryColumns}
+          dataSource={categoryData}
+          rowKey="id"
+          loading={categoryLoading}
+          pagination={false}
+          scroll={{ y: 500 }}
+        />
+      </>),
+    };
+    return null;
+  }).filter(Boolean) as any[];
 
   return (
     <div>

@@ -19,6 +19,7 @@ import {
   SearchOutlined,
 } from '@ant-design/icons';
 import { warehouseApi } from '../../api';
+import { useAuthStore } from '../../stores/authStore';
 
 // ============ 仓库管理 ============
 interface Warehouse {
@@ -68,6 +69,34 @@ interface LocationPageResult {
 
 const WarehousePage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('warehouse');
+  const { permissions } = useAuthStore();
+
+  const tabPermissionMap: Record<string, string[]> = {
+    warehouse: ['warehouse:warehouse', 'warehouse:warehouse:list', 'warehouse:warehouse:read'],
+    location: ['warehouse:warehouse:location', 'warehouse:warehouse:location:list', 'warehouse:warehouse:location:read'],
+  };
+
+  const hasTabPermission = (tab: string): boolean => {
+    const requiredPerms = tabPermissionMap[tab] || [];
+    if (requiredPerms.length === 0) return true;
+    return requiredPerms.some(perm => {
+      if (permissions.includes(perm)) return true;
+      const prefix = perm.replace(/:[^:]*$/, '');
+      return permissions.some(p => p.startsWith(prefix + ':') || p === prefix);
+    });
+  };
+
+  const visibleTabs = [
+    { key: 'warehouse', label: '仓库管理' },
+    { key: 'location', label: '库位管理' },
+  ].filter(tab => hasTabPermission(tab.key));
+
+  // 如果当前 tab 不可见，切换到可见的第一个 tab
+  useEffect(() => {
+    if (!hasTabPermission(activeTab) && visibleTabs.length > 0) {
+      setActiveTab(visibleTabs[0].key);
+    }
+  }, [activeTab, visibleTabs]);
   const [warehouseModalVisible, setWarehouseModalVisible] = useState(false);
   const [locationModalVisible, setLocationModalVisible] = useState(false);
   const [editingWarehouse, setEditingWarehouse] = useState<Warehouse | null>(null);
@@ -446,8 +475,8 @@ const WarehousePage: React.FC = () => {
     },
   ];
 
-  const tabItems = [
-    {
+  const tabItems = visibleTabs.map(tab => {
+    if (tab.key === 'warehouse') return {
       key: 'warehouse',
       label: '仓库管理',
       children: (
@@ -529,8 +558,9 @@ const WarehousePage: React.FC = () => {
           />
         </div>
       ),
-    },
-  ];
+    };
+    return null;
+  }).filter(Boolean) as any[];
 
   return (
     <div>
