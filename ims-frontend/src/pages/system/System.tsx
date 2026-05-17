@@ -335,15 +335,15 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
 
     // 加载权限数据和已选权限
     const loadPermissions = async () => {
-      // 如果权限数据为空，先获取
-      if (permissionData.length === 0) {
-        await fetchPermissions();
-      }
+      // 强制刷新权限数据，确保拿到最新完整数据
+      await fetchPermissions();
       // 获取已选权限
       const apiPath = type === 'role' ? `/role/${target.id}/permissions` : `/system/menu/${target.id}/permissions`;
       const res = await systemApi.get(apiPath);
       if (res.data.code === 200) {
-        const ids: number[] = res.data.data || [];
+        // 栏目返回的是权限对象数组，角色返回的是ID数组
+        const data = res.data.data || [];
+        const ids = data.map((item: any) => typeof item === 'number' ? item : item.id);
         setSelectedPermissionKeys([...ids]);
       }
     };

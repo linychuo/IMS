@@ -55,6 +55,9 @@ public class RoleController {
     @DeleteMapping("/{id}")
     @Permission(code = "delete", name = "删除角色")
     public Result<Void> delete(@PathVariable Long id) {
+        if (id == 1) {
+            return Result.error("禁止删除管理员角色");
+        }
         roleService.delete(id);
         return Result.success(null);
     }
