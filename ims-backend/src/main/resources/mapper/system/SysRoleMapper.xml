@@ -32,4 +32,28 @@
         ORDER BY id ASC
     </select>
 
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM sys_role
+        WHERE id = #{id} AND deleted = 0
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sys_role (role_code, role_name, description, status, create_time, update_time, deleted)
+        VALUES (#{roleCode}, #{roleName}, #{description}, #{status}, #{createTime}, #{createTime}, #{deleted})
+    </insert>
+
+    <update id="update">
+        UPDATE sys_role
+        SET role_name = #{roleName},
+            description = #{description},
+            status = #{status},
+            update_time = #{updateTime}
+        WHERE id = #{id} AND deleted = 0
+    </update>
+
+    <delete id="deleteById">
+        UPDATE sys_role SET deleted = 1, update_time = NOW() WHERE id = #{id}
+    </delete>
+
 </mapper>
