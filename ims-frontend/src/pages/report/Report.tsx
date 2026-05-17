@@ -18,9 +18,8 @@ import {
   TableOutlined,
 } from '@ant-design/icons';
 import { reportApi } from '../../api';
+import { useAuthStore } from '../../stores/authStore';
 import dayjs from 'dayjs';
-
-const { TabPane } = Tabs;
 const { RangePicker } = DatePicker;
 
 // ============ 销售报表数据类型 ============
@@ -109,6 +108,43 @@ interface SupplierAnalysis {
 
 const ReportPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('sales');
+  const { permissions } = useAuthStore();
+
+  const tabPermissionMap: Record<string, string[]> = {
+    sales: ['report:dashboard', 'report:dashboard:read'],
+    purchase: ['purchase:order', 'purchase:order:read'],
+    inventory: ['inventory:account', 'inventory:account:read'],
+    finance: ['finance:stat', 'finance:stat:read'],
+    customerAnalysis: ['customer:customer', 'customer:customer:read'],
+    productAnalysis: ['product:product', 'product:product:read'],
+    supplierAnalysis: ['supplier', 'supplier:read'],
+  };
+
+  const hasTabPermission = (tab: string): boolean => {
+    const requiredPerms = tabPermissionMap[tab] || [];
+    if (requiredPerms.length === 0) return true;
+    return requiredPerms.some(perm => {
+      if (permissions.includes(perm)) return true;
+      const prefix = perm.replace(/:[^:]*$/, '');
+      return permissions.some(p => p.startsWith(prefix + ':') || p === prefix);
+    });
+  };
+
+  const visibleTabs = [
+    { key: 'sales', label: '销售报表', icon: <BarChartOutlined /> },
+    { key: 'purchase', label: '采购报表', icon: <LineChartOutlined /> },
+    { key: 'inventory', label: '库存报表', icon: <PieChartOutlined /> },
+    { key: 'finance', label: '财务分析', icon: <TableOutlined /> },
+    { key: 'customerAnalysis', label: '客户分析', icon: <BarChartOutlined /> },
+    { key: 'productAnalysis', label: '商品分析', icon: <LineChartOutlined /> },
+    { key: 'supplierAnalysis', label: '供应商分析', icon: <PieChartOutlined /> },
+  ].filter(tab => hasTabPermission(tab.key));
+
+  useEffect(() => {
+    if (!hasTabPermission(activeTab) && visibleTabs.length > 0) {
+      setActiveTab(visibleTabs[0].key);
+    }
+  }, [activeTab, visibleTabs]);
 
   // 日期范围
   const [dateRange, setDateRange] = useState<[dayjs.Dayjs, dayjs.Dayjs] | null>(null);
@@ -433,269 +469,74 @@ const ReportPage: React.FC = () => {
         </Space>
       </div>
 
-      <Tabs activeKey={activeTab} onChange={setActiveTab}>
-        <TabPane
-          tab={<span><BarChartOutlined /> 销售报表</span>}
-          key="sales"
-        >
-          <Row gutter={16} style={{ marginBottom: 16 }}>
-            <Col span={6}>
-              <Card>
-                <Statistic
-                  title="总销售额"
-                  value={salesSummary?.totalSalesAmount || 0}
-                  precision={2}
-                  prefix="¥"
-                  loading={salesLoading}
-                />
-              </Card>
-            </Col>
-            <Col span={6}>
-              <Card>
-                <Statistic
-                  title="净销售额"
-                  value={salesSummary?.netAmount || 0}
-                  precision={2}
-                  prefix="¥"
-                  loading={salesLoading}
-                />
-              </Card>
-            </Col>
-            <Col span={6}>
-              <Card>
-                <Statistic
-                  title="总订单数"
-                  value={salesSummary?.totalOrderCount || 0}
-                  loading={salesLoading}
-                />
-              </Card>
-            </Col>
-            <Col span={6}>
-              <Card>
-                <Statistic
-                  title="退货金额"
-                  value={salesSummary?.returnAmount || 0}
-                  precision={2}
-                  prefix="¥"
-                  loading={salesLoading}
-                />
-              </Card>
-            </Col>
-          </Row>
-
-          <Table
-            title={() => '销售汇总'}
-            columns={salesColumns}
-            dataSource={salesData}
-            rowKey="reportDate"
-            loading={salesLoading}
-            pagination={{ pageSize: 10 }}
-            scroll={{ x: 800 }}
-          />
-        </TabPane>
-
-        <TabPane
-          tab={<span><LineChartOutlined /> 采购报表</span>}
-          key="purchase"
-        >
-          <Row gutter={16} style={{ marginBottom: 16 }}>
-            <Col span={6}>
-              <Card>
-                <Statistic
-                  title="总采购额"
-                  value={purchaseSummary?.totalPurchaseAmount || 0}
-                  precision={2}
-                  prefix="¥"
-                  loading={purchaseLoading}
-                />
-              </Card>
-            </Col>
-            <Col span={6}>
-              <Card>
-                <Statistic
-                  title="净采购额"
-                  value={purchaseSummary?.netAmount || 0}
-                  precision={2}
-                  prefix="¥"
-                  loading={purchaseLoading}
-                />
-              </Card>
-            </Col>
-            <Col span={6}>
-              <Card>
-                <Statistic
-                  title="总订单数"
-                  value={purchaseSummary?.totalOrderCount || 0}
-                  loading={purchaseLoading}
-                />
-              </Card>
-            </Col>
-            <Col span={6}>
-              <Card>
-                <Statistic
-                  title="退货金额"
-                  value={purchaseSummary?.returnAmount || 0}
-                  precision={2}
-                  prefix="¥"
-                  loading={purchaseLoading}
-                />
-              </Card>
-            </Col>
-          </Row>
-
-          <Table
-            title={() => '采购汇总'}
-            columns={purchaseColumns}
-            dataSource={purchaseData}
-            rowKey="reportDate"
-            loading={purchaseLoading}
-            pagination={{ pageSize: 10 }}
-            scroll={{ x: 700 }}
-          />
-        </TabPane>
-
-        <TabPane
-          tab={<span><PieChartOutlined /> 库存报表</span>}
-          key="inventory"
-        >
-          <Row gutter={16} style={{ marginBottom: 16 }}>
-            <Col span={8}>
-              <Card title="库存概览">
-                <Statistic title="库存商品种类" value={inventoryData.length} loading={inventoryLoading} />
-              </Card>
-            </Col>
-            <Col span={8}>
-              <Card title="低库存预警">
-                <Statistic
-                  title="预警商品数"
-                  value={lowStockData.length}
-                  loading={inventoryLoading}
-                  valueStyle={{ color: lowStockData.length > 0 ? '#cf1322' : '#3f8600' }}
-                />
-              </Card>
-            </Col>
-            <Col span={8}>
-              <Card title="呆滞库存">
-                <Statistic
-                  title="呆滞商品数"
-                  value={inventoryData.filter(item => item.status === 'IDLE').length}
-                  loading={inventoryLoading}
-                />
-              </Card>
-            </Col>
-          </Row>
-
-          <Table
-            title={() => '低库存预警'}
-            columns={lowStockColumns}
-            dataSource={lowStockData}
-            rowKey="productId"
-            loading={inventoryLoading}
-            pagination={{ pageSize: 10 }}
-            scroll={{ x: 800 }}
-          />
-
-          <Table
-            title={() => '库存列表'}
-            columns={inventoryColumns}
-            dataSource={inventoryData}
-            rowKey="productId"
-            loading={inventoryLoading}
-            pagination={{ pageSize: 10 }}
-            scroll={{ x: 900 }}
-            style={{ marginTop: 16 }}
-          />
-        </TabPane>
-
-        <TabPane
-          tab={<span><TableOutlined /> 财务分析</span>}
-          key="finance"
-        >
-          <Row gutter={16} style={{ marginBottom: 16 }}>
-            <Col span={8}>
-              <Card>
-                <Statistic
-                  title="总收入"
-                  value={financeSummary?.totalIncome || 0}
-                  precision={2}
-                  prefix="¥"
-                  loading={financeLoading}
-                  valueStyle={{ color: '#3f8600' }}
-                />
-              </Card>
-            </Col>
-            <Col span={8}>
-              <Card>
-                <Statistic
-                  title="总支出"
-                  value={financeSummary?.totalExpense || 0}
-                  precision={2}
-                  prefix="¥"
-                  loading={financeLoading}
-                  valueStyle={{ color: '#cf1322' }}
-                />
-              </Card>
-            </Col>
-            <Col span={8}>
-              <Card>
-                <Statistic
-                  title="净利润"
-                  value={financeSummary?.netProfit || 0}
-                  precision={2}
-                  prefix="¥"
-                  loading={financeLoading}
-                  valueStyle={{ color: (financeSummary?.netProfit || 0) >= 0 ? '#3f8600' : '#cf1322' }}
-                />
-              </Card>
-            </Col>
-          </Row>
-        </TabPane>
-
-        <TabPane
-          tab={<span><BarChartOutlined /> 客户分析</span>}
-          key="customerAnalysis"
-        >
-          <Table
-            title={() => '客户销售排行'}
-            columns={customerAnalysisColumns}
-            dataSource={customerAnalysisData}
-            rowKey="customerId"
-            loading={customerAnalysisLoading}
-            pagination={{ pageSize: 10 }}
-            scroll={{ x: 1000 }}
-          />
-        </TabPane>
-
-        <TabPane
-          tab={<span><LineChartOutlined /> 商品分析</span>}
-          key="productAnalysis"
-        >
-          <Table
-            title={() => '商品销售利润分析'}
-            columns={productAnalysisColumns}
-            dataSource={productAnalysisData}
-            rowKey="productId"
-            loading={productAnalysisLoading}
-            pagination={{ pageSize: 10 }}
-            scroll={{ x: 1200 }}
-          />
-        </TabPane>
-
-        <TabPane
-          tab={<span><PieChartOutlined /> 供应商分析</span>}
-          key="supplierAnalysis"
-        >
-          <Table
-            title={() => '供应商采购排行'}
-            columns={supplierAnalysisColumns}
-            dataSource={supplierAnalysisData}
-            rowKey="supplierId"
-            loading={supplierAnalysisLoading}
-            pagination={{ pageSize: 10 }}
-            scroll={{ x: 1000 }}
-          />
-        </TabPane>
-      </Tabs>
+      <Tabs activeKey={activeTab} onChange={setActiveTab as any} items={visibleTabs.map(tab => {
+        if (tab.key === 'sales') return {
+          key: 'sales',
+          label: <span><BarChartOutlined /> 销售报表</span>,
+          children: (<>
+            <Row gutter={16} style={{ marginBottom: 16 }}>
+              <Col span={6}><Card><Statistic title="总销售额" value={salesSummary?.totalSalesAmount || 0} precision={2} prefix="¥" loading={salesLoading} /></Card></Col>
+              <Col span={6}><Card><Statistic title="净销售额" value={salesSummary?.netAmount || 0} precision={2} prefix="¥" loading={salesLoading} /></Card></Col>
+              <Col span={6}><Card><Statistic title="总订单数" value={salesSummary?.totalOrderCount || 0} loading={salesLoading} /></Card></Col>
+              <Col span={6}><Card><Statistic title="退货金额" value={salesSummary?.returnAmount || 0} precision={2} prefix="¥" loading={salesLoading} /></Card></Col>
+            </Row>
+            <Table title={() => '销售汇总'} columns={salesColumns} dataSource={salesData} rowKey="reportDate" loading={salesLoading} pagination={{ pageSize: 10 }} scroll={{ x: 800 }} />
+          </>),
+        };
+        if (tab.key === 'purchase') return {
+          key: 'purchase',
+          label: <span><LineChartOutlined /> 采购报表</span>,
+          children: (<>
+            <Row gutter={16} style={{ marginBottom: 16 }}>
+              <Col span={6}><Card><Statistic title="总采购额" value={purchaseSummary?.totalPurchaseAmount || 0} precision={2} prefix="¥" loading={purchaseLoading} /></Card></Col>
+              <Col span={6}><Card><Statistic title="净采购额" value={purchaseSummary?.netAmount || 0} precision={2} prefix="¥" loading={purchaseLoading} /></Card></Col>
+              <Col span={6}><Card><Statistic title="总订单数" value={purchaseSummary?.totalOrderCount || 0} loading={purchaseLoading} /></Card></Col>
+              <Col span={6}><Card><Statistic title="退货金额" value={purchaseSummary?.returnAmount || 0} precision={2} prefix="¥" loading={purchaseLoading} /></Card></Col>
+            </Row>
+            <Table title={() => '采购汇总'} columns={purchaseColumns} dataSource={purchaseData} rowKey="reportDate" loading={purchaseLoading} pagination={{ pageSize: 10 }} scroll={{ x: 700 }} />
+          </>),
+        };
+        if (tab.key === 'inventory') return {
+          key: 'inventory',
+          label: <span><PieChartOutlined /> 库存报表</span>,
+          children: (<>
+            <Row gutter={16} style={{ marginBottom: 16 }}>
+              <Col span={8}><Card title="库存概览"><Statistic title="库存商品种类" value={inventoryData.length} loading={inventoryLoading} /></Card></Col>
+              <Col span={8}><Card title="低库存预警"><Statistic title="预警商品数" value={lowStockData.length} loading={inventoryLoading} valueStyle={{ color: lowStockData.length > 0 ? '#cf1322' : '#3f8600' }} /></Card></Col>
+              <Col span={8}><Card title="呆滞库存"><Statistic title="呆滞商品数" value={inventoryData.filter(item => item.status === 'IDLE').length} loading={inventoryLoading} /></Card></Col>
+            </Row>
+            <Table title={() => '低库存预警'} columns={lowStockColumns} dataSource={lowStockData} rowKey="productId" loading={inventoryLoading} pagination={{ pageSize: 10 }} scroll={{ x: 800 }} />
+            <Table title={() => '库存列表'} columns={inventoryColumns} dataSource={inventoryData} rowKey="productId" loading={inventoryLoading} pagination={{ pageSize: 10 }} scroll={{ x: 900 }} style={{ marginTop: 16 }} />
+          </>),
+        };
+        if (tab.key === 'finance') return {
+          key: 'finance',
+          label: <span><TableOutlined /> 财务分析</span>,
+          children: (<>
+            <Row gutter={16} style={{ marginBottom: 16 }}>
+              <Col span={8}><Card><Statistic title="总收入" value={financeSummary?.totalIncome || 0} precision={2} prefix="¥" loading={financeLoading} valueStyle={{ color: '#3f8600' }} /></Card></Col>
+              <Col span={8}><Card><Statistic title="总支出" value={financeSummary?.totalExpense || 0} precision={2} prefix="¥" loading={financeLoading} valueStyle={{ color: '#cf1322' }} /></Card></Col>
+              <Col span={8}><Card><Statistic title="净利润" value={financeSummary?.netProfit || 0} precision={2} prefix="¥" loading={financeLoading} valueStyle={{ color: (financeSummary?.netProfit || 0) >= 0 ? '#3f8600' : '#cf1322' }} /></Card></Col>
+            </Row>
+          </>),
+        };
+        if (tab.key === 'customerAnalysis') return {
+          key: 'customerAnalysis',
+          label: <span><BarChartOutlined /> 客户分析</span>,
+          children: <Table title={() => '客户销售排行'} columns={customerAnalysisColumns} dataSource={customerAnalysisData} rowKey="customerId" loading={customerAnalysisLoading} pagination={{ pageSize: 10 }} scroll={{ x: 1000 }} />,
+        };
+        if (tab.key === 'productAnalysis') return {
+          key: 'productAnalysis',
+          label: <span><LineChartOutlined /> 商品分析</span>,
+          children: <Table title={() => '商品销售利润分析'} columns={productAnalysisColumns} dataSource={productAnalysisData} rowKey="productId" loading={productAnalysisLoading} pagination={{ pageSize: 10 }} scroll={{ x: 1200 }} />,
+        };
+        if (tab.key === 'supplierAnalysis') return {
+          key: 'supplierAnalysis',
+          label: <span><PieChartOutlined /> 供应商分析</span>,
+          children: <Table title={() => '供应商采购排行'} columns={supplierAnalysisColumns} dataSource={supplierAnalysisData} rowKey="supplierId" loading={supplierAnalysisLoading} pagination={{ pageSize: 10 }} scroll={{ x: 1000 }} />,
+        };
+        return null;
+      }).filter(Boolean) as any[]} />
     </div>
   );
 };
