@@ -256,14 +256,23 @@ public class PermissionScanner implements ApplicationListener<ContextRefreshedEv
             String path = menu.getPath();
             if (path == null || path.isEmpty()) continue;
 
-            String code1 = path.substring(1);
-            String code2 = code1.replace("/", ":");
+            // 生成路径对应的所有可能权限码：/inventory/account → inventory:account, inventory
+            String pathCode = path.substring(1).replace("/", ":");
+            List<String> possibleCodes = new ArrayList<>();
+            possibleCodes.add(pathCode);
+            // 添加所有父级路径码：/inventory/account/invoice → inventory:account, inventory, inventory:account
+            String[] segments = path.substring(1).split("/");
+            String parent = segments[0];
+            for (int i = 1; i < segments.length; i++) {
+                possibleCodes.add(parent);
+                parent = parent + ":" + segments[i];
+            }
 
             List<Long> existingMenuPerms = menuPermissionMapper.selectPermissionIdsByMenuId(menu.getId());
             List<SysMenuPermission> toAddMenuPerms = new ArrayList<>();
 
             for (SysPermission perm : allPermissions) {
-                if ((perm.getPermissionCode().equals(code1) || perm.getPermissionCode().equals(code2))
+                if (possibleCodes.contains(perm.getPermissionCode())
                         && !existingMenuPerms.contains(perm.getId())) {
                     SysMenuPermission mp = new SysMenuPermission();
                     mp.setMenuId(menu.getId());
