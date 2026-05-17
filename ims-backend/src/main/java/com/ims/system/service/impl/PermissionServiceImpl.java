@@ -90,6 +90,40 @@ public class PermissionServiceImpl implements PermissionService {
         return result;
     }
 
+    /**
+     * 检查用户是否拥有指定权限的直接子权限，且该子权限必须在当前菜单的权限列表中
+     * 只有当用户拥有的子权限同时属于当前菜单的权限链时，才授予访问权限
+     */
+    private boolean hasDirectChildPermission(Long parentPermId, Set<String> userPermissionCodes, List<Long> menuPermIds) {
+        // 查找直接子权限
+        List<SysPermission> children = permissionMapper.selectByParentId(parentPermId);
+        for (SysPermission child : children) {
+            // 只有当这个子权限也在当前菜单的权限列表中时，才授予访问权限
+            if (menuPermIds.contains(child.getId()) && userPermissionCodes.contains(child.getPermissionCode())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 检查用户是否拥有指定权限的任何后代权限
+     */
+    private boolean hasChildPermission(Long parentPermId, Set<String> userPermissionCodes) {
+        // 查找所有后代权限
+        List<SysPermission> children = permissionMapper.selectByParentId(parentPermId);
+        for (SysPermission child : children) {
+            if (userPermissionCodes.contains(child.getPermissionCode())) {
+                return true;
+            }
+            // 递归检查更下层的权限
+            if (hasChildPermission(child.getId(), userPermissionCodes)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private MenuTree buildMenuTreeRecursive(SysMenu menu, List<SysMenu> allMenus,
                                            Map<Long, List<Long>> menuPermissionMap,
                                            Set<String> userPermissionCodes) {
@@ -105,20 +139,14 @@ public class PermissionServiceImpl implements PermissionService {
                 }
             }
         }
-        // 如果精确匹配未命中，检查是否有子级权限（如 system:menu 意味着有 system 的访问权）
+        // 如果精确匹配未命中，检查用户是否有该菜单权限的直接子权限（且该子权限属于当前菜单的权限链）
         if (!hasAccess && menuPermIds != null) {
             for (Long permId : menuPermIds) {
-                SysPermission perm = permissionMapper.selectById(permId);
-                if (perm != null) {
-                    String prefix = perm.getPermissionCode() + ":";
-                    for (String code : userPermissionCodes) {
-                        if (code.startsWith(prefix)) {
-                            hasAccess = true;
-                            break;
-                        }
-                    }
+                // 检查用户是否拥有此菜单权限的直接后代权限（必须是同一权限树分支）
+                if (hasDirectChildPermission(permId, userPermissionCodes, menuPermIds)) {
+                    hasAccess = true;
+                    break;
                 }
-                if (hasAccess) break;
             }
         }
 

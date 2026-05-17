@@ -73,6 +73,11 @@ public interface SysPermissionMapper {
     SysPermission selectById(@Param("id") Long id);
 
     /**
+     * 根据父级ID查询子权限
+     */
+    List<SysPermission> selectByParentId(@Param("parentId") Long parentId);
+
+    /**
      * 查询所有菜单
      */
     List<SysPermission> selectAllMenus();

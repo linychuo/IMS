@@ -118,6 +118,12 @@
         WHERE id = #{id} AND deleted = 0
     </select>
 
+    <select id="selectByParentId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM sys_permission
+        WHERE parent_id = #{parentId} AND deleted = 0
+    </select>
+
     <select id="selectAllMenus" resultMap="BaseResultMap">
         SELECT <include refid="Base_Column_List"/>
         FROM sys_permission
