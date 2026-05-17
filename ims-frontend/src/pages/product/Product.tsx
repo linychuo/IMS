@@ -23,8 +23,6 @@ import { productApi } from '../../api';
 import { PermissionWrapper } from '../../components/PermissionWrapper';
 import type { PageResult } from '../../types';
 
-const { TabPane } = Tabs;
-
 // ============ 分类 ============
 interface Category {
   id?: number;
@@ -284,23 +282,36 @@ const ProductPage: React.FC = () => {
     },
   ];
 
-  return (
-    <div>
-      <h2 style={{ marginBottom: 16 }}>商品管理</h2>
-      <Tabs activeKey={activeTab} onChange={setActiveTab}>
-        <TabPane tab="商品列表" key="product">
-          <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between' }}>
-            <Input.Search
-              placeholder="搜索商品名称"
-              allowClear
-              onSearch={handleSearch}
-              style={{ width: 200 }}
-              prefix={<SearchOutlined />}
-            />
-            <PermissionWrapper code="product:product:create">
-              <Button type="primary" icon={<PlusOutlined />} onClick={handleAddProduct}>新增商品</Button>
-            </PermissionWrapper>
-          </div>
+  const productTab = (
+    <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between' }}>
+      <Input.Search
+        placeholder="搜索商品名称"
+        allowClear
+        onSearch={handleSearch}
+        style={{ width: 200 }}
+        prefix={<SearchOutlined />}
+      />
+      <PermissionWrapper code="product:product:create">
+        <Button type="primary" icon={<PlusOutlined />} onClick={handleAddProduct}>新增商品</Button>
+      </PermissionWrapper>
+    </div>
+  );
+
+  const categoryTab = (
+    <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-end' }}>
+      <PermissionWrapper code="product:category:create">
+        <Button type="primary" icon={<PlusOutlined />} onClick={handleAddCategory}>新增分类</Button>
+      </PermissionWrapper>
+    </div>
+  );
+
+  const tabsItems = [
+    {
+      key: 'product',
+      label: '商品列表',
+      children: (
+        <>
+          {productTab}
           <Table
             columns={productColumns}
             dataSource={data}
@@ -317,14 +328,15 @@ const ProductPage: React.FC = () => {
             }}
             scroll={{ x: 1200 }}
           />
-        </TabPane>
-
-        <TabPane tab="商品分类" key="category">
-          <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-end' }}>
-            <PermissionWrapper code="product:category:create">
-              <Button type="primary" icon={<PlusOutlined />} onClick={handleAddCategory}>新增分类</Button>
-            </PermissionWrapper>
-          </div>
+        </>
+      ),
+    },
+    {
+      key: 'category',
+      label: '商品分类',
+      children: (
+        <>
+          {categoryTab}
           <Table
             columns={categoryColumns}
             dataSource={categoryData}
@@ -333,8 +345,15 @@ const ProductPage: React.FC = () => {
             pagination={false}
             scroll={{ y: 500 }}
           />
-        </TabPane>
-      </Tabs>
+        </>
+      ),
+    },
+  ];
+
+  return (
+    <div>
+      <h2 style={{ marginBottom: 16 }}>商品管理</h2>
+      <Tabs activeKey={activeTab} onChange={setActiveTab} items={tabsItems} />
 
       {/* 商品弹窗 */}
       <Modal
