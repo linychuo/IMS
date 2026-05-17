@@ -35,7 +35,7 @@ const routePermissionMap: Record<string, string> = {
   '/report': 'report:dashboard',
   '/warehouse': 'warehouse',
   '/warehouse/location': 'warehouse:warehouse:location',
-  '/product': 'product',
+  '/product': 'product:category',
   '/customer': 'customer:customer',
   '/supplier': 'supplier',
   '/sales/order': 'sales:order',
