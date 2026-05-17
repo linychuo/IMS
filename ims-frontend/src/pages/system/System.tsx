@@ -24,6 +24,7 @@ import {
   FileTextOutlined,
 } from '@ant-design/icons';
 import { systemApi } from '../../api';
+import { useAuthStore } from '../../stores/authStore';
 
 // ============ 用户 ============
 interface User {
@@ -77,6 +78,35 @@ interface SystemProps {
 
 const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
   const [activeTab, setActiveTab] = useState(defaultTab);
+  const { permissions } = useAuthStore();
+
+  // 权限码前缀映射到具体tab需要的权限
+  const tabPermissionMap: Record<string, string[]> = {
+    user: ['system:user', 'system:user:list', 'system:user:create', 'system:user:update', 'system:user:delete', 'system:user:read'],
+    role: ['system:role', 'system:role:list', 'system:role:create', 'system:role:update', 'system:role:delete', 'system:role:read'],
+    menu: ['system:menu', 'system:menu:list', 'system:menu:create', 'system:menu:update', 'system:menu:delete', 'system:menu:get', 'system:menu:permissions'],
+    permission: ['system:list', 'system:menu:permissionOptions'],
+  };
+
+  // 检查用户是否有访问某个tab的权限（精确匹配或前缀匹配）
+  const hasTabPermission = (tab: string): boolean => {
+    const requiredPerms = tabPermissionMap[tab] || [];
+    if (requiredPerms.length === 0) return true;
+    return requiredPerms.some(perm => {
+      // 精确匹配
+      if (permissions.includes(perm)) return true;
+      // 前缀匹配: 有 system:user 意味着有所有 system:user:* 权限
+      const prefix = perm.replace(/:[^:]*$/, '');
+      return permissions.some(p => p.startsWith(prefix + ':') || p === prefix);
+    });
+  };
+
+  const visibleTabs = [
+    { key: 'user', label: '用户管理' },
+    { key: 'role', label: '角色管理' },
+    { key: 'menu', label: '栏目管理' },
+    { key: 'permission', label: '权限管理' },
+  ].filter(tab => hasTabPermission(tab.key));
 
   // 用户状态
   const [userLoading, setUserLoading] = useState(false);
@@ -809,110 +839,110 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
     setSelectedPermissionKeys(numKeys);
   };
 
+  // 如果当前 tab 不可见，切换到可见的第一个 tab
+  useEffect(() => {
+    if (!hasTabPermission(activeTab) && visibleTabs.length > 0) {
+      setActiveTab(visibleTabs[0].key);
+    }
+  }, [activeTab, visibleTabs]);
+
   return (
     <div>
       <h2 style={{ marginBottom: 16 }}>系统管理</h2>
       <Tabs
         activeKey={activeTab}
         onChange={(key) => setActiveTab(key as any)}
-        items={[
-          {
+        items={visibleTabs.map(tab => {
+          if (tab.key === 'user') return {
             key: 'user',
             label: '用户管理',
-            children: (
-              <>
-                <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-end' }}>
-                  <Button type="primary" icon={<PlusOutlined />} onClick={handleAddUser}>新建用户</Button>
-                </div>
-                <Table
-                  columns={userColumns}
-                  dataSource={userData}
-                  rowKey="id"
-                  loading={userLoading}
-                  pagination={{
-                    current: userPagination.current,
-                    pageSize: userPagination.size,
-                    total: userPagination.total,
-                    showSizeChanger: true,
-                    showQuickJumper: true,
-                    showTotal: (total) => `共 ${total} 条`,
-                    onChange: (current, size) => setUserPagination({ current, size, total: userPagination.total }),
-                  }}
-                  scroll={{ x: 1000 }}
-                />
-              </>
-            ),
-          },
-          {
+            children: (<>
+              <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-end' }}>
+                <Button type="primary" icon={<PlusOutlined />} onClick={handleAddUser}>新建用户</Button>
+              </div>
+              <Table
+                columns={userColumns}
+                dataSource={userData}
+                rowKey="id"
+                loading={userLoading}
+                pagination={{
+                  current: userPagination.current,
+                  pageSize: userPagination.size,
+                  total: userPagination.total,
+                  showSizeChanger: true,
+                  showQuickJumper: true,
+                  showTotal: (total) => `共 ${total} 条`,
+                  onChange: (current, size) => setUserPagination({ current, size, total: userPagination.total }),
+                }}
+                scroll={{ x: 1000 }}
+              />
+            </>),
+          };
+          if (tab.key === 'role') return {
             key: 'role',
             label: '角色管理',
-            children: (
-              <>
-                <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-end' }}>
-                  <Button type="primary" icon={<PlusOutlined />} onClick={handleAddRole}>新建角色</Button>
-                </div>
-                <Table
-                  columns={roleColumns}
-                  dataSource={roleData}
-                  rowKey="id"
-                  loading={roleLoading}
-                  pagination={{
-                    current: rolePagination.current,
-                    pageSize: rolePagination.size,
-                    total: rolePagination.total,
-                    showSizeChanger: true,
-                    showQuickJumper: true,
-                    showTotal: (total) => `共 ${total} 条`,
-                    onChange: (current, size) => setRolePagination({ current, size, total: rolePagination.total }),
-                  }}
-                  scroll={{ x: 1000 }}
-                />
-              </>
-            ),
-          },
-          {
+            children: (<>
+              <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-end' }}>
+                <Button type="primary" icon={<PlusOutlined />} onClick={handleAddRole}>新建角色</Button>
+              </div>
+              <Table
+                columns={roleColumns}
+                dataSource={roleData}
+                rowKey="id"
+                loading={roleLoading}
+                pagination={{
+                  current: rolePagination.current,
+                  pageSize: rolePagination.size,
+                  total: rolePagination.total,
+                  showSizeChanger: true,
+                  showQuickJumper: true,
+                  showTotal: (total) => `共 ${total} 条`,
+                  onChange: (current, size) => setRolePagination({ current, size, total: rolePagination.total }),
+                }}
+                scroll={{ x: 1000 }}
+              />
+            </>),
+          };
+          if (tab.key === 'menu') return {
             key: 'menu',
             label: '栏目管理',
-            children: (
-              <>
-                <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-end' }}>
-                  <Button type="primary" icon={<PlusOutlined />} onClick={handleAddMenu}>新建栏目</Button>
-                </div>
-                <div style={{ background: '#fafafa', borderRadius: 8, padding: 16, minHeight: 400 }}>
-                  {menuLoading ? (
-                    <div style={{ textAlign: 'center', padding: 40 }}>加载中...</div>
-                  ) : menuData.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: 40, color: '#999' }}>暂无栏目数据</div>
-                  ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                      {renderMenuTreeItems(menuData, null, 0)}
-                    </div>
-                  )}
-                </div>
-              </>
-            ),
-          },
-          {
+            children: (<>
+              <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-end' }}>
+                <Button type="primary" icon={<PlusOutlined />} onClick={handleAddMenu}>新建栏目</Button>
+              </div>
+              <div style={{ background: '#fafafa', borderRadius: 8, padding: 16, minHeight: 400 }}>
+                {menuLoading ? (
+                  <div style={{ textAlign: 'center', padding: 40 }}>加载中...</div>
+                ) : menuData.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: 40, color: '#999' }}>暂无栏目数据</div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    {renderMenuTreeItems(menuData, null, 0)}
+                  </div>
+                )}
+              </div>
+            </>),
+          };
+          if (tab.key === 'permission') return {
             key: 'permission',
             label: '权限管理',
-            children: (
-              <>
-                <div style={{ marginBottom: 16, color: '#999' }}>
-                  权限点由代码扫描生成，按父子关系树形展示
-                </div>
-                <div style={{ background: '#fafafa', borderRadius: 8, padding: 16, minHeight: 400 }}>
-                  {permissionLoading ? (
-                    <div style={{ textAlign: 'center', padding: 40 }}>加载中...</div>
-                  ) : permissionData.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: 40, color: '#999' }}>暂无权限点数据</div>
-                  ) : (
-                    renderPermissionTree()
-                  )}
-                </div>
-              </>
-            ),
-          },
-        ]}
+            children: (<>
+              <div style={{ marginBottom: 16, color: '#999' }}>
+                权限点由代码扫描生成，按父子关系树形展示
+              </div>
+              <div style={{ background: '#fafafa', borderRadius: 8, padding: 16, minHeight: 400 }}>
+                {permissionLoading ? (
+                  <div style={{ textAlign: 'center', padding: 40 }}>加载中...</div>
+                ) : permissionData.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: 40, color: '#999' }}>暂无权限点数据</div>
+                ) : (
+                  renderPermissionTree()
+                )}
+              </div>
+            </>),
+          };
+          return null;
+        })}
       />
 
       {/* 用户弹窗 */}
