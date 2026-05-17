@@ -73,4 +73,27 @@
         WHERE id = #{id} AND deleted = 0
     </select>
 
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO sys_user (username, password, real_name, email, mobile, avatar, status, create_by, create_time, update_by, update_time, deleted)
+        VALUES (#{username}, #{password}, #{realName}, #{email}, #{mobile}, #{avatar}, #{status}, #{createBy}, #{createTime}, #{updateBy}, #{updateTime}, #{deleted})
+    </insert>
+
+    <update id="update">
+        UPDATE sys_user
+        SET username = #{username},
+            password = #{password},
+            real_name = #{realName},
+            email = #{email},
+            mobile = #{mobile},
+            avatar = #{avatar},
+            status = #{status},
+            update_by = #{updateBy},
+            update_time = #{updateTime}
+        WHERE id = #{id} AND deleted = 0
+    </update>
+
+    <delete id="deleteById">
+        UPDATE sys_user SET deleted = 1, update_time = NOW() WHERE id = #{id}
+    </delete>
+
 </mapper>
