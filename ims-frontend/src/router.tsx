@@ -58,9 +58,9 @@ const routePermissionMap: Record<string, string> = {
   '/finance/receivable': 'finance:receivable',
   '/finance/payable': 'finance:payable',
   '/finance/transaction': 'finance',
-  '/system': 'system',
-  '/system/user': 'system',
-  '/role': 'system',
+  '/system': 'system:menu',
+  '/system/user': 'system:user',
+  '/role': 'system:role',
 };
 
 // 带权限控制的路由组件

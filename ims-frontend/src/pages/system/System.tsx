@@ -95,9 +95,9 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
     return requiredPerms.some(perm => {
       // 精确匹配
       if (permissions.includes(perm)) return true;
-      // 前缀匹配: 有 system:user 意味着有所有 system:user:* 权限
-      const prefix = perm.replace(/:[^:]*$/, '');
-      return permissions.some(p => p.startsWith(prefix + ':') || p === prefix);
+      // 前缀匹配: 有 system:user 意味着有 system:user:*
+      if (permissions.some(p => p.startsWith(perm + ':') || p === perm)) return true;
+      return false;
     });
   };
 
