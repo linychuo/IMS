@@ -117,6 +117,8 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
   const [permissionModalTitle, setPermissionModalTitle] = useState('');
   const [permissionModalTargetId, setPermissionModalTargetId] = useState<number | null>(null);
   const [selectedPermissionKeys, setSelectedPermissionKeys] = useState<number[]>([]);
+  const [permExpandedKeys, setPermExpandedKeys] = useState<string[]>([]);
+  const [permSearchKeyword, setPermSearchKeyword] = useState('');
 
   useEffect(() => {
     if (activeTab === 'user') {
@@ -732,14 +734,41 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
     const buildTree = (parentId: number | null): any[] => {
       return permissionData
         .filter(p => p.parentId === parentId)
+        .filter(p => {
+          if (!permSearchKeyword) return true;
+          return p.permissionName.toLowerCase().includes(permSearchKeyword.toLowerCase()) ||
+                 p.permissionCode.toLowerCase().includes(permSearchKeyword.toLowerCase());
+        })
         .map(p => ({
           title: p.permissionName,
-          key: String(p.id),  // Tree组件需要字符串key
+          key: String(p.id),
           children: buildTree(p.id),
         }));
     };
     return buildTree(null);
-  }, [permissionData]);
+  }, [permissionData, permSearchKeyword]);
+
+  // 搜索时自动展开匹配的节点及其父节点
+  const handlePermSearch = (value: string) => {
+    setPermSearchKeyword(value);
+    if (value) {
+      const matchedIds: string[] = [];
+      const parentMap = new Map<number, number>();
+      permissionData.forEach(p => {
+        if (p.permissionName.toLowerCase().includes(value.toLowerCase()) ||
+            p.permissionCode.toLowerCase().includes(value.toLowerCase())) {
+          matchedIds.push(String(p.id));
+          // 收集所有祖先
+          let current = p;
+          while (current.parentId) {
+            matchedIds.push(String(current.parentId));
+            current = permissionData.find(x => x.id === current.parentId)!;
+          }
+        }
+      });
+      setPermExpandedKeys([...new Set(matchedIds)]);
+    }
+  };
 
   // 计算需要展开的节点（选中节点的所有父节点）
   const expandedKeys = useMemo(() => {
@@ -1038,20 +1067,56 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
         open={permissionModalVisible}
         onOk={handlePermissionModalOk}
         onCancel={() => setPermissionModalVisible(false)}
-        width={500}
+        width={800}
+        destroyOnHidden
       >
-        <div style={{ marginBottom: 16, color: '#666', fontSize: 12 }}>
-          勾选权限点后会自动包含其子节点
+        <div style={{ display: 'flex', gap: 24, height: 500 }}>
+          {/* 左侧：权限树 */}
+          <div style={{ flex: 1, border: '1px solid #f0f0f0', borderRadius: 8, padding: 16, overflow: 'auto' }}>
+            <div style={{ marginBottom: 12, fontWeight: 500, color: '#333' }}>系统权限</div>
+            <Input.Search
+              placeholder="搜索权限名称或编码"
+              allowClear
+              onSearch={handlePermSearch}
+              onChange={(e) => handlePermSearch(e.target.value)}
+              style={{ marginBottom: 12 }}
+            />
+            <Tree
+              checkable
+              checkedKeys={selectedPermissionKeys.map(k => String(k))}
+              onCheck={handlePermissionCheck}
+              onExpand={(keys) => setPermExpandedKeys(keys as string[])}
+              expandedKeys={permExpandedKeys}
+              treeData={permissionTreeData}
+              height={380}
+            />
+          </div>
+          {/* 右侧：已选权限列表 */}
+          <div style={{ flex: 1, border: '1px solid #f0f0f0', borderRadius: 8, padding: 16, overflow: 'auto' }}>
+            <div style={{ marginBottom: 12, fontWeight: 500, color: '#333' }}>已选权限 ({selectedPermissionKeys.length})</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {selectedPermissionKeys.map(id => {
+                const perm = permissionData.find(p => p.id === id);
+                return perm ? (
+                  <Tag
+                    key={id}
+                    closable
+                    onClose={() => {
+                      const newKeys = selectedPermissionKeys.filter(k => k !== id);
+                      setSelectedPermissionKeys(newKeys);
+                    }}
+                    style={{ marginBottom: 0 }}
+                  >
+                    {perm.permissionName}
+                  </Tag>
+                ) : null;
+              })}
+              {selectedPermissionKeys.length === 0 && (
+                <div style={{ color: '#999', fontSize: 13 }}>请在左侧勾选权限点</div>
+              )}
+            </div>
+          </div>
         </div>
-        <Tree
-          checkable
-          checkedKeys={Array.isArray(selectedPermissionKeys) ? selectedPermissionKeys.map(k => String(k)) : []}
-          onCheck={handlePermissionCheck}
-          treeData={permissionTreeData.length > 0 ? permissionTreeData : []}
-          expandedKeys={Array.isArray(expandedKeys) ? expandedKeys : []}
-          autoExpandParent
-          height={400}
-        />
       </Modal>
     </div>
   );
