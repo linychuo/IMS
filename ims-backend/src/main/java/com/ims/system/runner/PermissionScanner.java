@@ -278,8 +278,10 @@ public class PermissionScanner implements ApplicationListener<ContextRefreshedEv
             List<SysMenuPermission> toAddMenuPerms = new ArrayList<>();
 
             for (SysPermission perm : allPermissions) {
-                if (possibleCodes.contains(perm.getPermissionCode())
-                        && !existingMenuPerms.contains(perm.getId())) {
+                boolean matches = possibleCodes.stream()
+                        .anyMatch(code -> perm.getPermissionCode().equals(code)
+                                || perm.getPermissionCode().startsWith(code + ":"));
+                if (matches && !existingMenuPerms.contains(perm.getId())) {
                     SysMenuPermission mp = new SysMenuPermission();
                     mp.setMenuId(menu.getId());
                     mp.setPermissionId(perm.getId());
