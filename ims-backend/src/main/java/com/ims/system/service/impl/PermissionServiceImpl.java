@@ -98,9 +98,14 @@ public class PermissionServiceImpl implements PermissionService {
         // 查找直接子权限
         List<SysPermission> children = permissionMapper.selectByParentId(parentPermId);
         for (SysPermission child : children) {
-            // 只有当这个子权限也在当前菜单的权限列表中时，才授予访问权限
-            if (menuPermIds.contains(child.getId()) && userPermissionCodes.contains(child.getPermissionCode())) {
-                return true;
+            // 检查用户是否有这个子权限（精确匹配或前缀匹配）
+            for (String userPerm : userPermissionCodes) {
+                if (userPerm.equals(child.getPermissionCode()) || userPerm.startsWith(child.getPermissionCode() + ":")) {
+                    // 同时这个子权限必须在当前菜单的权限列表中
+                    if (menuPermIds.contains(child.getId())) {
+                        return true;
+                    }
+                }
             }
         }
         return false;
@@ -139,11 +144,10 @@ public class PermissionServiceImpl implements PermissionService {
                 }
             }
         }
-        // 如果精确匹配未命中，检查用户是否有该菜单权限的直接子权限（且该子权限属于当前菜单的权限链）
+        // 如果精确匹配未命中，检查用户是否有该菜单权限的任何后代权限
         if (!hasAccess && menuPermIds != null) {
             for (Long permId : menuPermIds) {
-                // 检查用户是否拥有此菜单权限的直接后代权限（必须是同一权限树分支）
-                if (hasDirectChildPermission(permId, userPermissionCodes, menuPermIds)) {
+                if (hasChildPermission(permId, userPermissionCodes)) {
                     hasAccess = true;
                     break;
                 }
@@ -161,7 +165,8 @@ public class PermissionServiceImpl implements PermissionService {
             }
         }
 
-        if (!hasAccess && accessibleChildren.isEmpty()) {
+        // 只有在没有直接权限且没有任何子菜单有权限时才返回null
+        if (accessibleChildren.isEmpty() && !hasAccess) {
             return null;
         }
 
