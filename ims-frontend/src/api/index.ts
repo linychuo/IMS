@@ -21,6 +21,7 @@ export const authApi = createApi('http://localhost:8080');
 export const systemApi = createApi('http://localhost:8080');
 export const productApi = createApi('http://localhost:8080/api');
 export const warehouseApi = createApi('http://localhost:8080/api');
+export const locationApi = createApi('http://localhost:8080/api');
 export const customerApi = createApi('http://localhost:8080/api');
 export const supplierApi = createApi('http://localhost:8080/api');
 export const salesApi = createApi('http://localhost:8080/api');

@@ -18,7 +18,7 @@ import {
   DeleteOutlined,
   SearchOutlined,
 } from '@ant-design/icons';
-import { warehouseApi } from '../../api';
+import { warehouseApi, locationApi } from '../../api';
 import { useAuthStore } from '../../stores/authStore';
 
 // ============ 仓库管理 ============
@@ -124,7 +124,7 @@ const WarehousePage: React.FC = () => {
     } else {
       fetchLocations();
     }
-  }, [warehousePagination.current, warehousePagination.size, warehouseKeyword, locationPagination.current, locationPagination.size, selectedWarehouseId]);
+  }, [activeTab, warehousePagination.current, warehousePagination.size, warehouseKeyword, locationPagination.current, locationPagination.size, selectedWarehouseId]);
 
   // 获取仓库列表
   const fetchWarehouses = async () => {
@@ -174,7 +174,7 @@ const WarehousePage: React.FC = () => {
       if (selectedWarehouseId) {
         params.warehouseId = selectedWarehouseId;
       }
-      const res = await warehouseApi.get('/location/page', { params });
+      const res = await locationApi.get('/location/page', { params });
       if (res.data.code === 200) {
         const pageResult: LocationPageResult = res.data.data;
         setLocationData(pageResult.records);
@@ -268,7 +268,7 @@ const WarehousePage: React.FC = () => {
 
   const handleDeleteLocation = async (id: number) => {
     try {
-      const res = await warehouseApi.delete(`/location/${id}`);
+      const res = await locationApi.delete(`/location/${id}`);
       if (res.data.code === 200) {
         message.success('删除成功');
         fetchLocations();
@@ -285,7 +285,7 @@ const WarehousePage: React.FC = () => {
     try {
       const values = await locationForm.validateFields();
       if (editingLocation?.id) {
-        const res = await warehouseApi.put('/location', { ...values, id: editingLocation.id });
+        const res = await locationApi.put('/location', { ...values, id: editingLocation.id });
         if (res.data.code === 200) {
           message.success('修改成功');
           setLocationModalVisible(false);
@@ -294,7 +294,7 @@ const WarehousePage: React.FC = () => {
           message.error(res.data.message || '修改失败');
         }
       } else {
-        const res = await warehouseApi.post('/location', values);
+        const res = await locationApi.post('/location', values);
         if (res.data.code === 200) {
           message.success('新增成功');
           setLocationModalVisible(false);
@@ -476,89 +476,93 @@ const WarehousePage: React.FC = () => {
   ];
 
   const tabItems = visibleTabs.map(tab => {
-    if (tab.key === 'warehouse') return {
-      key: 'warehouse',
-      label: '仓库管理',
-      children: (
-        <div>
-          <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between' }}>
-            <Space>
-              <Input.Search
-                placeholder="搜索仓库名称"
-                allowClear
-                onSearch={handleWarehouseSearch}
-                style={{ width: 200 }}
-                prefix={<SearchOutlined />}
-              />
-            </Space>
-            <Button type="primary" icon={<PlusOutlined />} onClick={handleAddWarehouse}>
-              新增仓库
-            </Button>
+    if (tab.key === 'warehouse') {
+      return {
+        key: 'warehouse',
+        label: '仓库管理',
+        children: (
+          <div>
+            <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between' }}>
+              <Space>
+                <Input.Search
+                  placeholder="搜索仓库名称"
+                  allowClear
+                  onSearch={handleWarehouseSearch}
+                  style={{ width: 200 }}
+                  prefix={<SearchOutlined />}
+                />
+              </Space>
+              <Button type="primary" icon={<PlusOutlined />} onClick={handleAddWarehouse}>
+                新增仓库
+              </Button>
+            </div>
+            <Table
+              columns={warehouseColumns}
+              dataSource={warehouseData}
+              rowKey="id"
+              loading={warehouseLoading}
+              pagination={{
+                current: warehousePagination.current,
+                pageSize: warehousePagination.size,
+                total: warehousePagination.total,
+                showSizeChanger: true,
+                showQuickJumper: true,
+                showTotal: (total) => `共 ${total} 条`,
+                onChange: (current, size) => setWarehousePagination({ current, size, total: warehousePagination.total }),
+              }}
+              scroll={{ x: 1200 }}
+            />
           </div>
-          <Table
-            columns={warehouseColumns}
-            dataSource={warehouseData}
-            rowKey="id"
-            loading={warehouseLoading}
-            pagination={{
-              current: warehousePagination.current,
-              pageSize: warehousePagination.size,
-              total: warehousePagination.total,
-              showSizeChanger: true,
-              showQuickJumper: true,
-              showTotal: (total) => `共 ${total} 条`,
-              onChange: (current, size) => setWarehousePagination({ current, size, total: warehousePagination.total }),
-            }}
-            scroll={{ x: 1200 }}
-          />
-        </div>
-      ),
-    },
-    {
-      key: 'location',
-      label: '库位管理',
-      children: (
-        <div>
-          <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between' }}>
-            <Space>
-              <span>仓库筛选：</span>
-              <Select
-                placeholder="选择仓库"
-                allowClear
-                style={{ width: 200 }}
-                onChange={handleLocationWarehouseChange}
-                value={selectedWarehouseId}
-              >
-                {warehouseList.map((w) => (
-                  <Select.Option key={w.id} value={w.id!}>
-                    {w.name}
-                  </Select.Option>
-                ))}
-              </Select>
-            </Space>
-            <Button type="primary" icon={<PlusOutlined />} onClick={handleAddLocation}>
-              新增库位
-            </Button>
+        ),
+      };
+    }
+    if (tab.key === 'location') {
+      return {
+        key: 'location',
+        label: '库位管理',
+        children: (
+          <div>
+            <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between' }}>
+              <Space>
+                <span>仓库筛选：</span>
+                <Select
+                  placeholder="选择仓库"
+                  allowClear
+                  style={{ width: 200 }}
+                  onChange={handleLocationWarehouseChange}
+                  value={selectedWarehouseId}
+                >
+                  {warehouseList.map((w) => (
+                    <Select.Option key={w.id} value={w.id!}>
+                      {w.name}
+                    </Select.Option>
+                  ))}
+                </Select>
+              </Space>
+              <Button type="primary" icon={<PlusOutlined />} onClick={handleAddLocation}>
+                新增库位
+              </Button>
+            </div>
+            <Table
+              columns={locationColumns}
+              dataSource={locationData}
+              rowKey="id"
+              loading={locationLoading}
+              pagination={{
+                current: locationPagination.current,
+                pageSize: locationPagination.size,
+                total: locationPagination.total,
+                showSizeChanger: true,
+                showQuickJumper: true,
+                showTotal: (total) => `共 ${total} 条`,
+                onChange: (current, size) => setLocationPagination({ current, size, total: locationPagination.total }),
+              }}
+              scroll={{ x: 1200 }}
+            />
           </div>
-          <Table
-            columns={locationColumns}
-            dataSource={locationData}
-            rowKey="id"
-            loading={locationLoading}
-            pagination={{
-              current: locationPagination.current,
-              pageSize: locationPagination.size,
-              total: locationPagination.total,
-              showSizeChanger: true,
-              showQuickJumper: true,
-              showTotal: (total) => `共 ${total} 条`,
-              onChange: (current, size) => setLocationPagination({ current, size, total: locationPagination.total }),
-            }}
-            scroll={{ x: 1200 }}
-          />
-        </div>
-      ),
-    };
+        ),
+      };
+    }
     return null;
   }).filter(Boolean) as any[];
 
