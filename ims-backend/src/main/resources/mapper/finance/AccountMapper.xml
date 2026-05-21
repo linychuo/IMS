@@ -4,7 +4,6 @@
 
     <resultMap id="BaseResultMap" type="com.ims.finance.entity.Account">
         <id column="id" property="id"/>
-        <result column="account_no" property="accountNo"/>
         <result column="account_name" property="accountName"/>
         <result column="account_type" property="accountType"/>
         <result column="bank_name" property="bankName"/>
@@ -18,14 +17,14 @@
     </resultMap>
 
     <sql id="Base_Column_List">
-        id, account_no, account_name, account_type, bank_name, bank_account, 
+        id, account_name, account_type, bank_name, bank_account,
         balance, status, remark, create_time, update_time, deleted
     </sql>
 
     <select id="selectByAccountNo" resultMap="BaseResultMap">
         SELECT <include refid="Base_Column_List"/>
         FROM account
-        WHERE account_no = #{accountNo} AND deleted = 0
+        WHERE account_name = #{accountName} AND deleted = 0
     </select>
 
     <select id="selectByType" resultMap="BaseResultMap">

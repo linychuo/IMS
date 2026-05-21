@@ -7,7 +7,6 @@ import java.time.LocalDateTime;
 
 @TableName("account")
 public class Account extends BaseEntity {
-    private String accountNo;        // 账户编号
     private String accountName;      // 账户名称
     private Integer accountType;    // 账户类型: 1-现金 2-银行 3-支付宝 4-微信 5-其他
     private String bankName;        // 开户行
@@ -15,14 +14,6 @@ public class Account extends BaseEntity {
     private BigDecimal balance;     // 当前余额
     private Integer status;         // 状态: 1-启用 2-停用
     private String remark;          // 备注
-
-    public String getAccountNo() {
-        return accountNo;
-    }
-
-    public void setAccountNo(String accountNo) {
-        this.accountNo = accountNo;
-    }
 
     public String getAccountName() {
         return accountName;

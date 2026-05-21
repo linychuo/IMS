@@ -210,7 +210,6 @@ public class FinanceServiceImpl implements FinanceService {
     @Transactional
     public boolean saveAccount(Account account) {
         if (account.getId() == null) {
-            account.setAccountNo(generateAccountNo());
             account.setStatus(1);
             return accountMapper.insert(account) > 0;
         }
