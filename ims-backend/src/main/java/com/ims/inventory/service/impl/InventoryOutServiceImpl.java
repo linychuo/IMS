@@ -10,6 +10,8 @@ import com.ims.inventory.mapper.InventoryOutDetailMapper;
 import com.ims.inventory.mapper.InventoryOutMapper;
 import com.ims.inventory.service.InventoryOutService;
 import com.ims.inventory.service.InventoryService;
+import com.ims.product.entity.Product;
+import com.ims.product.mapper.ProductMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,6 +30,8 @@ public class InventoryOutServiceImpl extends ServiceImpl<InventoryOutMapper, Inv
     private InventoryOutDetailMapper outDetailMapper;
     @Autowired
     private InventoryService inventoryService;
+    @Autowired
+    private ProductMapper productMapper;
 
     @Override
     public PageResult<InventoryOut> pageOut(Long page, Long pageSize, Long warehouseId, Integer outType, Integer status) {
@@ -127,5 +131,23 @@ public class InventoryOutServiceImpl extends ServiceImpl<InventoryOutMapper, Inv
     
     private String generateOutNo() {
         return "OUT" + System.currentTimeMillis();
+    }
+
+    @Override
+    public InventoryOutDetail getByBarcode(String barcode) {
+        Product product = productMapper.selectByBarcode(barcode);
+        if (product == null) {
+            throw new RuntimeException("商品不存在，条码：" + barcode);
+        }
+
+        InventoryOutDetail detail = new InventoryOutDetail();
+        detail.setProductId(product.getId());
+        detail.setProductName(product.getName());
+        detail.setProductCode(product.getCode());
+        detail.setUnit(product.getUnit());
+        detail.setSpec(product.getSpec());
+        detail.setPrice(product.getSalePrice());
+        detail.setBarcode(barcode);
+        return detail;
     }
 }

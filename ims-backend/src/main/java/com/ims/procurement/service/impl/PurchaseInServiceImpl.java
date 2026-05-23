@@ -4,7 +4,10 @@ import com.ims.common.enums.CommonStatus;
 import com.ims.common.util.OrderNoGenerator;
 import com.ims.finance.entity.Payable;
 import com.ims.finance.service.PayableService;
+import com.ims.procurement.dto.request.InspectionRequest;
 import com.ims.procurement.entity.PurchaseIn;
+import com.ims.procurement.entity.PurchaseInDetail;
+import com.ims.procurement.mapper.PurchaseInDetailMapper;
 import com.ims.procurement.mapper.PurchaseInMapper;
 import com.ims.procurement.service.PurchaseInService;
 import org.slf4j.Logger;
@@ -26,13 +29,16 @@ public class PurchaseInServiceImpl implements PurchaseInService {
     private static final Logger log = LoggerFactory.getLogger(PurchaseInServiceImpl.class);
 
     private final PurchaseInMapper purchaseInMapper;
+    private final PurchaseInDetailMapper purchaseInDetailMapper;
     private final OrderNoGenerator orderNoGenerator;
     private final PayableService payableService;
 
     public PurchaseInServiceImpl(PurchaseInMapper purchaseInMapper,
+                                  PurchaseInDetailMapper purchaseInDetailMapper,
                                   OrderNoGenerator orderNoGenerator,
                                   PayableService payableService) {
         this.purchaseInMapper = purchaseInMapper;
+        this.purchaseInDetailMapper = purchaseInDetailMapper;
         this.orderNoGenerator = orderNoGenerator;
         this.payableService = payableService;
     }
@@ -120,6 +126,39 @@ public class PurchaseInServiceImpl implements PurchaseInService {
         purchaseIn.setStatus(CommonStatus.COMPLETED.getCode());
         purchaseInMapper.update(purchaseIn);
         log.info("完成采购入库: {}", id);
+    }
+
+    @Override
+    @Transactional
+    public void inspect(Long id, InspectionRequest request) {
+        PurchaseIn purchaseIn = purchaseInMapper.selectById(id);
+        if (purchaseIn == null) {
+            throw new RuntimeException("入库单不存在: " + id);
+        }
+        if (purchaseIn.getStatus() != CommonStatus.APPROVED.getCode()) {
+            throw new RuntimeException("只有已审核状态可检验");
+        }
+
+        for (InspectionRequest.InspectionItem item : request.getItems()) {
+            purchaseInDetailMapper.updateCheckStatus(
+                item.getDetailId(),
+                item.getCheckStatus(),
+                item.getCheckedQty()
+            );
+        }
+
+        boolean allPassed = request.getItems().stream()
+            .allMatch(item -> item.getCheckStatus() == 1);
+        boolean anyFailed = request.getItems().stream()
+            .anyMatch(item -> item.getCheckStatus() == 2);
+
+        if (allPassed) {
+            log.info("采购入库单 {} 检验全部通过", id);
+        } else if (anyFailed) {
+            log.warn("采购入库单 {} 检验存在不合格品", id);
+        }
+
+        log.info("提交采购入库检验结果: {}, 明细数: {}", id, request.getItems().size());
     }
 
     @Override

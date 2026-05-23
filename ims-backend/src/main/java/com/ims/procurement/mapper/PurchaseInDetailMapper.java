@@ -41,4 +41,14 @@ public interface PurchaseInDetailMapper {
      * 根据入库单ID删除
      */
     int deleteByInId(@Param("inId") String inId);
+
+    /**
+     * 更新检验状态
+     */
+    int updateCheckStatus(@Param("id") String id, @Param("checkStatus") Integer checkStatus, @Param("checkedQty") java.math.BigDecimal checkedQty);
+
+    /**
+     * 批量更新检验状态
+     */
+    int batchUpdateCheckStatus(@Param("ids") List<String> ids, @Param("checkStatus") Integer checkStatus, @Param("checkedQty") java.math.BigDecimal checkedQty);
 }

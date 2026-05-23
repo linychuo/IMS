@@ -50,4 +50,25 @@ public class InventoryRecordController {
 
         return Result.success(inventoryRecordService.getByOrder(orderType, orderId));
     }
+
+    /**
+     * 按批次号查询库存变动记录（批次追溯）
+     */
+    @GetMapping("/batch/{batchNo}")
+    @Permission(code = "read", name = "查看库存记录")
+    public Result<List<InventoryRecord>> getByBatchNo(@PathVariable String batchNo) {
+        return Result.success(inventoryRecordService.getByBatchNo(batchNo));
+    }
+
+    /**
+     * 按商品查询库存变动记录
+     */
+    @GetMapping("/product/{productId}")
+    @Permission(code = "read", name = "查看库存记录")
+    public Result<List<InventoryRecord>> getByProduct(
+            @PathVariable Long productId,
+            @RequestParam(required = false) Long warehouseId,
+            @RequestParam(required = false) String changeType) {
+        return Result.success(inventoryRecordService.getByProduct(productId, warehouseId, changeType));
+    }
 }

@@ -46,4 +46,9 @@ public interface InventoryOutService extends IService<InventoryOut> {
      * 取消出库单
      */
     boolean cancelOut(Long id);
+
+    /**
+     * 根据条码查询商品信息（扫码出库）
+     */
+    InventoryOutDetail getByBarcode(String barcode);
 }

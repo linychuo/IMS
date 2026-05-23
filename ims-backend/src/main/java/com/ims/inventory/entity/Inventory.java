@@ -24,6 +24,7 @@ public class Inventory extends BaseEntity {
     private String productCode;
     private String warehouseName;
     private String locationName;
+    private BigDecimal highStockWarning;
 
     public Long getProductId() { return productId; }
     public void setProductId(Long productId) { this.productId = productId; }
@@ -51,4 +52,6 @@ public class Inventory extends BaseEntity {
     public void setWarehouseName(String warehouseName) { this.warehouseName = warehouseName; }
     public String getLocationName() { return locationName; }
     public void setLocationName(String locationName) { this.locationName = locationName; }
+    public BigDecimal getHighStockWarning() { return highStockWarning; }
+    public void setHighStockWarning(BigDecimal highStockWarning) { this.highStockWarning = highStockWarning; }
 }

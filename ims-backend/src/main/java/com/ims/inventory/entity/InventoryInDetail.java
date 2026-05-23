@@ -24,6 +24,9 @@ public class InventoryInDetail extends BaseEntity {
     private String productName;
     private String productCode;
     private String locationName;
+    private String unit;
+    private String spec;
+    private String barcode;
 
     public Long getInId() { return inId; }
     public void setInId(Long inId) { this.inId = inId; }
@@ -51,4 +54,10 @@ public class InventoryInDetail extends BaseEntity {
     public void setProductCode(String productCode) { this.productCode = productCode; }
     public String getLocationName() { return locationName; }
     public void setLocationName(String locationName) { this.locationName = locationName; }
+    public String getUnit() { return unit; }
+    public void setUnit(String unit) { this.unit = unit; }
+    public String getSpec() { return spec; }
+    public void setSpec(String spec) { this.spec = spec; }
+    public String getBarcode() { return barcode; }
+    public void setBarcode(String barcode) { this.barcode = barcode; }
 }

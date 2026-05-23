@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ims.finance.mapper.InvoiceMapper">
+
+    <resultMap id="BaseResultMap" type="com.ims.finance.entity.Invoice">
+        <id column="id" property="id"/>
+        <result column="invoice_no" property="invoiceNo"/>
+        <result column="invoice_type" property="invoiceType"/>
+        <result column="invoice_kind" property="invoiceKind"/>
+        <result column="order_type" property="orderType"/>
+        <result column="order_id" property="orderId"/>
+        <result column="order_no" property="orderNo"/>
+        <result column="supplier_id" property="supplierId"/>
+        <result column="supplier_name" property="supplierName"/>
+        <result column="customer_id" property="customerId"/>
+        <result column="customer_name" property="customerName"/>
+        <result column="invoice_date" property="invoiceDate"/>
+        <result column="amount" property="amount"/>
+        <result column="tax_rate" property="taxRate"/>
+        <result column="tax_amount" property="taxAmount"/>
+        <result column="total_amount" property="totalAmount"/>
+        <result column="invoice_code" property="invoiceCode"/>
+        <result column="invoice_number" property="invoiceNumber"/>
+        <result column="status" property="status"/>
+        <result column="check_date" property="checkDate"/>
+        <result column="remark" property="remark"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="deleted" property="deleted"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, invoice_no, invoice_type, invoice_kind, order_type, order_id, order_no,
+        supplier_id, supplier_name, customer_id, customer_name, invoice_date,
+        amount, tax_rate, tax_amount, total_amount, invoice_code, invoice_number,
+        status, check_date, remark, create_time, update_time, deleted
+    </sql>
+
+    <select id="selectByOrder" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM invoice
+        WHERE deleted = 0 AND order_type = #{orderType} AND order_id = #{orderId}
+    </select>
+
+    <select id="selectBySupplier" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM invoice
+        WHERE deleted = 0 AND invoice_type = 1 AND supplier_id = #{supplierId}
+        ORDER BY invoice_date DESC
+    </select>
+
+    <select id="selectByCustomer" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM invoice
+        WHERE deleted = 0 AND invoice_type = 2 AND customer_id = #{customerId}
+        ORDER BY invoice_date DESC
+    </select>
+
+</mapper>

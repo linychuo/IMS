@@ -5,11 +5,15 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.ims.common.util.OrderNoGenerator;
 import com.ims.core.result.PageResult;
+import com.ims.finance.dto.SupplierStatementDTO;
 import com.ims.finance.entity.Payable;
 import com.ims.finance.entity.WriteoffRecord;
 import com.ims.finance.mapper.PayableMapper;
 import com.ims.finance.mapper.WriteoffRecordMapper;
 import com.ims.finance.service.PayableService;
+import com.ims.finance.mapper.FinanceOutMapper;
+import com.ims.finance.entity.FinanceOut;
+import com.ims.procurement.mapper.SupplierMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +33,10 @@ public class PayableServiceImpl extends ServiceImpl<PayableMapper, Payable> impl
     private WriteoffRecordMapper writeoffRecordMapper;
     @Autowired
     private OrderNoGenerator orderNoGenerator;
+    @Autowired
+    private FinanceOutMapper financeOutMapper;
+    @Autowired
+    private SupplierMapper supplierMapper;
 
     @Override
     public PageResult<Payable> page(Long page, Long pageSize, Long supplierId, Integer status) {
@@ -192,5 +200,106 @@ public class PayableServiceImpl extends ServiceImpl<PayableMapper, Payable> impl
         return list.stream()
             .map(Payable::getPendingAmount)
             .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    @Override
+    public SupplierStatementDTO getSupplierStatement(Long supplierId, LocalDate startDate, LocalDate endDate) {
+        SupplierStatementDTO statement = new SupplierStatementDTO();
+        statement.setSupplierId(supplierId);
+        statement.setStartDate(startDate);
+        statement.setEndDate(endDate);
+
+        // 获取供应商信息
+        com.ims.procurement.entity.Supplier supplier = supplierMapper.selectById(supplierId);
+        statement.setSupplierName(supplier != null ? supplier.getSupplierName() : "供应商" + supplierId);
+
+        // 期初应付（截止到startDate之前的所有未结清应付）
+        LambdaQueryWrapper<Payable> initWrapper = new LambdaQueryWrapper<>();
+        initWrapper.eq(Payable::getSupplierId, supplierId)
+                  .lt(Payable::getDueDate, startDate)
+                  .ne(Payable::getStatus, 3);
+        List<Payable> initialPayables = this.list(initWrapper);
+        BigDecimal initialPayable = initialPayables.stream()
+            .map(Payable::getTotalAmount)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal initialPaid = initialPayables.stream()
+            .map(Payable::getPaidAmount)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal initialPending = initialPayables.stream()
+            .map(Payable::getPendingAmount)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        statement.setInitialPayable(initialPayable);
+        statement.setInitialPaid(initialPaid);
+        statement.setInitialPending(initialPending);
+
+        // 本期新增应付
+        LambdaQueryWrapper<Payable> periodWrapper = new LambdaQueryWrapper<>();
+        periodWrapper.eq(Payable::getSupplierId, supplierId)
+                    .ge(Payable::getDueDate, startDate)
+                    .le(Payable::getDueDate, endDate);
+        List<Payable> periodPayables = this.list(periodWrapper);
+        BigDecimal periodNewPayable = periodPayables.stream()
+            .map(Payable::getTotalAmount)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+        statement.setPeriodNewPayable(periodNewPayable);
+
+        // 本期付款（从finance_out表查询，排除预付款）
+        LambdaQueryWrapper<FinanceOut> paymentWrapper = new LambdaQueryWrapper<>();
+        paymentWrapper.eq(FinanceOut::getSupplierId, supplierId)
+                     .eq(FinanceOut::getStatus, 2) // 已审核
+                     .eq(FinanceOut::getPaymentType, 1) // 采购付款（非预付款）
+                     .ge(FinanceOut::getPayDate, startDate.atStartOfDay())
+                     .le(FinanceOut::getPayDate, endDate.plusDays(1).atStartOfDay());
+        List<FinanceOut> payments = financeOutMapper.selectList(paymentWrapper);
+        BigDecimal periodPaid = payments.stream()
+            .map(FinanceOut::getAmount)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+        statement.setPeriodPaid(periodPaid);
+
+        // 期末应付
+        statement.setFinalPayable(initialPayable.add(periodNewPayable));
+        statement.setFinalPaid(initialPaid.add(periodPaid));
+        statement.setFinalPending(initialPending.add(periodNewPayable).subtract(periodPaid));
+
+        // 应付明细
+        List<SupplierStatementDTO.PayableDetail> payableDetails = periodPayables.stream().map(p -> {
+            SupplierStatementDTO.PayableDetail detail = new SupplierStatementDTO.PayableDetail();
+            detail.setOrderNo(p.getOrderNo());
+            detail.setDueDate(p.getDueDate());
+            detail.setTotalAmount(p.getTotalAmount());
+            detail.setPaidAmount(p.getPaidAmount());
+            detail.setPendingAmount(p.getPendingAmount());
+            detail.setOverdueDays(p.getOverdueDays());
+            detail.setStatus(p.getStatus() == 1 ? "未结清" : p.getStatus() == 2 ? "部分付款" : "已结清");
+            return detail;
+        }).toList();
+        statement.setPayables(payableDetails);
+
+        // 付款明细
+        List<SupplierStatementDTO.PaymentDetail> paymentDetails = payments.stream().map(p -> {
+            SupplierStatementDTO.PaymentDetail detail = new SupplierStatementDTO.PaymentDetail();
+            detail.setPaymentNo(p.getOutNo());
+            detail.setPaymentDate(p.getPayDate());
+            detail.setAmount(p.getAmount());
+            detail.setPayMethod(getPayMethodName(p.getPayMethod()));
+            detail.setRemark(p.getRemark());
+            return detail;
+        }).toList();
+        statement.setPayments(paymentDetails);
+
+        return statement;
+    }
+
+    private String getPayMethodName(Integer payMethod) {
+        if (payMethod == null) return "";
+        return switch (payMethod) {
+            case 1 -> "现金";
+            case 2 -> "银行转账";
+            case 3 -> "支付宝";
+            case 4 -> "微信";
+            case 5 -> "其他";
+            default -> "未知";
+        };
     }
 }

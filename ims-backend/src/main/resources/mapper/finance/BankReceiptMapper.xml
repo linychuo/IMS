@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ims.finance.mapper.BankReceiptMapper">
+
+    <resultMap id="BaseResultMap" type="com.ims.finance.entity.BankReceipt">
+        <id column="id" property="id"/>
+        <result column="receipt_no" property="receiptNo"/>
+        <result column="customer_id" property="customerId"/>
+        <result column="customer_name" property="customerName"/>
+        <result column="amount" property="amount"/>
+        <result column="claimed_amount" property="claimedAmount"/>
+        <result column="pending_amount" property="pendingAmount"/>
+        <result column="receipt_date" property="receiptDate"/>
+        <result column="bank_account" property="bankAccount"/>
+        <result column="bank_name" property="bankName"/>
+        <result column="pay_method" property="payMethod"/>
+        <result column="status" property="status"/>
+        <result column="remark" property="remark"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="deleted" property="deleted"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, receipt_no, customer_id, customer_name, amount, claimed_amount, pending_amount,
+        receipt_date, bank_account, bank_name, pay_method, status, remark,
+        create_time, update_time, deleted
+    </sql>
+
+    <select id="selectPendingByCustomer" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM bank_receipt
+        WHERE deleted = 0 AND customer_id = #{customerId}
+        AND status IN (0, 1)
+        ORDER BY receipt_date DESC
+    </select>
+
+    <select id="selectAllPending" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM bank_receipt
+        WHERE deleted = 0 AND status IN (0, 1)
+        ORDER BY receipt_date DESC
+    </select>
+
+</mapper>

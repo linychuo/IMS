@@ -9,21 +9,28 @@
         <result column="category_id" property="categoryId"/>
         <result column="spec" property="spec"/>
         <result column="unit" property="unit"/>
-        <result column="cost" property="purchasePrice"/>
-        <result column="price" property="salePrice"/>
+        <result column="barcode" property="barcode"/>
+        <result column="purchase_price" property="purchasePrice"/>
+        <result column="sale_price" property="salePrice"/>
+        <result column="min_sale_price" property="minSalePrice"/>
         <result column="stock_warning" property="stockWarning"/>
         <result column="status" property="status"/>
         <result column="remark" property="remark"/>
+        <result column="image_url" property="imageUrl"/>
         <result column="created_at" property="createTime"/>
         <result column="updated_at" property="updateTime"/>
     </resultMap>
 
     <sql id="Base_Column_List">
-        id, product_code, product_name, category_id, spec, unit, cost, price, stock_warning, status, remark, created_at, updated_at
+        id, product_code, product_name, category_id, spec, unit, barcode, purchase_price, sale_price, min_sale_price, stock_warning, status, remark, image_url, created_at, updated_at
     </sql>
 
     <select id="selectByCode" resultMap="BaseResultMap">
         SELECT <include refid="Base_Column_List"/> FROM product WHERE product_code = #{code}
+    </select>
+
+    <select id="selectByBarcode" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/> FROM product WHERE barcode = #{barcode} AND deleted = 0
     </select>
 
     <select id="selectByCategory" resultMap="BaseResultMap">

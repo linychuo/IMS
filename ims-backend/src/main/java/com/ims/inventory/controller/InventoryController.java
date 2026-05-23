@@ -95,4 +95,44 @@ public class InventoryController {
     public Result<List<Inventory>> getWarningList() {
         return Result.success(inventoryService.getWarningList());
     }
+
+    /**
+     * 获取FIFO推荐批次（按生产日期升序）
+     */
+    @GetMapping("/fifo/{productId}")
+    @Permission(code = "read", name = "查看库存")
+    public Result<List<Inventory>> getFifoRecommend(
+            @PathVariable Long productId,
+            @RequestParam(required = false) Long warehouseId) {
+        return Result.success(inventoryService.getInventoryListByProduct(productId, warehouseId));
+    }
+
+    /**
+     * 获取临期商品预警（有效期≤N天）
+     */
+    @GetMapping("/expiring")
+    @Permission(code = "read", name = "查看库存")
+    public Result<List<Inventory>> getExpiringList(
+            @RequestParam(defaultValue = "30") Integer days) {
+        return Result.success(inventoryService.getExpiringList(days));
+    }
+
+    /**
+     * 获取呆滞商品（N天未动）
+     */
+    @GetMapping("/idle")
+    @Permission(code = "read", name = "查看库存")
+    public Result<List<Inventory>> getIdleStock(
+            @RequestParam(defaultValue = "90") Integer days) {
+        return Result.success(inventoryService.getIdleStock(days));
+    }
+
+    /**
+     * 获取最高库存预警列表（库存高于最高库存）
+     */
+    @GetMapping("/high-stock")
+    @Permission(code = "read", name = "查看库存")
+    public Result<List<Inventory>> getHighStockList() {
+        return Result.success(inventoryService.getHighStockList());
+    }
 }

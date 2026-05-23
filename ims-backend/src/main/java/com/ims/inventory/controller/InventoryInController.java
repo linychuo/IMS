@@ -91,4 +91,13 @@ public class InventoryInController {
     public Result<Boolean> cancel(@PathVariable Long id) {
         return Result.success(inventoryInService.cancelIn(id));
     }
+
+    /**
+     * 扫码入库 - 根据条码查询商品信息
+     */
+    @GetMapping("/barcode/{barcode}")
+    @Permission(code = "read", name = "查看入库单")
+    public Result<InventoryInDetail> getByBarcode(@PathVariable String barcode) {
+        return Result.success(inventoryInService.getByBarcode(barcode));
+    }
 }

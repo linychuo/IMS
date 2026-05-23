@@ -1,11 +1,11 @@
 package com.ims.procurement.controller;
 
+import com.ims.core.result.Result;
 import com.ims.procurement.entity.Supplier;
 import com.ims.procurement.service.SupplierService;
 import com.ims.system.annotation.Permission;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -24,36 +24,36 @@ public class SupplierController {
 
     @PostMapping
     @Permission(code = "create", name = "创建供应商")
-    public ResponseEntity<Supplier> create(@RequestBody Supplier supplier) {
+    public Result<Supplier> create(@RequestBody Supplier supplier) {
         log.info("创建供应商: {}", supplier.getSupplierName());
-        return ResponseEntity.ok(supplierService.create(supplier));
+        return Result.success(supplierService.create(supplier));
     }
 
     @PutMapping("/{id}")
     @Permission(code = "update", name = "更新供应商")
-    public ResponseEntity<Supplier> update(@PathVariable Long id, @RequestBody Supplier supplier) {
+    public Result<Supplier> update(@PathVariable Long id, @RequestBody Supplier supplier) {
         supplier.setId(id);
-        return ResponseEntity.ok(supplierService.update(supplier));
+        return Result.success(supplierService.update(supplier));
     }
 
     @GetMapping("/{id}")
     @Permission(code = "read", name = "查看供应商")
-    public ResponseEntity<Supplier> getById(@PathVariable Long id) {
+    public Result<Supplier> getById(@PathVariable Long id) {
         var result = supplierService.getById(id);
-        return result != null ? ResponseEntity.ok(result) : ResponseEntity.notFound().build();
+        return result != null ? Result.success(result) : Result.error("供应商不存在");
     }
 
     @GetMapping("/code/{supplierCode}")
     @Permission(code = "read", name = "查看供应商")
-    public ResponseEntity<Supplier> getByCode(@PathVariable String supplierCode) {
+    public Result<Supplier> getByCode(@PathVariable String supplierCode) {
         var result = supplierService.getByCode(supplierCode);
-        return result != null ? ResponseEntity.ok(result) : ResponseEntity.notFound().build();
+        return result != null ? Result.success(result) : Result.error("供应商不存在");
     }
 
     @GetMapping
     @Permission(code = "list", name = "查看供应商列表")
-    public ResponseEntity<List<Supplier>> list(Supplier query) {
-        return ResponseEntity.ok(supplierService.list(query));
+    public Result<List<Supplier>> list(Supplier query) {
+        return Result.success(supplierService.list(query));
     }
 
     /**
@@ -61,15 +61,15 @@ public class SupplierController {
      */
     @GetMapping("/list")
     @Permission(code = "list", name = "查看供应商列表")
-    public ResponseEntity<List<Supplier>> listAlias(Supplier query) {
-        return ResponseEntity.ok(supplierService.list(query));
+    public Result<List<Supplier>> listAlias(Supplier query) {
+        return Result.success(supplierService.list(query));
     }
 
     @DeleteMapping("/{id}")
     @Permission(code = "delete", name = "删除供应商")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
+    public Result<Void> delete(@PathVariable Long id) {
         log.info("删除供应商, id: {}", id);
         supplierService.delete(id);
-        return ResponseEntity.ok().build();
+        return Result.success(null);
     }
 }

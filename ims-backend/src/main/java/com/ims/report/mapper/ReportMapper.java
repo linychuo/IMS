@@ -100,4 +100,16 @@ public interface ReportMapper {
      * 获取单个供应商分析数据
      */
     SupplierAnalysisDTO getSupplierAnalysisById(@Param("supplierId") Long supplierId);
+
+    /**
+     * 获取库存周转分析数据
+     */
+    List<InventoryTurnoverDTO> getInventoryTurnoverList(@Param("startDate") LocalDate startDate,
+                                                         @Param("endDate") LocalDate endDate);
+
+    /**
+     * 获取毛利分析数据
+     */
+    List<ProfitMarginDTO> getProfitMarginList(@Param("startDate") LocalDate startDate,
+                                               @Param("endDate") LocalDate endDate);
 }

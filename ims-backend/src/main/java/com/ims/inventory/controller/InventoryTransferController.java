@@ -56,6 +56,15 @@ public class InventoryTransferController {
     }
 
     /**
+     * 审核调拨单
+     */
+    @PutMapping("/{id}/approve")
+    @Permission(code = "audit", name = "审核调拨单")
+    public Result<Boolean> approve(@PathVariable Long id, @RequestParam Long auditorId) {
+        return Result.success(inventoryTransferService.approve(id, auditorId));
+    }
+
+    /**
      * 开始调拨
      */
     @PutMapping("/{id}/start")

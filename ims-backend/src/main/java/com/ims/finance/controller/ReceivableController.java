@@ -2,6 +2,7 @@ package com.ims.finance.controller;
 
 import com.ims.core.result.PageResult;
 import com.ims.core.result.Result;
+import com.ims.finance.dto.CustomerStatementDTO;
 import com.ims.finance.entity.Receivable;
 import com.ims.finance.service.ReceivableService;
 import com.ims.system.annotation.Permission;
@@ -75,5 +76,34 @@ public class ReceivableController {
     @Permission(code = "read", name = "查看应收账款")
     public Result<BigDecimal> getTotalPending(@PathVariable Long customerId) {
         return Result.success(receivableService.getTotalPendingByCustomer(customerId));
+    }
+
+    @GetMapping("/customer/{customerId}/statement")
+    @Permission(code = "read", name = "查看对账单")
+    public Result<CustomerStatementDTO> getCustomerStatement(
+            @PathVariable Long customerId,
+            @RequestParam(required = false) LocalDate startDate,
+            @RequestParam(required = false) LocalDate endDate) {
+        return Result.success(receivableService.getCustomerStatement(customerId, startDate, endDate));
+    }
+
+    /**
+     * 获取逾期应收列表（用于预警）
+     */
+    @GetMapping("/overdue")
+    @Permission(code = "read", name = "查看应收账款")
+    public Result<List<Receivable>> getOverdueReceivables(
+            @RequestParam(defaultValue = "1") Integer overdueDays) {
+        return Result.success(receivableService.getOverdueReceivables(overdueDays));
+    }
+
+    /**
+     * 获取即将到期应收（N天内）
+     */
+    @GetMapping("/due-soon")
+    @Permission(code = "read", name = "查看应收账款")
+    public Result<List<Receivable>> getDueSoonReceivables(
+            @RequestParam(defaultValue = "7") Integer days) {
+        return Result.success(receivableService.getDueSoonReceivables(days));
     }
 }

@@ -67,4 +67,19 @@ public interface InventoryService extends IService<Inventory> {
      * 获取库存预警列表 (库存低于安全库存)
      */
     List<Inventory> getWarningList();
+
+    /**
+     * 获取临期商品预警（有效期≤N天）
+     */
+    List<Inventory> getExpiringList(Integer days);
+
+    /**
+     * 获取呆滞商品（N天未动）
+     */
+    List<Inventory> getIdleStock(Integer days);
+
+    /**
+     * 获取最高库存预警列表（库存高于最高库存）
+     */
+    List<Inventory> getHighStockList();
 }

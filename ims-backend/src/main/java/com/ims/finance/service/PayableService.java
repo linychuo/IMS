@@ -1,6 +1,7 @@
 package com.ims.finance.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.ims.finance.dto.SupplierStatementDTO;
 import com.ims.finance.entity.Payable;
 import com.ims.core.result.PageResult;
 
@@ -61,4 +62,9 @@ public interface PayableService extends IService<Payable> {
      * 汇总供应商应付
      */
     BigDecimal getTotalPendingBySupplier(Long supplierId);
+
+    /**
+     * 获取供应商对账单
+     */
+    SupplierStatementDTO getSupplierStatement(Long supplierId, LocalDate startDate, LocalDate endDate);
 }

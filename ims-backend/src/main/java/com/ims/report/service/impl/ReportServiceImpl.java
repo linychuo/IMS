@@ -132,4 +132,16 @@ public class ReportServiceImpl implements IReportService {
     public SupplierAnalysisDTO getSupplierAnalysisById(Long supplierId) {
         return reportMapper.getSupplierAnalysisById(supplierId);
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<InventoryTurnoverDTO> getInventoryTurnover(java.time.LocalDate startDate, java.time.LocalDate endDate) {
+        return reportMapper.getInventoryTurnoverList(startDate, endDate);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ProfitMarginDTO> getProfitMargin(java.time.LocalDate startDate, java.time.LocalDate endDate) {
+        return reportMapper.getProfitMarginList(startDate, endDate);
+    }
 }

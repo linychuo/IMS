@@ -68,8 +68,20 @@ public final class OrderNoGenerator {
         return generateOrderNo("WO");
     }
 
+    public static String generateSupplierAgreementNo() {
+        return generateOrderNo("SA");
+    }
+
     public static String generateFinanceOutNo() {
         return generateOrderNo("FO");
+    }
+
+    public static String generateFinanceInNo() {
+        return generateOrderNo("FI");
+    }
+
+    public static String generatePromotionNo() {
+        return generateOrderNo("PM");
     }
 
     public static String generateOrderNo(String prefix) {

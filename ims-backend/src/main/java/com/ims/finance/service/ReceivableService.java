@@ -1,6 +1,7 @@
 package com.ims.finance.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.ims.finance.dto.CustomerStatementDTO;
 import com.ims.finance.entity.Receivable;
 import com.ims.core.result.PageResult;
 
@@ -61,4 +62,19 @@ public interface ReceivableService extends IService<Receivable> {
      * 汇总客户应收
      */
     BigDecimal getTotalPendingByCustomer(Long customerId);
+
+    /**
+     * 获取客户对账单
+     */
+    CustomerStatementDTO getCustomerStatement(Long customerId, LocalDate startDate, LocalDate endDate);
+
+    /**
+     * 获取逾期应收列表（用于预警提醒）
+     */
+    List<Receivable> getOverdueReceivables(Integer overdueDays);
+
+    /**
+     * 获取即将到期应收（N天内）
+     */
+    List<Receivable> getDueSoonReceivables(Integer days);
 }

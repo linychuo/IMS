@@ -48,4 +48,9 @@ public interface InventoryInService extends IService<InventoryIn> {
      * 取消入库单
      */
     boolean cancelIn(Long id);
+
+    /**
+     * 根据条码查询商品信息（扫码入库）
+     */
+    InventoryInDetail getByBarcode(String barcode);
 }

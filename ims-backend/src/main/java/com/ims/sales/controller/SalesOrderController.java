@@ -5,6 +5,7 @@ import com.ims.core.result.Result;
 import com.ims.sales.dto.SalesOrderRequest;
 import com.ims.sales.entity.SalesOrder;
 import com.ims.sales.entity.SalesOrderDetail;
+import com.ims.sales.entity.SalesOrderStatusHistory;
 import com.ims.sales.service.SalesOrderService;
 import com.ims.system.annotation.Permission;
 import jakarta.validation.Valid;
@@ -118,5 +119,14 @@ public class SalesOrderController {
             @RequestParam(defaultValue = "10") Long size,
             @ModelAttribute SalesOrder query) {
         return Result.success(salesOrderService.page(current, size, query));
+    }
+
+    /**
+     * 查询订单状态历史
+     */
+    @GetMapping("/{id}/status-history")
+    @Permission(code = "read", name = "查看销售订单")
+    public Result<List<SalesOrderStatusHistory>> getStatusHistory(@PathVariable Long id) {
+        return Result.success(salesOrderService.getStatusHistory(id));
     }
 }

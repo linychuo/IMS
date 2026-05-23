@@ -9,6 +9,8 @@ import com.ims.inventory.mapper.InventoryInDetailMapper;
 import com.ims.inventory.mapper.InventoryInMapper;
 import com.ims.inventory.service.InventoryInService;
 import com.ims.inventory.service.InventoryService;
+import com.ims.product.entity.Product;
+import com.ims.product.mapper.ProductMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,6 +29,8 @@ public class InventoryInServiceImpl extends ServiceImpl<InventoryInMapper, Inven
     private InventoryInDetailMapper inDetailMapper;
     @Autowired
     private InventoryService inventoryService;
+    @Autowired
+    private ProductMapper productMapper;
 
     @Override
     public PageResult<InventoryIn> pageIn(Long page, Long pageSize, Long warehouseId, Integer inType, Integer status) {
@@ -127,5 +131,24 @@ public class InventoryInServiceImpl extends ServiceImpl<InventoryInMapper, Inven
     
     private String generateInNo() {
         return "INI" + System.currentTimeMillis();
+    }
+
+    @Override
+    public InventoryInDetail getByBarcode(String barcode) {
+        // 根据条码查询商品
+        Product product = productMapper.selectByBarcode(barcode);
+        if (product == null) {
+            throw new RuntimeException("商品不存在，条码：" + barcode);
+        }
+
+        InventoryInDetail detail = new InventoryInDetail();
+        detail.setProductId(product.getId());
+        detail.setProductName(product.getName());
+        detail.setProductCode(product.getCode());
+        detail.setUnit(product.getUnit());
+        detail.setSpec(product.getSpec());
+        detail.setPrice(product.getPurchasePrice());
+        detail.setBarcode(barcode);
+        return detail;
     }
 }

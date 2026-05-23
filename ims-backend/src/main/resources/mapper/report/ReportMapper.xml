@@ -299,4 +299,85 @@
         GROUP BY s.id, s.supplier_name
     </select>
 
+    <!-- 获取库存周转分析 -->
+    <select id="getInventoryTurnoverList" resultType="com.ims.report.dto.InventoryTurnoverDTO">
+        WITH sales_data AS (
+            SELECT
+                p.id as product_id,
+                p.product_name,
+                p.product_code,
+                pc.category_name,
+                COALESCE(SUM(sod.quantity * sod.cost), 0) as total_sales_cost,
+                COUNT(DISTINCT DATE(sod.create_time)) as sales_days
+            FROM product p
+            LEFT JOIN sales_out_detail sod ON p.id = sod.product_id AND sod.create_time::date BETWEEN #{startDate} AND #{endDate}
+            LEFT JOIN product_category pc ON p.category_id = pc.id
+            GROUP BY p.id, p.product_name, p.product_code, pc.category_name
+        ),
+        inventory_data AS (
+            SELECT
+                i.product_id,
+                COALESCE(AVG(i.quantity), 0) as avg_quantity,
+                COALESCE(SUM(i.quantity), 0) as total_quantity
+            FROM inventory i
+            GROUP BY i.product_id
+        )
+        SELECT
+            sd.product_id as productId,
+            sd.product_name as productName,
+            sd.product_code as productCode,
+            sd.category_name as categoryName,
+            COALESCE(id.avg_quantity, 0) as averageInventory,
+            sd.total_sales_cost as salesCost,
+            CASE WHEN sd.sales_days > 0 THEN sd.total_sales_cost / sd.sales_days ELSE 0 END as dailySalesCost,
+            CASE
+                WHEN sd.total_sales_cost > 0 AND sd.sales_days > 0
+                THEN CAST((COALESCE(id.avg_quantity, 0) / (sd.total_sales_cost / sd.sales_days) * 30) AS INTEGER)
+                ELSE 0
+            END as turnoverDays,
+            CASE
+                WHEN COALESCE(id.avg_quantity, 0) > 0
+                THEN ROUND(sd.total_sales_cost / id.avg_quantity, 2)
+                ELSE 0
+            END as turnoverCount,
+            COALESCE(id.total_quantity, 0) as currentStock
+        FROM sales_data sd
+        LEFT JOIN inventory_data id ON sd.product_id = id.product_id
+        ORDER BY turnoverDays ASC
+    </select>
+
+    <!-- 获取毛利分析 -->
+    <select id="getProfitMarginList" resultType="com.ims.report.dto.ProfitMarginDTO">
+        SELECT
+            p.id as productId,
+            p.product_name as productName,
+            p.product_code as productCode,
+            pc.category_name as categoryName,
+            COALESCE(SUM(sod.quantity * sod.price), 0) as salesAmount,
+            COALESCE(SUM(sod.quantity * sod.cost), 0) as salesCost,
+            COALESCE(SUM(sod.quantity * sod.price), 0) - COALESCE(SUM(sod.quantity * sod.cost), 0) as grossProfit,
+            CASE
+                WHEN COALESCE(SUM(sod.quantity * sod.price), 0) > 0
+                THEN ROUND((COALESCE(SUM(sod.quantity * sod.price), 0) - COALESCE(SUM(sod.quantity * sod.cost), 0)) / COALESCE(SUM(sod.quantity * sod.price), 0) * 100, 2)
+                ELSE 0
+            END as grossProfitRate,
+            COALESCE(SUM(sod.quantity), 0) as salesQuantity,
+            CASE
+                WHEN COALESCE(SUM(sod.quantity), 0) > 0
+                THEN ROUND(COALESCE(SUM(sod.quantity * sod.price), 0) / COALESCE(SUM(sod.quantity), 0), 2)
+                ELSE 0
+            END as avgUnitPrice,
+            CASE
+                WHEN COALESCE(SUM(sod.quantity), 0) > 0
+                THEN ROUND(COALESCE(SUM(sod.quantity * sod.cost), 0) / COALESCE(SUM(sod.quantity), 0), 2)
+                ELSE 0
+            END as avgUnitCost,
+            TO_CHAR(sod.create_time, 'YYYY-MM') as period
+        FROM product p
+        LEFT JOIN sales_out_detail sod ON p.id = sod.product_id AND sod.create_time::date BETWEEN #{startDate} AND #{endDate}
+        LEFT JOIN product_category pc ON p.category_id = pc.id
+        GROUP BY p.id, p.product_name, p.product_code, pc.category_name, TO_CHAR(sod.create_time, 'YYYY-MM')
+        ORDER BY grossProfit DESC
+    </select>
+
 </mapper>

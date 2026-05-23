@@ -87,4 +87,14 @@ public interface IReportService {
      * 获取单个供应商分析
      */
     SupplierAnalysisDTO getSupplierAnalysisById(Long supplierId);
+
+    /**
+     * 获取库存周转分析
+     */
+    List<InventoryTurnoverDTO> getInventoryTurnover(java.time.LocalDate startDate, java.time.LocalDate endDate);
+
+    /**
+     * 获取毛利分析
+     */
+    List<ProfitMarginDTO> getProfitMargin(java.time.LocalDate startDate, java.time.LocalDate endDate);
 }

@@ -60,6 +60,9 @@ CREATE SEQUENCE sys_user_seq START WITH 1 INCREMENT BY 1;
 CREATE SEQUENCE sys_role_seq START WITH 1 INCREMENT BY 1;
 CREATE SEQUENCE sys_permission_seq START WITH 1 INCREMENT BY 1;
 CREATE SEQUENCE sys_menu_id_seq START WITH 1 INCREMENT BY 1;
+CREATE SEQUENCE sys_config_seq START WITH 1 INCREMENT BY 1;
+CREATE SEQUENCE sys_operation_log_seq START WITH 1 INCREMENT BY 1;
+CREATE SEQUENCE sys_login_log_seq START WITH 1 INCREMENT BY 1;
 
 -- ========== 3. 系统模块表 ==========
 CREATE TABLE sys_user (
@@ -71,11 +74,20 @@ CREATE TABLE sys_user (
     mobile VARCHAR(20),
     avatar VARCHAR(500),
     status INTEGER DEFAULT 1,
+    department_id BIGINT,
+    data_scope INTEGER DEFAULT 1,
     create_by BIGINT,
     create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     update_by BIGINT,
     update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     deleted INTEGER DEFAULT 0
+);
+
+CREATE TABLE sys_user_warehouse (
+    id BIGINT PRIMARY KEY DEFAULT nextval('sys_user_seq'),
+    user_id BIGINT NOT NULL,
+    warehouse_id BIGINT NOT NULL,
+    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE sys_role (
@@ -118,6 +130,69 @@ CREATE TABLE sys_role_permission (
     role_id BIGINT NOT NULL,
     permission_id BIGINT NOT NULL,
     create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE SEQUENCE approval_rule_seq START WITH 1 INCREMENT BY 1;
+
+CREATE TABLE approval_rule (
+    id BIGINT PRIMARY KEY DEFAULT nextval('approval_rule_seq'),
+    rule_code VARCHAR(50) NOT NULL,
+    rule_name VARCHAR(100) NOT NULL,
+    business_type VARCHAR(50) NOT NULL,
+    min_amount DECIMAL(15,2) NOT NULL DEFAULT 0,
+    max_amount DECIMAL(15,2),
+    approval_level INTEGER DEFAULT 0,
+    approver_role VARCHAR(100),
+    approver_user VARCHAR(100),
+    status INTEGER DEFAULT 1,
+    remark VARCHAR(500),
+    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted INTEGER DEFAULT 0
+);
+
+CREATE TABLE sys_config (
+    id BIGINT PRIMARY KEY DEFAULT nextval('sys_config_seq'),
+    config_key VARCHAR(100) NOT NULL UNIQUE,
+    config_name VARCHAR(100) NOT NULL,
+    config_value VARCHAR(500),
+    config_type VARCHAR(50),
+    sort_order INTEGER DEFAULT 0,
+    remark VARCHAR(500),
+    status INTEGER DEFAULT 1,
+    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted INTEGER DEFAULT 0
+);
+
+CREATE TABLE sys_operation_log (
+    id BIGINT PRIMARY KEY DEFAULT nextval('sys_operation_log_seq'),
+    module VARCHAR(50),
+    action VARCHAR(100),
+    operator VARCHAR(100),
+    operator_ip VARCHAR(50),
+    device VARCHAR(100),
+    request_method VARCHAR(20),
+    request_url VARCHAR(500),
+    request_params TEXT,
+    response_result TEXT,
+    response_status INTEGER,
+    duration BIGINT,
+    error_message TEXT,
+    operate_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE sys_login_log (
+    id BIGINT PRIMARY KEY DEFAULT nextval('sys_login_log_seq'),
+    username VARCHAR(50),
+    real_name VARCHAR(100),
+    login_ip VARCHAR(50),
+    device VARCHAR(100),
+    browser VARCHAR(100),
+    os VARCHAR(100),
+    login_status INTEGER DEFAULT 1,
+    fail_reason VARCHAR(500),
+    login_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- ========== 4. 基础数据模块表 ==========
@@ -503,6 +578,31 @@ CREATE TABLE sales_price_strategy (
     price_type INTEGER,
     price DECIMAL(12,2),
     discount_rate DECIMAL(5,4),
+    status INTEGER DEFAULT 1,
+    remark VARCHAR(500),
+    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted INTEGER DEFAULT 0
+);
+
+CREATE SEQUENCE promotion_seq START WITH 1 INCREMENT BY 1;
+
+CREATE TABLE promotion (
+    id BIGINT PRIMARY KEY DEFAULT nextval('promotion_seq'),
+    promotion_no VARCHAR(50) NOT NULL UNIQUE,
+    promotion_name VARCHAR(100) NOT NULL,
+    promotion_type INTEGER NOT NULL,
+    discount_type INTEGER,
+    discount_value DECIMAL(10,2),
+    min_purchase_amount DECIMAL(14,2),
+    max_discount_amount DECIMAL(14,2),
+    buy_quantity INTEGER,
+    gift_quantity INTEGER,
+    product_id BIGINT,
+    product_name VARCHAR(200),
+    category_id BIGINT,
+    start_date DATE,
+    end_date DATE,
     status INTEGER DEFAULT 1,
     remark VARCHAR(500),
     create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

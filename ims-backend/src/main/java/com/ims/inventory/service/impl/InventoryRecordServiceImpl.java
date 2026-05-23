@@ -31,4 +31,22 @@ public class InventoryRecordServiceImpl extends ServiceImpl<InventoryRecordMappe
     public List<InventoryRecord> getByOrder(String orderType, Long orderId) {
         return baseMapper.selectByOrder(orderType, orderId);
     }
+
+    @Override
+    public List<InventoryRecord> getByBatchNo(String batchNo) {
+        LambdaQueryWrapper<InventoryRecord> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(InventoryRecord::getBatchNo, batchNo)
+              .orderByAsc(InventoryRecord::getCreateTime);
+        return this.list(wrapper);
+    }
+
+    @Override
+    public List<InventoryRecord> getByProduct(Long productId, Long warehouseId, String changeType) {
+        LambdaQueryWrapper<InventoryRecord> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(InventoryRecord::getProductId, productId)
+              .eq(warehouseId != null, InventoryRecord::getWarehouseId, warehouseId)
+              .eq(changeType != null, InventoryRecord::getChangeType, changeType)
+              .orderByDesc(InventoryRecord::getCreateTime);
+        return this.list(wrapper);
+    }
 }

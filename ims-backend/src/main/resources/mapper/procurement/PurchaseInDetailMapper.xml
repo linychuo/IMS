@@ -14,6 +14,8 @@
         <result column="quantity" property="quantity"/>
         <result column="price" property="price"/>
         <result column="amount" property="amount"/>
+        <result column="check_status" property="checkStatus"/>
+        <result column="checked_qty" property="checkedQty"/>
         <result column="remark" property="remark"/>
         <result column="create_time" property="createTime"/>
         <result column="update_time" property="updateTime"/>
@@ -24,7 +26,7 @@
 
     <sql id="Base_Column_List">
         id, in_id, order_detail_id, product_id, product_code, product_name, spec, unit,
-        quantity, price, amount, remark, create_time, update_time, create_by, update_by, deleted
+        quantity, price, amount, check_status, checked_qty, remark, create_time, update_time, create_by, update_by, deleted
     </sql>
 
     <select id="selectById" resultMap="BaseResultMap">
@@ -79,5 +81,25 @@
         SET deleted = 1, update_time = NOW()
         WHERE in_id = #{inId}
     </delete>
+
+    <update id="updateCheckStatus">
+        UPDATE ims_purchase_in_detail
+        SET check_status = #{checkStatus},
+            checked_qty = #{checkedQty},
+            update_time = NOW()
+        WHERE id = #{id} AND deleted = 0
+    </update>
+
+    <update id="batchUpdateCheckStatus">
+        UPDATE ims_purchase_in_detail
+        SET check_status = #{checkStatus},
+            checked_qty = #{checkedQty},
+            update_time = NOW()
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        AND deleted = 0
+    </update>
 
 </mapper>

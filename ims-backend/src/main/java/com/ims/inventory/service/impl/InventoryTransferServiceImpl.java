@@ -93,6 +93,18 @@ public class InventoryTransferServiceImpl extends ServiceImpl<InventoryTransferM
 
     @Override
     @Transactional
+    public boolean approve(Long id, Long auditorId) {
+        InventoryTransfer transfer = this.getById(id);
+        if (transfer == null || transfer.getStatus() != 0) {
+            throw new RuntimeException("只有待调拨状态可审核");
+        }
+        transfer.setStatus(0); // 仍为待调拨，审核只是确认
+        log.info("审核库存调拨单: {} by {}", transfer.getTransferNo(), auditorId);
+        return this.updateById(transfer);
+    }
+
+    @Override
+    @Transactional
     public boolean startTransfer(Long id, Long transfererId) {
         InventoryTransfer transfer = this.getById(id);
         if (transfer == null || transfer.getStatus() != 0) {

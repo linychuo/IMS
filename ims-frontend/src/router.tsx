@@ -10,6 +10,9 @@ import SalesOrderPage from './pages/sales/SalesOrder';
 import SalesOutPage from './pages/sales/SalesOut';
 import SalesReturnPage from './pages/sales/SalesReturn';
 import SalesPriceStrategyPage from './pages/sales/SalesPriceStrategy';
+import PromotionPage from './pages/sales/Promotion';
+import CustomerReconciliationPage from './pages/finance/CustomerReconciliation';
+import SupplierReconciliationPage from './pages/finance/SupplierReconciliation';
 import PurchaseOrderPage from './pages/purchase/PurchaseOrder';
 import PurchaseInPage from './pages/purchase/PurchaseIn';
 import PurchaseReturnPage from './pages/purchase/PurchaseReturn';
@@ -43,6 +46,7 @@ const routePermissionMap: Record<string, string> = {
   '/sales/return': 'sales:return',
   '/sales/strategy': 'sales:price-strategy',
   '/sales/price-strategy': 'sales:price-strategy',
+  '/sales/promotion': 'sales:promotion',
   '/purchase/order': 'purchase:order',
   '/purchase/in': 'purchase:in',
   '/purchase/return': 'purchase:return',
@@ -58,6 +62,8 @@ const routePermissionMap: Record<string, string> = {
   '/finance/receivable': 'finance:receivable',
   '/finance/payable': 'finance:payable',
   '/finance/transaction': 'finance',
+  '/finance/customer-reconciliation': 'finance:customerReconciliation',
+  '/finance/supplier-reconciliation': 'finance:supplierReconciliation',
   '/system': 'system:menu',
   '/system/user': 'system:user',
   '/role': 'system:role',
@@ -97,6 +103,7 @@ export const router = createBrowserRouter([
       { path: 'sales/return', element: <PermissionRoute path="/sales/return" element={<SalesReturnPage />} /> },
       { path: 'sales/strategy', element: <PermissionRoute path="/sales/strategy" element={<SalesPriceStrategyPage />} /> },
       { path: 'sales/price-strategy', element: <PermissionRoute path="/sales/price-strategy" element={<SalesPriceStrategyPage />} /> },
+      { path: 'sales/promotion', element: <PermissionRoute path="/sales/promotion" element={<PromotionPage />} /> },
       { path: 'purchase/order', element: <PermissionRoute path="/purchase/order" element={<PurchaseOrderPage />} /> },
       { path: 'purchase/in', element: <PermissionRoute path="/purchase/in" element={<PurchaseInPage />} /> },
       { path: 'purchase/return', element: <PermissionRoute path="/purchase/return" element={<PurchaseReturnPage />} /> },
@@ -112,6 +119,8 @@ export const router = createBrowserRouter([
       { path: 'finance/receivable', element: <PermissionRoute path="/finance/receivable" element={<ReceivablePage />} /> },
       { path: 'finance/payable', element: <PermissionRoute path="/finance/payable" element={<PayablePage />} /> },
       { path: 'finance/transaction', element: <PermissionRoute path="/finance/transaction" element={<TransactionPage />} /> },
+      { path: 'finance/customer-reconciliation', element: <PermissionRoute path="/finance/customer-reconciliation" element={<CustomerReconciliationPage />} /> },
+      { path: 'finance/supplier-reconciliation', element: <PermissionRoute path="/finance/supplier-reconciliation" element={<SupplierReconciliationPage />} /> },
       { path: 'system', element: <PermissionRoute path="/system" element={<SystemPage defaultTab="user" />} /> },
       { path: 'system/user', element: <PermissionRoute path="/system" element={<SystemPage defaultTab="user" />} /> },
       { path: 'role', element: <PermissionRoute path="/system" element={<SystemPage defaultTab="role" />} /> },

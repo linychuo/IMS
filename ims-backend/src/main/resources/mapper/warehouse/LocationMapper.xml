@@ -7,6 +7,7 @@
         <result column="location_code" property="code"/>
         <result column="location_name" property="name"/>
         <result column="warehouse_id" property="warehouseId"/>
+        <result column="zone" property="zone"/>
         <result column="shelf_no" property="shelfNo"/>
         <result column="row_no" property="row"/>
         <result column="col_no" property="col"/>
@@ -20,7 +21,7 @@
     </resultMap>
 
     <sql id="Base_Column_List">
-        id, location_code, location_name, warehouse_id, shelf_no, row_no, col_no, level_no, location_type, status, remark, create_time, update_time, deleted
+        id, location_code, location_name, warehouse_id, zone, shelf_no, row_no, col_no, level_no, location_type, status, remark, create_time, update_time, deleted
     </sql>
 
     <select id="selectByWarehouseId" resultMap="BaseResultMap">

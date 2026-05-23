@@ -11,8 +11,10 @@ import com.ims.customer.mapper.CustomerMapper;
 import com.ims.inventory.service.InventoryService;
 import com.ims.sales.entity.SalesOrder;
 import com.ims.sales.entity.SalesOrderDetail;
+import com.ims.sales.entity.SalesOrderStatusHistory;
 import com.ims.sales.mapper.SalesOrderDetailMapper;
 import com.ims.sales.mapper.SalesOrderMapper;
+import com.ims.sales.mapper.SalesOrderStatusHistoryMapper;
 import com.ims.sales.service.SalesOrderService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,17 +35,20 @@ public class SalesOrderServiceImpl implements SalesOrderService {
 
     private final SalesOrderMapper salesOrderMapper;
     private final SalesOrderDetailMapper salesOrderDetailMapper;
+    private final SalesOrderStatusHistoryMapper statusHistoryMapper;
     private final OrderNoGenerator orderNoGenerator;
     private final CustomerMapper customerMapper;
     private final InventoryService inventoryService;
 
     public SalesOrderServiceImpl(SalesOrderMapper salesOrderMapper,
                                   SalesOrderDetailMapper salesOrderDetailMapper,
+                                  SalesOrderStatusHistoryMapper statusHistoryMapper,
                                   OrderNoGenerator orderNoGenerator,
                                   CustomerMapper customerMapper,
                                   InventoryService inventoryService) {
         this.salesOrderMapper = salesOrderMapper;
         this.salesOrderDetailMapper = salesOrderDetailMapper;
+        this.statusHistoryMapper = statusHistoryMapper;
         this.orderNoGenerator = orderNoGenerator;
         this.customerMapper = customerMapper;
         this.inventoryService = inventoryService;
@@ -76,6 +81,9 @@ public class SalesOrderServiceImpl implements SalesOrderService {
         salesOrder.setOrderNo(orderNoGenerator.generateSalesOrderNo());
         salesOrder.setStatus(CommonStatus.PENDING.getCode());
         salesOrderMapper.insert(salesOrder);
+
+        // 记录状态变更历史
+        recordStatusChange(salesOrder, null, CommonStatus.PENDING.getCode(), null, "创建订单");
 
         // 保存明细
         for (SalesOrderDetail detail : details) {
@@ -124,12 +132,28 @@ public class SalesOrderServiceImpl implements SalesOrderService {
             throw new RuntimeException("只有待审核状态可审核");
         }
 
-        // 审核时确认预占，不再需要解冻（已冻结）
+        // 审核时预占库存（冻结库存）
+        // 使用仓库ID 1作为默认值，实际应从订单或商品配置获取
+        List<SalesOrderDetail> details = salesOrderDetailMapper.selectByOrderId(id);
+        for (SalesOrderDetail detail : details) {
+            try {
+                Long productId = Long.parseLong(detail.getProductId());
+                inventoryService.freezeStock(productId, 1L, detail.getQuantity());
+            } catch (Exception e) {
+                log.warn("预占库存失败: orderId={}, productId={}, error={}", id, detail.getProductId(), e.getMessage());
+            }
+        }
+
+        // 审核通过
         salesOrder.setAuditedBy(userId);
         salesOrder.setAuditedAt(LocalDateTime.now());
         salesOrder.setStatus(CommonStatus.APPROVED.getCode());
         salesOrderMapper.update(salesOrder);
-        log.info("审核销售订单: {} by {}", id, userId);
+
+        // 记录状态变更历史
+        recordStatusChange(salesOrder, CommonStatus.PENDING.getCode(), CommonStatus.APPROVED.getCode(), userId, "审核通过");
+
+        log.info("审核销售订单: {} by {}，已预占库存", id, userId);
     }
 
     @Override
@@ -143,9 +167,27 @@ public class SalesOrderServiceImpl implements SalesOrderService {
             throw new RuntimeException("已完成不能取消");
         }
 
+        // 如果是已审核状态，释放预占的库存
+        Integer oldStatus = salesOrder.getStatus();
+        if (salesOrder.getStatus() == CommonStatus.APPROVED.getCode()) {
+            List<SalesOrderDetail> details = salesOrderDetailMapper.selectByOrderId(id);
+            for (SalesOrderDetail detail : details) {
+                try {
+                    Long productId = Long.parseLong(detail.getProductId());
+                    inventoryService.unfreezeStock(productId, 1L, detail.getQuantity());
+                } catch (Exception e) {
+                    log.warn("释放预占库存失败: orderId={}, productId={}, error={}", id, detail.getProductId(), e.getMessage());
+                }
+            }
+        }
+
         salesOrder.setStatus(CommonStatus.CANCELLED.getCode());
         salesOrder.setRemark(reason);
         salesOrderMapper.update(salesOrder);
+
+        // 记录状态变更历史
+        recordStatusChange(salesOrder, oldStatus, CommonStatus.CANCELLED.getCode(), null, reason);
+
         log.info("取消销售订单: {}, 原因: {}", id, reason);
     }
 
@@ -195,5 +237,25 @@ public class SalesOrderServiceImpl implements SalesOrderService {
         salesOrderDetailMapper.deleteByOrderId(id);
         salesOrderMapper.deleteById(id);
         log.info("删除销售订单: {}", id);
+    }
+
+    @Override
+    public List<SalesOrderStatusHistory> getStatusHistory(Long orderId) {
+        return statusHistoryMapper.selectByOrderId(orderId);
+    }
+
+    /**
+     * 记录状态变更历史
+     */
+    private void recordStatusChange(SalesOrder order, Integer fromStatus, Integer toStatus, String userName, String remark) {
+        SalesOrderStatusHistory history = new SalesOrderStatusHistory();
+        history.setOrderId(order.getId());
+        history.setOrderNo(order.getOrderNo());
+        history.setFromStatus(fromStatus);
+        history.setToStatus(toStatus);
+        history.setOperatorName(userName);
+        history.setOperateTime(LocalDateTime.now());
+        history.setRemark(remark);
+        statusHistoryMapper.insert(history);
     }
 }

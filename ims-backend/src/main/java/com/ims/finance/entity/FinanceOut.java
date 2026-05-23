@@ -10,6 +10,7 @@ public class FinanceOut extends BaseEntity {
     private String outNo;             // 付款单号
     private Long orderId;              // 订单ID(采购订单)
     private Long supplierId;           // 供应商ID
+    private Integer paymentType;      // 类型: 1采购付款/2预付款
     private BigDecimal amount;         // 付款金额
     private BigDecimal discountAmount; // 优惠金额
     private Integer payMethod;         // 支付方式: 1-现金 2-银行转账 3-支付宝 4-微信 5-其他
@@ -44,6 +45,14 @@ public class FinanceOut extends BaseEntity {
 
     public void setSupplierId(Long supplierId) {
         this.supplierId = supplierId;
+    }
+
+    public Integer getPaymentType() {
+        return paymentType;
+    }
+
+    public void setPaymentType(Integer paymentType) {
+        this.paymentType = paymentType;
     }
 
     public BigDecimal getAmount() {

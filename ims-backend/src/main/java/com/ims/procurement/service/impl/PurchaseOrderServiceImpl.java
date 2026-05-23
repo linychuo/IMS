@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
 /**
@@ -181,5 +182,29 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         purchaseOrderMapper.deleteById(id);
 
         log.info("删除采购订单: {}", order.getOrderNo());
+    }
+
+    @Override
+    public List<PurchaseOrder> getIncomingOrders(Integer days) {
+        if (days == null) {
+            days = 7; // 默认7天内
+        }
+        LocalDate threshold = LocalDate.now().plusDays(days);
+        return purchaseOrderMapper.selectList(null).stream()
+                .filter(o -> o.getExpectedDate() != null
+                        && o.getExpectedDate().isAfter(LocalDate.now())
+                        && !o.getExpectedDate().isAfter(threshold)
+                        && (o.getStatus() == 1 || o.getStatus() == 2)) // 已审核或部分入库
+                .toList();
+    }
+
+    @Override
+    public List<PurchaseOrder> getOverdueOrders() {
+        LocalDate today = LocalDate.now();
+        return purchaseOrderMapper.selectList(null).stream()
+                .filter(o -> o.getExpectedDate() != null
+                        && o.getExpectedDate().isBefore(today)
+                        && (o.getStatus() == 1 || o.getStatus() == 2)) // 已审核或部分入库
+                .toList();
     }
 }

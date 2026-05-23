@@ -2,6 +2,7 @@ package com.ims.finance.controller;
 
 import com.ims.core.result.PageResult;
 import com.ims.core.result.Result;
+import com.ims.finance.dto.SupplierStatementDTO;
 import com.ims.finance.entity.Payable;
 import com.ims.finance.service.PayableService;
 import com.ims.system.annotation.Permission;
@@ -57,6 +58,18 @@ public class PayableController {
         return Result.success(payableService.writeoff(id, paymentId, amount));
     }
 
+    /**
+     * 自动付款核销（FIFO）
+     */
+    @PostMapping("/supplier/{supplierId}/auto-writeoff")
+    @Permission(code = "writeoff", name = "付款核销")
+    public Result<BigDecimal> autoWriteoff(
+            @PathVariable Long supplierId,
+            @RequestParam Long paymentId,
+            @RequestParam BigDecimal totalAmount) {
+        return Result.success(payableService.autoWriteoff(supplierId, paymentId, totalAmount));
+    }
+
     @GetMapping("/supplier/{supplierId}")
     @Permission(code = "read", name = "查看应付账款")
     public Result<List<Payable>> listBySupplier(@PathVariable Long supplierId) {
@@ -75,5 +88,14 @@ public class PayableController {
     @Permission(code = "read", name = "查看应付账款")
     public Result<BigDecimal> getTotalPending(@PathVariable Long supplierId) {
         return Result.success(payableService.getTotalPendingBySupplier(supplierId));
+    }
+
+    @GetMapping("/supplier/{supplierId}/statement")
+    @Permission(code = "read", name = "查看对账单")
+    public Result<SupplierStatementDTO> getSupplierStatement(
+            @PathVariable Long supplierId,
+            @RequestParam(required = false) LocalDate startDate,
+            @RequestParam(required = false) LocalDate endDate) {
+        return Result.success(payableService.getSupplierStatement(supplierId, startDate, endDate));
     }
 }

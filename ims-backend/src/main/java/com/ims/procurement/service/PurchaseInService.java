@@ -1,5 +1,6 @@
 package com.ims.procurement.service;
 
+import com.ims.procurement.dto.request.InspectionRequest;
 import com.ims.procurement.entity.PurchaseIn;
 
 import java.util.List;
@@ -18,6 +19,8 @@ public interface PurchaseInService {
     void cancel(Long id, String reason);
 
     void complete(Long id);
+
+    void inspect(Long id, InspectionRequest request);
 
     PurchaseIn getById(Long id);
 

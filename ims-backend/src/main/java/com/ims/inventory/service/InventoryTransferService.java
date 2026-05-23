@@ -27,6 +27,11 @@ public interface InventoryTransferService extends IService<InventoryTransfer> {
     InventoryTransfer create(InventoryTransfer transfer, List<InventoryTransferDetail> details);
 
     /**
+     * 审核调拨单
+     */
+    boolean approve(Long id, Long auditorId);
+
+    /**
      * 开始调拨
      */
     boolean startTransfer(Long id, Long transfererId);

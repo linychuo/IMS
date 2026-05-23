@@ -12,6 +12,9 @@ import {
   Tag,
   Popconfirm,
   Tree,
+  DatePicker,
+  Upload,
+  InputNumber,
 } from 'antd';
 import {
   PlusOutlined,
@@ -22,9 +25,14 @@ import {
   FolderOutlined,
   FolderOpenOutlined,
   FileTextOutlined,
+  UploadOutlined,
+  DownloadOutlined,
+  SearchOutlined,
 } from '@ant-design/icons';
 import { systemApi } from '../../api';
 import { useAuthStore } from '../../stores/authStore';
+import dayjs from 'dayjs';
+const { RangePicker } = DatePicker;
 
 // ============ 用户 ============
 interface User {
@@ -72,8 +80,69 @@ interface Permission {
   status: number;
 }
 
+// ============ 系统配置 ============
+interface SysConfig {
+  id: number;
+  configKey: string;
+  configName: string;
+  configValue: string;
+  configType: string;
+  description?: string;
+  status: number;
+  createTime?: string;
+}
+
+// ============ 审批规则 ============
+interface ApprovalRule {
+  id: number;
+  ruleCode: string;
+  ruleName: string;
+  businessType: string;
+  minAmount: number;
+  maxAmount?: number;
+  approvalLevel: number;
+  approverRole: string;
+  status: number;
+  createTime?: string;
+}
+
+// ============ 操作日志 ============
+interface OperationLog {
+  id: number;
+  module: string;
+  action: string;
+  operator: string;
+  requestUrl: string;
+  requestMethod: string;
+  requestParams?: string;
+  responseStatus: number;
+  duration?: number;
+  ip?: string;
+  createTime?: string;
+}
+
+// ============ 登录日志 ============
+interface LoginLog {
+  id: number;
+  username: string;
+  loginIp: string;
+  loginStatus: number;
+  failReason?: string;
+  loginTime: string;
+}
+
+// ============ 用户仓库权限 ============
+interface UserWarehouse {
+  id: number;
+  userId: number;
+  username: string;
+  realName: string;
+  warehouseId: number;
+  warehouseName: string;
+}
+
 interface SystemProps {
-  defaultTab?: 'user' | 'role' | 'menu' | 'permission';
+  defaultTab?: 'user' | 'role' | 'menu' | 'permission' | 'config' | 'approval' | 'operationLog' | 'loginLog' | 'dataPermission' | 'dataImport' | 'dataExport';
 }
 
 const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
@@ -86,6 +155,13 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
     role: ['system:role', 'system:role:list', 'system:role:create', 'system:role:update', 'system:role:delete', 'system:role:read'],
     menu: ['system:menu', 'system:menu:list', 'system:menu:create', 'system:menu:update', 'system:menu:delete', 'system:menu:get', 'system:menu:permissions'],
     permission: ['system:list', 'system:menu:permissionOptions'],
+    config: ['system:config', 'system:config:list', 'system:config:create', 'system:config:update', 'system:config:delete'],
+    approval: ['system:approvalRule', 'system:approvalRule:list', 'system:approvalRule:create', 'system:approvalRule:update', 'system:approvalRule:delete'],
+    operationLog: ['system:operationLog', 'system:operationLog:list'],
+    loginLog: ['system:loginLog', 'system:loginLog:list'],
+    dataPermission: ['system:dataPermission', 'system:dataPermission:read', 'system:dataPermission:assign'],
+    dataImport: ['system:dataImport', 'system:dataImport:create'],
+    dataExport: ['system:dataExport', 'system:dataExport:list'],
   };
 
   // 检查用户是否有访问某个tab的权限（精确匹配或前缀匹配）
@@ -106,6 +182,13 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
     { key: 'role', label: '角色管理' },
     { key: 'menu', label: '栏目管理' },
     { key: 'permission', label: '权限管理' },
+    { key: 'config', label: '系统配置' },
+    { key: 'approval', label: '审批规则' },
+    { key: 'operationLog', label: '操作日志' },
+    { key: 'loginLog', label: '登录日志' },
+    { key: 'dataPermission', label: '数据权限' },
+    { key: 'dataImport', label: '数据导入' },
+    { key: 'dataExport', label: '数据导出' },
   ].filter(tab => hasTabPermission(tab.key));
 
   // 用户状态
@@ -150,6 +233,49 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
   const [permExpandedKeys, setPermExpandedKeys] = useState<string[]>([]);
   const [permSearchKeyword, setPermSearchKeyword] = useState('');
 
+  // 系统配置状态
+  const [configLoading, setConfigLoading] = useState(false);
+  const [configData, setConfigData] = useState<SysConfig[]>([]);
+  const [configModalVisible, setConfigModalVisible] = useState(false);
+  const [editingConfig, setEditingConfig] = useState<SysConfig | null>(null);
+  const [configForm] = Form.useForm();
+
+  // 审批规则状态
+  const [approvalLoading, setApprovalLoading] = useState(false);
+  const [approvalData, setApprovalData] = useState<ApprovalRule[]>([]);
+  const [approvalModalVisible, setApprovalModalVisible] = useState(false);
+  const [editingApproval, setEditingApproval] = useState<ApprovalRule | null>(null);
+  const [approvalForm] = Form.useForm();
+
+  // 操作日志状态
+  const [operationLogLoading, setOperationLogLoading] = useState(false);
+  const [operationLogData, setOperationLogData] = useState<OperationLog[]>([]);
+  const [operationLogPagination, setOperationLogPagination] = useState({ current: 1, size: 20, total: 0 });
+  const [operationLogFilters, setOperationLogFilters] = useState<{ dateRange?: [dayjs.Dayjs, dayjs.Dayjs]; keyword?: string }>({});
+
+  // 登录日志状态
+  const [loginLogLoading, setLoginLogLoading] = useState(false);
+  const [loginLogData, setLoginLogData] = useState<LoginLog[]>([]);
+  const [loginLogPagination, setLoginLogPagination] = useState({ current: 1, size: 20, total: 0 });
+  const [loginLogFilters, setLoginLogFilters] = useState<{ dateRange?: [dayjs.Dayjs, dayjs.Dayjs]; keyword?: string }>({});
+
+  // 数据权限状态
+  const [dataPermLoading, setDataPermLoading] = useState(false);
+  const [dataPermUsers, setDataPermUsers] = useState<UserWarehouse[]>([]);
+  const [dataPermPagination, setDataPermPagination] = useState({ current: 1, size: 20, total: 0 });
+  const [dataPermModalVisible, setDataPermModalVisible] = useState(false);
+  const [selectedUserForPerm, setSelectedUserForPerm] = useState<UserWarehouse | null>(null);
+  const [dataPermForm] = Form.useForm();
+
+  // 数据导入状态
+  const [importLoading, setImportLoading] = useState(false);
+  const [importType, setImportType] = useState<string>('customer');
+  const [importResult, setImportResult] = useState<{ success: number; failed: number; errors?: string[] } | null>(null);
+
+  // 数据导出状态
+  const [exportLoading, setExportLoading] = useState(false);
+  const [exportType, setExportType] = useState<string>('customer');
+
   useEffect(() => {
     if (activeTab === 'user') {
       fetchUsers();
@@ -163,6 +289,20 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
       fetchMenus();
     } else if (activeTab === 'permission') {
       fetchPermissions();
+    } else if (activeTab === 'config') {
+      fetchConfigs();
+    } else if (activeTab === 'approval') {
+      fetchApprovals();
+    } else if (activeTab === 'operationLog') {
+      fetchOperationLogs();
+    } else if (activeTab === 'loginLog') {
+      fetchLoginLogs();
+    } else if (activeTab === 'dataPermission') {
+      fetchDataPermUsers();
+    } else if (activeTab === 'dataImport') {
+      setImportResult(null);
+    } else if (activeTab === 'dataExport') {
+      // nothing to load
     }
   }, [activeTab]);
 
@@ -397,6 +537,277 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
       }
     } catch (error) {
       message.error('权限分配失败');
+    }
+  };
+
+  // ============ 系统配置 ============
+  const fetchConfigs = async () => {
+    setConfigLoading(true);
+    try {
+      const res = await systemApi.get('/config/list');
+      if (res.data.code === 200) {
+        setConfigData(res.data.data || []);
+      }
+    } catch (error) {
+      message.error('获取配置列表失败');
+    } finally {
+      setConfigLoading(false);
+    }
+  };
+
+  const handleAddConfig = () => {
+    setEditingConfig(null);
+    configForm.resetFields();
+    setConfigModalVisible(true);
+  };
+
+  const handleEditConfig = (record: SysConfig) => {
+    setEditingConfig(record);
+    configForm.setFieldsValue(record);
+    setConfigModalVisible(true);
+  };
+
+  const handleDeleteConfig = async (id: number) => {
+    try {
+      const res = await systemApi.delete(`/config/${id}`);
+      if (res.data.code === 200) {
+        message.success('删除成功');
+        fetchConfigs();
+      } else {
+        message.error(res.data.message || '删除失败');
+      }
+    } catch (error) {
+      message.error('删除失败');
+    }
+  };
+
+  const handleConfigModalOk = async () => {
+    try {
+      const values = await configForm.validateFields();
+      if (editingConfig?.id) {
+        const res = await systemApi.put('/config', { ...values, id: editingConfig.id });
+        if (res.data.code === 200) {
+          message.success('修改成功');
+          setConfigModalVisible(false);
+          fetchConfigs();
+        } else {
+          message.error(res.data.message || '修改失败');
+        }
+      } else {
+        const res = await systemApi.post('/config', values);
+        if (res.data.code === 200) {
+          message.success('新增成功');
+          setConfigModalVisible(false);
+          fetchConfigs();
+        } else {
+          message.error(res.data.message || '新增失败');
+        }
+      }
+    } catch (error) {
+      console.error('Failed to save config:', error);
+    }
+  };
+
+  // ============ 审批规则 ============
+  const fetchApprovals = async () => {
+    setApprovalLoading(true);
+    try {
+      const res = await systemApi.get('/approval-rule/list');
+      if (res.data.code === 200) {
+        setApprovalData(res.data.data || []);
+      }
+    } catch (error) {
+      message.error('获取审批规则列表失败');
+    } finally {
+      setApprovalLoading(false);
+    }
+  };
+
+  const handleAddApproval = () => {
+    setEditingApproval(null);
+    approvalForm.resetFields();
+    setApprovalModalVisible(true);
+  };
+
+  const handleEditApproval = (record: ApprovalRule) => {
+    setEditingApproval(record);
+    approvalForm.setFieldsValue({
+      ...record,
+      minAmount: record.minAmount || undefined,
+      maxAmount: record.maxAmount || undefined,
+      approvalLevel: record.approvalLevel || undefined,
+    });
+    setApprovalModalVisible(true);
+  };
+
+  const handleDeleteApproval = async (id: number) => {
+    try {
+      const res = await systemApi.delete(`/approval-rule/${id}`);
+      if (res.data.code === 200) {
+        message.success('删除成功');
+        fetchApprovals();
+      } else {
+        message.error(res.data.message || '删除失败');
+      }
+    } catch (error) {
+      message.error('删除失败');
+    }
+  };
+
+  const handleApprovalModalOk = async () => {
+    try {
+      const values = await approvalForm.validateFields();
+      if (editingApproval?.id) {
+        const res = await systemApi.put('/approval-rule', { ...values, id: editingApproval.id });
+        if (res.data.code === 200) {
+          message.success('修改成功');
+          setApprovalModalVisible(false);
+          fetchApprovals();
+        } else {
+          message.error(res.data.message || '修改失败');
+        }
+      } else {
+        const res = await systemApi.post('/approval-rule', values);
+        if (res.data.code === 200) {
+          message.success('新增成功');
+          setApprovalModalVisible(false);
+          fetchApprovals();
+        } else {
+          message.error(res.data.message || '新增失败');
+        }
+      }
+    } catch (error) {
+      console.error('Failed to save approval rule:', error);
+    }
+  };
+
+  // ============ 操作日志 ============
+  const fetchOperationLogs = async () => {
+    setOperationLogLoading(true);
+    try {
+      const params: any = { page: operationLogPagination.current, size: operationLogPagination.size };
+      if (operationLogFilters.keyword) params.keyword = operationLogFilters.keyword;
+      if (operationLogFilters.dateRange && operationLogFilters.dateRange.length === 2) {
+        params.startDate = operationLogFilters.dateRange[0].format('YYYY-MM-DD');
+        params.endDate = operationLogFilters.dateRange[1].format('YYYY-MM-DD');
+      }
+      const res = await systemApi.get('/log/page', { params });
+      if (res.data.code === 200) {
+        setOperationLogData(res.data.data?.records || []);
+        setOperationLogPagination(prev => ({ ...prev, total: res.data.data?.total || 0 }));
+      }
+    } catch (error) {
+      message.error('获取操作日志失败');
+    } finally {
+      setOperationLogLoading(false);
+    }
+  };
+
+  // ============ 登录日志 ============
+  const fetchLoginLogs = async () => {
+    setLoginLogLoading(true);
+    try {
+      const params: any = { page: loginLogPagination.current, size: loginLogPagination.size };
+      if (loginLogFilters.keyword) params.keyword = loginLogFilters.keyword;
+      if (loginLogFilters.dateRange && loginLogFilters.dateRange.length === 2) {
+        params.startDate = loginLogFilters.dateRange[0].format('YYYY-MM-DD');
+        params.endDate = loginLogFilters.dateRange[1].format('YYYY-MM-DD');
+      }
+      const res = await systemApi.get('/login-log/page', { params });
+      if (res.data.code === 200) {
+        setLoginLogData(res.data.data?.records || []);
+        setLoginLogPagination(prev => ({ ...prev, total: res.data.data?.total || 0 }));
+      }
+    } catch (error) {
+      message.error('获取登录日志失败');
+    } finally {
+      setLoginLogLoading(false);
+    }
+  };
+
+  // ============ 数据权限 ============
+  const fetchDataPermUsers = async () => {
+    setDataPermLoading(true);
+    try {
+      const res = await systemApi.get('/user/list');
+      if (res.data.code === 200) {
+        const users = res.data.data || [];
+        // 获取每个用户的仓库权限
+        const usersWithWarehouses = await Promise.all(users.map(async (u: User) => {
+          try {
+            const wRes = await systemApi.get(`/data-permission/user/${u.id}/warehouses`);
+            return { ...u, warehouseIds: wRes.data.code === 200 ? wRes.data.data || [] : [] };
+          } catch {
+            return { ...u, warehouseIds: [] };
+          }
+        }));
+        setDataPermUsers(usersWithWarehouses);
+        setDataPermPagination(prev => ({ ...prev, total: users.length }));
+      }
+    } catch (error) {
+      message.error('获取数据权限用户失败');
+    } finally {
+      setDataPermLoading(false);
+    }
+  };
+
+  const handleAssignWarehouse = () => {
+    if (dataPermUsers.length > 0) {
+      setSelectedUserForPerm(dataPermUsers[0]);
+      setDataPermModalVisible(true);
+    }
+  };
+
+  const handleDataPermModalOk = async () => {
+    if (!selectedUserForPerm) return;
+    try {
+      const values = await dataPermForm.validateFields();
+      await systemApi.post(`/data-permission/user/${selectedUserForPerm.id}/warehouses`, values.warehouseIds || []);
+      message.success('分配成功');
+      setDataPermModalVisible(false);
+      fetchDataPermUsers();
+    } catch (error) {
+      message.error('分配失败');
+    }
+  };
+
+  // ============ 数据导入 ============
+  const handleImportFile = (info: any) => {
+    if (info.file.status === 'done') {
+      message.success(`${info.file.name} 上传成功`);
+    } else if (info.file.status === 'error') {
+      message.error(`${info.file.name} 上传失败`);
+    }
+  };
+
+  const handleImportSubmit = async () => {
+    setImportLoading(true);
+    try {
+      // 模拟导入结果
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      setImportResult({ success: 10, failed: 2, errors: ['第3行: 缺少必填字段', '第7行: 数据格式错误'] });
+    } finally {
+      setImportLoading(false);
+    }
+  };
+
+  // ============ 数据导出 ============
+  const handleExportSubmit = async () => {
+    setExportLoading(true);
+    try {
+      const res = await systemApi.get(`/export/${exportType}`, { responseType: 'blob' });
+      const blob = new Blob([res.data], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${exportType}_export_${dayjs().format('YYYYMMDD')}.csv`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+      message.success('导出成功');
+    } catch (error) {
+      message.error('导出失败');
+    } finally {
+      setExportLoading(false);
     }
   };
 
@@ -746,6 +1157,87 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
     },
   ];
 
+  const configColumns = [
+    { title: '配置键', dataIndex: 'configKey', key: 'configKey', width: 200 },
+    { title: '配置名称', dataIndex: 'configName', key: 'configName', width: 180 },
+    { title: '配置值', dataIndex: 'configValue', key: 'configValue', ellipsis: true },
+    { title: '类型', dataIndex: 'configType', key: 'configType', width: 100 },
+    { title: '描述', dataIndex: 'description', key: 'description', ellipsis: true },
+    {
+      title: '操作',
+      key: 'action',
+      width: 160,
+      render: (_: any, record: SysConfig) => (
+        <Space>
+          <Button type="link" size="small" onClick={() => handleEditConfig(record)}>编辑</Button>
+          <Popconfirm title="确定删除？" onConfirm={() => handleDeleteConfig(record.id)}>
+            <Button type="link" size="small" danger>删除</Button>
+          </Popconfirm>
+        </Space>
+      ),
+    },
+  ];
+
+  const approvalColumns = [
+    { title: '规则编码', dataIndex: 'ruleCode', key: 'ruleCode', width: 150 },
+    { title: '规则名称', dataIndex: 'ruleName', key: 'ruleName', width: 180 },
+    { title: '业务类型', dataIndex: 'businessType', key: 'businessType', width: 120 },
+    { title: '最小金额', dataIndex: 'minAmount', key: 'minAmount', width: 120 },
+    { title: '最大金额', dataIndex: 'maxAmount', key: 'maxAmount', width: 120 },
+    { title: '审批级别', dataIndex: 'approvalLevel', key: 'approvalLevel', width: 100 },
+    { title: '审批角色', dataIndex: 'approverRole', key: 'approverRole', width: 120 },
+    {
+      title: '操作',
+      key: 'action',
+      width: 160,
+      render: (_: any, record: ApprovalRule) => (
+        <Space>
+          <Button type="link" size="small" onClick={() => handleEditApproval(record)}>编辑</Button>
+          <Popconfirm title="确定删除？" onConfirm={() => handleDeleteApproval(record.id)}>
+            <Button type="link" size="small" danger>删除</Button>
+          </Popconfirm>
+        </Space>
+      ),
+    },
+  ];
+
+  const operationLogColumns = [
+    { title: '模块', dataIndex: 'module', key: 'module', width: 120 },
+    { title: '操作', dataIndex: 'action', key: 'action', width: 120 },
+    { title: '操作人', dataIndex: 'operator', key: 'operator', width: 120 },
+    { title: '请求URL', dataIndex: 'requestUrl', key: 'requestUrl', ellipsis: true },
+    { title: '请求方法', dataIndex: 'requestMethod', key: 'requestMethod', width: 80 },
+    { title: '响应状态', dataIndex: 'responseStatus', key: 'responseStatus', width: 80, render: (s: number) => <Tag color={s === 200 ? 'green' : 'red'}>{s}</Tag> },
+    { title: '耗时(ms)', dataIndex: 'duration', key: 'duration', width: 80 },
+    { title: 'IP地址', dataIndex: 'ip', key: 'ip', width: 130 },
+    { title: '操作时间', dataIndex: 'createTime', key: 'createTime', width: 180 },
+  ];
+
+  const loginLogColumns = [
+    { title: '用户名', dataIndex: 'username', key: 'username', width: 150 },
+    { title: '登录IP', dataIndex: 'loginIp', key: 'loginIp', width: 150 },
+    { title: '登录状态', dataIndex: 'loginStatus', key: 'loginStatus', width: 100, render: (s: number) => <Tag color={s === 1 ? 'green' : 'red'}>{s === 1 ? '成功' : '失败'}</Tag> },
+    { title: '失败原因', dataIndex: 'failReason', key: 'failReason', ellipsis: true },
+    { title: '登录时间', dataIndex: 'loginTime', key: 'loginTime', width: 180 },
+  ];
+
+  const dataPermColumns = [
+    { title: '用户名', dataIndex: 'username', key: 'username', width: 150 },
+    { title: '真实姓名', dataIndex: 'realName', key: 'realName', width: 120 },
+    { title: '角色', dataIndex: 'roleName', key: 'roleName', width: 120 },
+    { title: '仓库权限', dataIndex: 'warehouseIds', key: 'warehouseIds', render: (ids: number[]) => ids?.length > 0 ? <Tag>{ids.length} 个仓库</Tag> : <Tag color="red">未分配</Tag> },
+    {
+      title: '操作',
+      key: 'action',
+      width: 160,
+      render: (_: any, record: any) => (
+        <Button type="link" size="small" onClick={() => { setSelectedUserForPerm(record); setDataPermModalVisible(true); }}>
+          分配仓库
+        </Button>
+      ),
+    },
+  ];
+
   // ============ 表格列定义 ============
   const getParentMenuOptions = () => {
     const options: { label: string; value: number }[] = [];
@@ -941,6 +1433,183 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
                 ) : (
                   renderPermissionTree()
                 )}
+              </div>
+            </>),
+          };
+          if (tab.key === 'config') return {
+            key: 'config',
+            label: '系统配置',
+            children: (<>
+              <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-end' }}>
+                <Button type="primary" icon={<PlusOutlined />} onClick={handleAddConfig}>新建配置</Button>
+              </div>
+              <Table
+                columns={configColumns}
+                dataSource={configData}
+                rowKey="id"
+                loading={configLoading}
+                pagination={{ pageSize: 10, showSizeChanger: true, showTotal: (total) => `共 ${total} 条` }}
+                scroll={{ x: 1000 }}
+              />
+            </>),
+          };
+          if (tab.key === 'approval') return {
+            key: 'approval',
+            label: '审批规则',
+            children: (<>
+              <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-end' }}>
+                <Button type="primary" icon={<PlusOutlined />} onClick={handleAddApproval}>新建规则</Button>
+              </div>
+              <Table
+                columns={approvalColumns}
+                dataSource={approvalData}
+                rowKey="id"
+                loading={approvalLoading}
+                pagination={{ pageSize: 10, showSizeChanger: true, showTotal: (total) => `共 ${total} 条` }}
+                scroll={{ x: 1000 }}
+              />
+            </>),
+          };
+          if (tab.key === 'operationLog') return {
+            key: 'operationLog',
+            label: '操作日志',
+            children: (<>
+              <div style={{ marginBottom: 16, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <Input placeholder="操作人/模块" prefix={<SearchOutlined />} style={{ width: 200 }}
+                  onChange={(e) => setOperationLogFilters({ ...operationLogFilters, keyword: e.target.value })} />
+                <RangePicker onChange={(dates) => setOperationLogFilters({ ...operationLogFilters, dateRange: dates as any })} />
+                <Button type="primary" onClick={fetchOperationLogs}>搜索</Button>
+              </div>
+              <Table
+                columns={operationLogColumns}
+                dataSource={operationLogData}
+                rowKey="id"
+                loading={operationLogLoading}
+                pagination={{
+                  current: operationLogPagination.current,
+                  pageSize: operationLogPagination.size,
+                  total: operationLogPagination.total,
+                  showSizeChanger: true,
+                  showQuickJumper: true,
+                  showTotal: (total) => `共 ${total} 条`,
+                  onChange: (current, size) => setOperationLogPagination({ current, size, total: operationLogPagination.total }),
+                }}
+                scroll={{ x: 1200 }}
+              />
+            </>),
+          };
+          if (tab.key === 'loginLog') return {
+            key: 'loginLog',
+            label: '登录日志',
+            children: (<>
+              <div style={{ marginBottom: 16, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <Input placeholder="用户名" prefix={<SearchOutlined />} style={{ width: 200 }}
+                  onChange={(e) => setLoginLogFilters({ ...loginLogFilters, keyword: e.target.value })} />
+                <RangePicker onChange={(dates) => setLoginLogFilters({ ...loginLogFilters, dateRange: dates as any })} />
+                <Button type="primary" onClick={fetchLoginLogs}>搜索</Button>
+              </div>
+              <Table
+                columns={loginLogColumns}
+                dataSource={loginLogData}
+                rowKey="id"
+                loading={loginLogLoading}
+                pagination={{
+                  current: loginLogPagination.current,
+                  pageSize: loginLogPagination.size,
+                  total: loginLogPagination.total,
+                  showSizeChanger: true,
+                  showQuickJumper: true,
+                  showTotal: (total) => `共 ${total} 条`,
+                  onChange: (current, size) => setLoginLogPagination({ current, size, total: loginLogPagination.total }),
+                }}
+                scroll={{ x: 1000 }}
+              />
+            </>),
+          };
+          if (tab.key === 'dataPermission') return {
+            key: 'dataPermission',
+            label: '数据权限',
+            children: (<>
+              <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-end' }}>
+                <Button type="primary" onClick={handleAssignWarehouse}>分配仓库</Button>
+              </div>
+              <Table
+                columns={dataPermColumns}
+                dataSource={dataPermUsers}
+                rowKey="id"
+                loading={dataPermLoading}
+                pagination={{
+                  current: dataPermPagination.current,
+                  pageSize: dataPermPagination.size,
+                  total: dataPermPagination.total,
+                  showSizeChanger: true,
+                  showQuickJumper: true,
+                  showTotal: (total) => `共 ${total} 条`,
+                  onChange: (current, size) => setDataPermPagination({ current, size, total: dataPermPagination.total }),
+                }}
+                scroll={{ x: 1000 }}
+              />
+            </>),
+          };
+          if (tab.key === 'dataImport') return {
+            key: 'dataImport',
+            label: '数据导入',
+            children: (<>
+              <div style={{ maxWidth: 600 }}>
+                <Form layout="vertical">
+                  <Form.Item label="数据类型">
+                    <Select value={importType} onChange={(v) => setImportType(v)}>
+                      <Select.Option value="customer">客户</Select.Option>
+                      <Select.Option value="supplier">供应商</Select.Option>
+                      <Select.Option value="product">商品</Select.Option>
+                    </Select>
+                  </Form.Item>
+                  <Form.Item label="上传文件">
+                    <Upload accept=".csv,.xlsx" maxCount={1} beforeUpload={() => false}
+                      onChange={(info) => handleImportFile(info)}>
+                      <Button icon={<UploadOutlined />}>点击上传</Button>
+                    </Upload>
+                  </Form.Item>
+                  <Form.Item>
+                    <Button type="primary" loading={importLoading} onClick={handleImportSubmit}>开始导入</Button>
+                    <span style={{ marginLeft: 16, color: '#999' }}>支持 CSV/Excel 格式</span>
+                  </Form.Item>
+                </Form>
+                {importResult && (
+                  <div style={{ marginTop: 24, padding: 16, background: '#fafafa', borderRadius: 8 }}>
+                    <div style={{ fontWeight: 500, marginBottom: 8 }}>导入结果</div>
+                    <div>成功: {importResult.success} 条</div>
+                    <div>失败: {importResult.failed} 条</div>
+                    {importResult.errors && importResult.errors.length > 0 && (
+                      <div style={{ marginTop: 8, color: '#ff4d4f' }}>
+                        {importResult.errors.slice(0, 5).map((e, i) => <div key={i}>{e}</div>)}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </>),
+          };
+          if (tab.key === 'dataExport') return {
+            key: 'dataExport',
+            label: '数据导出',
+            children: (<>
+              <div style={{ maxWidth: 600 }}>
+                <Form layout="vertical">
+                  <Form.Item label="数据类型">
+                    <Select value={exportType} onChange={(v) => setExportType(v)}>
+                      <Select.Option value="customer">客户</Select.Option>
+                      <Select.Option value="supplier">供应商</Select.Option>
+                      <Select.Option value="product">商品</Select.Option>
+                    </Select>
+                  </Form.Item>
+                  <Form.Item>
+                    <Button type="primary" loading={exportLoading} icon={<DownloadOutlined />} onClick={handleExportSubmit}>
+                      导出数据
+                    </Button>
+                    <span style={{ marginLeft: 16, color: '#999' }}>导出为 CSV 格式</span>
+                  </Form.Item>
+                </Form>
               </div>
             </>),
           };
@@ -1152,6 +1821,97 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
             </div>
           </div>
         </div>
+      </Modal>
+
+      {/* 系统配置弹窗 */}
+      <Modal
+        title={editingConfig ? '编辑配置' : '新建配置'}
+        open={configModalVisible}
+        onOk={handleConfigModalOk}
+        onCancel={() => setConfigModalVisible(false)}
+        width={500}
+      >
+        <Form form={configForm} layout="vertical">
+          <Form.Item name="configKey" label="配置键" rules={[{ required: true, message: '请输入配置键' }]}>
+            <Input placeholder="如: system.name" disabled={!!editingConfig} />
+          </Form.Item>
+          <Form.Item name="configName" label="配置名称" rules={[{ required: true, message: '请输入配置名称' }]}>
+            <Input placeholder="请输入配置名称" />
+          </Form.Item>
+          <Form.Item name="configValue" label="配置值" rules={[{ required: true, message: '请输入配置值' }]}>
+            <Input.TextArea rows={3} placeholder="请输入配置值" />
+          </Form.Item>
+          <Form.Item name="configType" label="类型" initialValue="string">
+            <Select>
+              <Select.Option value="string">字符串</Select.Option>
+              <Select.Option value="number">数字</Select.Option>
+              <Select.Option value="boolean">布尔值</Select.Option>
+            </Select>
+          </Form.Item>
+          <Form.Item name="description" label="描述">
+            <Input.TextArea rows={2} placeholder="请输入描述" />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* 审批规则弹窗 */}
+      <Modal
+        title={editingApproval ? '编辑规则' : '新建规则'}
+        open={approvalModalVisible}
+        onOk={handleApprovalModalOk}
+        onCancel={() => setApprovalModalVisible(false)}
+        width={600}
+      >
+        <Form form={approvalForm} layout="vertical">
+          <Form.Item name="ruleCode" label="规则编码" rules={[{ required: true, message: '请输入规则编码' }]}>
+            <Input placeholder="如: PO_APPROVAL_001" disabled={!!editingApproval} />
+          </Form.Item>
+          <Form.Item name="ruleName" label="规则名称" rules={[{ required: true, message: '请输入规则名称' }]}>
+            <Input placeholder="请输入规则名称" />
+          </Form.Item>
+          <Form.Item name="businessType" label="业务类型" rules={[{ required: true, message: '请选择业务类型' }]}>
+            <Select>
+              <Select.Option value="purchase">采购订单</Select.Option>
+              <Select.Option value="sales">销售订单</Select.Option>
+            </Select>
+          </Form.Item>
+          <Space style={{ width: '100%' }} size="large">
+            <Form.Item name="minAmount" label="最小金额" style={{ flex: 1 }}>
+              <InputNumber style={{ width: '100%' }} placeholder="0" min={0} />
+            </Form.Item>
+            <Form.Item name="maxAmount" label="最大金额" style={{ flex: 1 }}>
+              <InputNumber style={{ width: '100%' }} placeholder="不限制" min={0} />
+            </Form.Item>
+          </Space>
+          <Space style={{ width: '100%' }} size="large">
+            <Form.Item name="approvalLevel" label="审批级别" style={{ flex: 1 }} rules={[{ required: true, message: '请输入审批级别' }]}>
+              <InputNumber style={{ width: '100%' }} placeholder="1" min={1} />
+            </Form.Item>
+            <Form.Item name="approverRole" label="审批角色" style={{ flex: 1 }} rules={[{ required: true, message: '请输入审批角色' }]}>
+              <Input placeholder="如: 财务主管" />
+            </Form.Item>
+          </Space>
+        </Form>
+      </Modal>
+
+      {/* 数据权限分配弹窗 */}
+      <Modal
+        title={`分配仓库 - ${selectedUserForPerm?.username || ''}`}
+        open={dataPermModalVisible}
+        onOk={handleDataPermModalOk}
+        onCancel={() => setDataPermModalVisible(false)}
+        width={500}
+      >
+        <Form form={dataPermForm} layout="vertical">
+          <Form.Item name="warehouseIds" label="可访问仓库">
+            <Select mode="multiple" placeholder="请选择可访问的仓库" allowClear>
+              <Select.Option value={1}>北京仓库</Select.Option>
+              <Select.Option value={2}>上海仓库</Select.Option>
+              <Select.Option value={3}>广州仓库</Select.Option>
+              <Select.Option value={4}>深圳仓库</Select.Option>
+            </Select>
+          </Form.Item>
+        </Form>
       </Modal>
     </div>
   );

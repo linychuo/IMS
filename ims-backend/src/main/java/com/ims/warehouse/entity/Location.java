@@ -19,6 +19,11 @@ public class Location extends BaseEntity {
     @TableField("warehouse_id")
     private Long warehouseId;
 
+    /**
+     * 库区
+     */
+    private String zone;
+
     @TableField("shelf_no")
     private String shelfNo;
 
@@ -43,6 +48,8 @@ public class Location extends BaseEntity {
     public void setName(String name) { this.name = name; }
     public Long getWarehouseId() { return warehouseId; }
     public void setWarehouseId(Long warehouseId) { this.warehouseId = warehouseId; }
+    public String getZone() { return zone; }
+    public void setZone(String zone) { this.zone = zone; }
     public String getShelfNo() { return shelfNo; }
     public void setShelfNo(String shelfNo) { this.shelfNo = shelfNo; }
     public Integer getRow() { return row; }

@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -304,7 +305,61 @@ public class InventoryServiceImpl extends ServiceImpl<InventoryMapper, Inventory
             })
             .toList();
     }
-    
+
+    @Override
+    public List<Inventory> getExpiringList(Integer days) {
+        if (days == null) {
+            days = 30; // 默认30天
+        }
+        LocalDate threshold = LocalDate.now().plusDays(days);
+        LambdaQueryWrapper<Inventory> wrapper = new LambdaQueryWrapper<>();
+        wrapper.isNotNull(Inventory::getExpiryDate)
+              .le(Inventory::getExpiryDate, threshold)
+              .gt(Inventory::getQuantity, BigDecimal.ZERO);
+        return this.list(wrapper);
+    }
+
+    @Override
+    public List<Inventory> getIdleStock(Integer days) {
+        if (days == null) {
+            days = 90; // 默认90天
+        }
+        // 查询最近days天没有出入库的商品
+        LocalDate threshold = LocalDate.now().minusDays(days);
+        // 通过InventoryRecord查找最后变动日期
+        List<Inventory> inventories = this.list();
+        return inventories.stream()
+            .filter(inv -> {
+                // 检查是否有在threshold之后的变化记录
+                LambdaQueryWrapper<InventoryRecord> wrapper = new LambdaQueryWrapper<>();
+                wrapper.eq(InventoryRecord::getProductId, inv.getProductId())
+                       .ge(InventoryRecord::getCreateTime, threshold.atStartOfDay());
+                long count = recordMapper.selectCount(wrapper);
+                return count == 0 && inv.getQuantity().compareTo(BigDecimal.ZERO) > 0;
+            })
+            .toList();
+    }
+
+    @Override
+    public List<Inventory> getHighStockList() {
+        List<Inventory> inventories = this.list();
+        return inventories.stream()
+            .filter(inv -> {
+                if (inv.getHighStockWarning() == null) {
+                    return false;
+                }
+                BigDecimal available = inv.getQuantity().subtract(inv.getFrozenQuantity());
+                return available.compareTo(inv.getHighStockWarning()) > 0;
+            })
+            .map(inv -> {
+                var product = productMapper.selectById(inv.getProductId());
+                inv.setProductName(product != null ? product.getName() : null);
+                inv.setProductCode(product != null ? product.getCode() : null);
+                return inv;
+            })
+            .toList();
+    }
+
     /**
      * 记录库存变动
      */

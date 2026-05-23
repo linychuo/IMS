@@ -10,6 +10,7 @@ public class FinanceIn extends BaseEntity {
     private String inNo;             // 收款单号
     private Long orderId;            // 订单ID(销售订单)
     private Long customerId;         // 客户ID
+    private Integer receiptType;      // 类型: 1销售收款/2预收款
     private BigDecimal amount;       // 收款金额
     private BigDecimal discountAmount; // 优惠金额
     private Integer payMethod;      // 支付方式: 1-现金 2-银行转账 3-支付宝 4-微信 5-其他
@@ -44,6 +45,14 @@ public class FinanceIn extends BaseEntity {
 
     public void setCustomerId(Long customerId) {
         this.customerId = customerId;
+    }
+
+    public Integer getReceiptType() {
+        return receiptType;
+    }
+
+    public void setReceiptType(Integer receiptType) {
+        this.receiptType = receiptType;
     }
 
     public BigDecimal getAmount() {

@@ -3,6 +3,7 @@ package com.ims.sales.service;
 import com.ims.core.result.PageResult;
 import com.ims.sales.entity.SalesOrder;
 import com.ims.sales.entity.SalesOrderDetail;
+import com.ims.sales.entity.SalesOrderStatusHistory;
 
 import java.util.List;
 
@@ -60,4 +61,9 @@ public interface SalesOrderService {
      * 删除
      */
     void delete(Long id);
+
+    /**
+     * 获取订单状态历史
+     */
+    List<SalesOrderStatusHistory> getStatusHistory(Long orderId);
 }

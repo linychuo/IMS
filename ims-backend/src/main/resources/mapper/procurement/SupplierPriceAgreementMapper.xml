@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ims.procurement.mapper.SupplierPriceAgreementMapper">
+
+    <resultMap id="BaseResultMap" type="com.ims.procurement.entity.SupplierPriceAgreement">
+        <id column="id" property="id"/>
+        <result column="agreement_no" property="agreementNo"/>
+        <result column="agreement_name" property="agreementName"/>
+        <result column="supplier_id" property="supplierId"/>
+        <result column="supplier_name" property="supplierName"/>
+        <result column="product_id" property="productId"/>
+        <result column="product_name" property="productName"/>
+        <result column="product_code" property="productCode"/>
+        <result column="start_date" property="startDate"/>
+        <result column="end_date" property="endDate"/>
+        <result column="price_type" property="priceType"/>
+        <result column="standard_price" property="standardPrice"/>
+        <result column="tier1_quantity" property="tier1Quantity"/>
+        <result column="tier1_price" property="tier1Price"/>
+        <result column="tier2_quantity" property="tier2Quantity"/>
+        <result column="tier2_price" property="tier2Price"/>
+        <result column="tier3_quantity" property="tier3Quantity"/>
+        <result column="tier3_price" property="tier3Price"/>
+        <result column="status" property="status"/>
+        <result column="remark" property="remark"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+        <result column="deleted" property="deleted"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, agreement_no, agreement_name, supplier_id, supplier_name, product_id, product_name,
+        product_code, start_date, end_date, price_type, standard_price,
+        tier1_quantity, tier1_price, tier2_quantity, tier2_price, tier3_quantity, tier3_price,
+        status, remark, create_time, update_time, deleted
+    </sql>
+
+    <select id="selectEffective" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM supplier_price_agreement
+        WHERE deleted = 0 AND status = 1
+          AND supplier_id = #{supplierId}
+          AND product_id = #{productId}
+    </select>
+
+    <select id="selectBySupplier" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM supplier_price_agreement
+        WHERE deleted = 0 AND supplier_id = #{supplierId}
+        ORDER BY create_time DESC
+    </select>
+
+</mapper>

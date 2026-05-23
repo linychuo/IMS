@@ -24,4 +24,14 @@ public interface InventoryRecordService extends IService<InventoryRecord> {
      * 根据单据查询变动记录
      */
     List<InventoryRecord> getByOrder(String orderType, Long orderId);
+
+    /**
+     * 根据批次号查询变动记录（批次追溯）
+     */
+    List<InventoryRecord> getByBatchNo(String batchNo);
+
+    /**
+     * 根据商品查询变动记录
+     */
+    List<InventoryRecord> getByProduct(Long productId, Long warehouseId, String changeType);
 }

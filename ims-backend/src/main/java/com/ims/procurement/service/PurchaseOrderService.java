@@ -4,6 +4,7 @@ import com.ims.procurement.dto.request.CreatePurchaseOrderRequest;
 import com.ims.procurement.dto.request.UpdatePurchaseOrderRequest;
 import com.ims.procurement.entity.PurchaseOrder;
 
+import java.time.LocalDate;
 import java.util.List;
 
 /**
@@ -26,4 +27,14 @@ public interface PurchaseOrderService {
     List<PurchaseOrder> list(PurchaseOrder query);
 
     void delete(Long id);
+
+    /**
+     * 获取即将到货的订单（N天内）
+     */
+    List<PurchaseOrder> getIncomingOrders(Integer days);
+
+    /**
+     * 获取已逾期未入库的订单
+     */
+    List<PurchaseOrder> getOverdueOrders();
 }
