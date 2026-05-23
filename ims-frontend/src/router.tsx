@@ -89,6 +89,7 @@ export const router = createBrowserRouter([
       { path: 'dashboard', element: <PermissionRoute path="/dashboard" element={<Dashboard />} /> },
       { path: 'product', element: <PermissionRoute path="/product" element={<ProductPage />} /> },
       { path: 'warehouse', element: <PermissionRoute path="/warehouse" element={<WarehousePage />} /> },
+      { path: 'warehouse/location', element: <PermissionRoute path="/warehouse" element={<WarehousePage defaultTab="location" />} /> },
       { path: 'customer', element: <PermissionRoute path="/customer" element={<CustomerPage />} /> },
       { path: 'supplier', element: <PermissionRoute path="/supplier" element={<SupplierPage />} /> },
       { path: 'sales/order', element: <PermissionRoute path="/sales/order" element={<SalesOrderPage />} /> },

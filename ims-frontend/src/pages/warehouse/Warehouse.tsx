@@ -67,9 +67,16 @@ interface LocationPageResult {
   records: Location[];
 }
 
-const WarehousePage: React.FC = () => {
+const WarehousePage: React.FC<{ defaultTab?: string }> = ({ defaultTab }) => {
   const [activeTab, setActiveTab] = useState('warehouse');
   const { permissions } = useAuthStore();
+
+  // Handle defaultTab prop from router
+  useEffect(() => {
+    if (defaultTab === 'location') {
+      setActiveTab('location');
+    }
+  }, [defaultTab]);
 
   const tabPermissionMap: Record<string, string[]> = {
     warehouse: ['warehouse:warehouse', 'warehouse:warehouse:list', 'warehouse:warehouse:read'],

@@ -42,9 +42,10 @@ public class ReceivableController {
         return Result.success(receivableService.create(receivable));
     }
 
-    @PutMapping
+    @PutMapping("/{id}")
     @Permission(code = "update", name = "更新应收账款")
-    public Result<Boolean> update(@RequestBody Receivable receivable) {
+    public Result<Boolean> update(@PathVariable Long id, @RequestBody Receivable receivable) {
+        receivable.setId(id);
         return Result.success(receivableService.update(receivable));
     }
 

@@ -42,9 +42,10 @@ public class PayableController {
         return Result.success(payableService.create(payable));
     }
 
-    @PutMapping
+    @PutMapping("/{id}")
     @Permission(code = "update", name = "更新应付账款")
-    public Result<Boolean> update(@RequestBody Payable payable) {
+    public Result<Boolean> update(@PathVariable Long id, @RequestBody Payable payable) {
+        payable.setId(id);
         return Result.success(payableService.update(payable));
     }
 

@@ -51,6 +51,11 @@ public interface SalesOutService {
     List<SalesOut> list(SalesOut query);
 
     /**
+     * 更新销售出库单
+     */
+    SalesOut update(Long id, SalesOut salesOut, List<SalesOutDetail> details);
+
+    /**
      * 删除
      */
     void delete(Long id);

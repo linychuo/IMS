@@ -259,6 +259,34 @@ public class SalesOutServiceImpl implements SalesOutService {
 
     @Override
     @Transactional
+    public SalesOut update(Long id, SalesOut salesOut, List<SalesOutDetail> details) {
+        SalesOut existing = salesOutMapper.selectById(id);
+        if (existing == null) {
+            throw new RuntimeException("出库单不存在: " + id);
+        }
+        if (existing.getStatus() != CommonStatus.PENDING.getCode()) {
+            throw new RuntimeException("只有待出库状态可编辑");
+        }
+
+        salesOut.setId(id);
+        salesOut.setOutNo(existing.getOutNo());
+        salesOut.setStatus(existing.getStatus());
+        salesOutMapper.update(salesOut);
+
+        // 删除旧明细，插入新明细
+        salesOutDetailMapper.deleteByOutId(id);
+        for (SalesOutDetail detail : details) {
+            detail.setOutId(id);
+            detail.setOutNo(existing.getOutNo());
+        }
+        salesOutDetailMapper.batchInsert(details);
+
+        log.info("更新销售出库单: {}", id);
+        return salesOut;
+    }
+
+    @Override
+    @Transactional
     public void delete(Long id) {
         SalesOut salesOut = salesOutMapper.selectById(id);
         if (salesOut == null) {

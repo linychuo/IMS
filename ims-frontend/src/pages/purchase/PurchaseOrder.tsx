@@ -7,8 +7,8 @@ import {
   Modal,
   Form,
   InputNumber,
-  
-  
+  Select,
+  DatePicker,
   message,
   Popconfirm,
   Tag,
@@ -16,12 +16,12 @@ import {
   Divider,
 } from 'antd';
 import {
-  
+  PlusOutlined,
   SearchOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
 } from '@ant-design/icons';
-import { procurementApi, supplierApi } from '../../api';
+import { procurementApi, supplierApi, productApi } from '../../api';
 
 interface PurchaseOrderDetail {
   id?: string;
@@ -52,6 +52,14 @@ interface PurchaseOrder {
   details?: PurchaseOrderDetail[];
 }
 
+interface Product {
+  id: string;
+  name: string;
+  spec?: string;
+  unit?: string;
+  price?: number;
+}
+
 const PurchaseOrderPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<PurchaseOrder[]>([]);
@@ -61,10 +69,13 @@ const PurchaseOrderPage: React.FC = () => {
   const [viewModalVisible, setViewModalVisible] = useState(false);
   const [editingRecord, setEditingRecord] = useState<PurchaseOrder | null>(null);
   const [supplierList, setSupplierList] = useState<{ id: string; name: string }[]>([]);
+  const [productList, setProductList] = useState<Product[]>([]);
   const [form] = Form.useForm();
+  const [orderDetails, setOrderDetails] = useState<PurchaseOrderDetail[]>([]);
 
   useEffect(() => {
     fetchSuppliers();
+    fetchProducts();
   }, []);
 
   useEffect(() => {
@@ -79,6 +90,17 @@ const PurchaseOrderPage: React.FC = () => {
       }
     } catch (error) {
       console.error('Failed to fetch suppliers:', error);
+    }
+  };
+
+  const fetchProducts = async () => {
+    try {
+      const res = await productApi.get('/product/list');
+      if (res.data.code === 200) {
+        setProductList(res.data.data || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch products:', error);
     }
   };
 
@@ -140,6 +162,78 @@ const PurchaseOrderPage: React.FC = () => {
     }
   };
 
+  // 新增订单相关
+  const handleAddOrder = () => {
+    form.resetFields();
+    setOrderDetails([]);
+    setModalVisible(true);
+  };
+
+  const handleAddDetail = () => {
+    setOrderDetails([...orderDetails, { productId: '', productName: '', spec: '', unit: '', quantity: 1, price: 0, amount: 0 }]);
+  };
+
+  const handleRemoveDetail = (index: number) => {
+    const newDetails = [...orderDetails];
+    newDetails.splice(index, 1);
+    setOrderDetails(newDetails);
+  };
+
+  const handleDetailChange = (index: number, field: string, value: any) => {
+    const newDetails = [...orderDetails];
+    newDetails[index] = { ...newDetails[index], [field]: value };
+    if (field === 'quantity' || field === 'price') {
+      newDetails[index].amount = (newDetails[index].quantity || 0) * (newDetails[index].price || 0);
+    }
+    setOrderDetails(newDetails);
+  };
+
+  const handleProductSelect = (index: number, productId: string) => {
+    const product = productList.find(p => p.id === productId);
+    if (product) {
+      const newDetails = [...orderDetails];
+      newDetails[index] = {
+        ...newDetails[index],
+        productId,
+        productName: product.name,
+        spec: product.spec || '',
+        unit: product.unit || '',
+        price: product.price || 0,
+        amount: (newDetails[index].quantity || 0) * (product.price || 0),
+      };
+      setOrderDetails(newDetails);
+    }
+  };
+
+  const handleModalOk = async () => {
+    try {
+      const values = await form.validateFields();
+      const orderData = {
+        supplierId: values.supplierId,
+        orderDate: values.orderDate?.format('YYYY-MM-DD'),
+        expectedDate: values.expectedDate?.format('YYYY-MM-DD'),
+        remark: values.remark || '',
+      };
+      const res = await procurementApi.post('/orders', {
+        supplierId: orderData.supplierId,
+        orderDate: orderData.orderDate,
+        expectedDate: orderData.expectedDate,
+        remark: orderData.remark,
+        details: orderDetails,
+      });
+      if (res.status === 200 || res.data.code === 200) {
+        message.success('创建成功');
+        setModalVisible(false);
+        fetchData();
+      } else {
+        message.error(res.data?.message || '创建失败');
+      }
+    } catch (error) {
+      console.error('Failed to create order:', error);
+      message.error('创建失败');
+    }
+  };
+
   const renderStatus = (status: number) => {
     const map: Record<number, { text: string; color: string }> = {
       0: { text: '新建', color: 'default' },
@@ -194,6 +288,9 @@ const PurchaseOrderPage: React.FC = () => {
           style={{ width: 200 }}
           prefix={<SearchOutlined />}
         />
+        <Button type="primary" icon={<PlusOutlined />} onClick={handleAddOrder}>
+          新增订单
+        </Button>
       </div>
       <Table
         columns={columns}
@@ -211,6 +308,75 @@ const PurchaseOrderPage: React.FC = () => {
         }}
         scroll={{ x: 1300 }}
       />
+
+      {/* 新增订单弹窗 */}
+      <Modal
+        title="新增采购订单"
+        open={modalVisible}
+        onOk={handleModalOk}
+        onCancel={() => setModalVisible(false)}
+        width={800}
+        okText="创建"
+        cancelText="取消"
+      >
+        <Form form={form} layout="vertical">
+          <Space style={{ width: '100%' }} size="large">
+            <Form.Item name="supplierId" label="供应商" rules={[{ required: true, message: '请选择供应商' }]} style={{ flex: 1 }}>
+              <Select placeholder="请选择供应商">
+                {supplierList.map(s => (
+                  <Select.Option key={s.id} value={s.id}>{s.name}</Select.Option>
+                ))}
+              </Select>
+            </Form.Item>
+            <Form.Item name="orderDate" label="订单日期" rules={[{ required: true, message: '请选择订单日期' }]} style={{ flex: 1 }}>
+              <DatePicker style={{ width: '100%' }} />
+            </Form.Item>
+          </Space>
+          <Space style={{ width: '100%' }} size="large">
+            <Form.Item name="expectedDate" label="要求到货日期" style={{ flex: 1 }}>
+              <DatePicker style={{ width: '100%' }} />
+            </Form.Item>
+            <Form.Item name="remark" label="备注" style={{ flex: 1 }}>
+              <Input.TextArea rows={2} placeholder="请输入备注" />
+            </Form.Item>
+          </Space>
+        </Form>
+
+        <Divider>订单明细</Divider>
+        <Button type="dashed" onClick={handleAddDetail} style={{ marginBottom: 16 }}>
+          添加商品
+        </Button>
+        {orderDetails.map((detail, index) => (
+          <Space key={index} style={{ display: 'flex', marginBottom: 8 }} size="middle">
+            <Select
+              placeholder="选择商品"
+              style={{ width: 200 }}
+              value={detail.productId || undefined}
+              onChange={(value) => handleProductSelect(index, value)}
+            >
+              {productList.map(p => (
+                <Select.Option key={p.id} value={p.id}>{p.name} {p.spec || ''}</Select.Option>
+              ))}
+            </Select>
+            <InputNumber
+              placeholder="数量"
+              min={1}
+              value={detail.quantity}
+              onChange={(value) => handleDetailChange(index, 'quantity', value)}
+              style={{ width: 80 }}
+            />
+            <InputNumber
+              placeholder="单价"
+              min={0}
+              value={detail.price}
+              onChange={(value) => handleDetailChange(index, 'price', value)}
+              style={{ width: 100 }}
+            />
+            <span style={{ width: 100 }}>金额: ¥{(detail.amount || 0).toFixed(2)}</span>
+            <Button type="link" danger onClick={() => handleRemoveDetail(index)}>删除</Button>
+          </Space>
+        ))}
+      </Modal>
 
       <Modal
         title="订单详情"

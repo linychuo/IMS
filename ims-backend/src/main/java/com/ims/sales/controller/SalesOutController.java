@@ -38,6 +38,15 @@ public class SalesOutController {
     }
 
     /**
+     * 更新出库单
+     */
+    @PutMapping("/{id}")
+    @Permission(code = "update", name = "更新销售出库")
+    public Result<SalesOut> update(@PathVariable Long id, @RequestBody SalesOutRequest request) {
+        return Result.success(salesOutService.update(id, request.getSalesOut(), request.getDetails()));
+    }
+
+    /**
      * 审核出库单
      */
     @PostMapping("/{id}/approve")
