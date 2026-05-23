@@ -20,6 +20,7 @@ import {
   SearchOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
+  EditOutlined,
 } from '@ant-design/icons';
 import { salesApi, customerApi, productApi } from '../../api';
 
@@ -143,6 +144,25 @@ const SalesOrderPage: React.FC = () => {
     }
   };
 
+  const handleEdit = async (record: SalesOrder) => {
+    try {
+      const res = await salesApi.get(`/order/${record.id}`);
+      if (res.data) {
+        setEditingRecord(res.data);
+        setOrderDetails(res.data.details || []);
+        form.setFieldsValue({
+          customerId: res.data.customerId,
+          orderDate: res.data.orderDate,
+          expectedDate: res.data.expectedDate,
+          remark: res.data.remark,
+        });
+        setModalVisible(true);
+      }
+    } catch (error) {
+      message.error('获取订单详情失败');
+    }
+  };
+
   const handleApprove = async (id: string) => {
     try {
       await salesApi.post(`/order/${id}/approve`);
@@ -216,17 +236,22 @@ const SalesOrderPage: React.FC = () => {
         expectedDate: values.expectedDate?.format('YYYY-MM-DD'),
         remark: values.remark || '',
       };
-      const res = await salesApi.post('/order', { salesOrder: orderData, details: orderDetails });
+      let res;
+      if (editingRecord) {
+        res = await salesApi.put(`/order/${editingRecord.id}`, { salesOrder: orderData, details: orderDetails });
+      } else {
+        res = await salesApi.post('/order', { salesOrder: orderData, details: orderDetails });
+      }
       if (res.data.code === 200) {
-        message.success('创建成功');
+        message.success(editingRecord ? '修改成功' : '创建成功');
         setModalVisible(false);
         fetchData();
       } else {
-        message.error(res.data.message || '创建失败');
+        message.error(res.data.message || '操作失败');
       }
     } catch (error) {
-      console.error('Failed to create order:', error);
-      message.error('创建失败');
+      console.error('Failed to save order:', error);
+      message.error('操作失败');
     }
   };
 
@@ -254,12 +279,13 @@ const SalesOrderPage: React.FC = () => {
     {
       title: '操作',
       key: 'action',
-      width: 200,
+      width: 240,
       render: (_: any, record: SalesOrder) => (
         <Space>
           <Button type="link" size="small" onClick={() => handleView(record)}>查看</Button>
           {record.status === 0 && (
             <>
+              <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)}>编辑</Button>
               <Button type="link" size="small" icon={<CheckCircleOutlined />} onClick={() => handleApprove(record.id)}>审核</Button>
               <Popconfirm title="确定取消？" onConfirm={() => handleCancel(record.id)}>
                 <Button type="link" size="small" danger icon={<CloseCircleOutlined />}>取消</Button>
@@ -303,14 +329,14 @@ const SalesOrderPage: React.FC = () => {
         scroll={{ x: 1300 }}
       />
 
-      {/* 新增订单弹窗 */}
+      {/* 新增/编辑订单弹窗 */}
       <Modal
-        title="新增销售订单"
+        title={editingRecord ? '编辑销售订单' : '新增销售订单'}
         open={modalVisible}
         onOk={handleModalOk}
         onCancel={() => setModalVisible(false)}
         width={800}
-        okText="创建"
+        okText={editingRecord ? '修改' : '创建'}
         cancelText="取消"
       >
         <Form form={form} layout="vertical">

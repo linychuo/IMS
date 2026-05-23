@@ -20,6 +20,7 @@ import {
   SearchOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
+  EditOutlined,
 } from '@ant-design/icons';
 import { procurementApi, supplierApi, productApi } from '../../api';
 
@@ -142,6 +143,25 @@ const PurchaseOrderPage: React.FC = () => {
     }
   };
 
+  const handleEdit = async (record: PurchaseOrder) => {
+    try {
+      const res = await procurementApi.get(`/orders/${record.id}`);
+      if (res.data) {
+        setEditingRecord(res.data);
+        setOrderDetails(res.data.details || []);
+        form.setFieldsValue({
+          supplierId: res.data.supplierId,
+          orderDate: res.data.orderDate,
+          expectedDate: res.data.expectedDate,
+          remark: res.data.remark,
+        });
+        setModalVisible(true);
+      }
+    } catch (error) {
+      message.error('获取订单详情失败');
+    }
+  };
+
   const handleApprove = async (id: string) => {
     try {
       await procurementApi.post(`/orders/${id}/approve`);
@@ -214,22 +234,30 @@ const PurchaseOrderPage: React.FC = () => {
         expectedDate: values.expectedDate?.format('YYYY-MM-DD'),
         remark: values.remark || '',
       };
-      const res = await procurementApi.post('/orders', {
-        supplierId: orderData.supplierId,
-        orderDate: orderData.orderDate,
-        expectedDate: orderData.expectedDate,
-        remark: orderData.remark,
-        details: orderDetails,
-      });
+      let res;
+      if (editingRecord) {
+        res = await procurementApi.put(`/orders/${editingRecord.id}`, {
+          ...orderData,
+          details: orderDetails,
+        });
+      } else {
+        res = await procurementApi.post('/orders', {
+          supplierId: orderData.supplierId,
+          orderDate: orderData.orderDate,
+          expectedDate: orderData.expectedDate,
+          remark: orderData.remark,
+          details: orderDetails,
+        });
+      }
       if (res.status === 200 || res.data.code === 200) {
-        message.success('创建成功');
+        message.success(editingRecord ? '修改成功' : '创建成功');
         setModalVisible(false);
         fetchData();
       } else {
-        message.error(res.data?.message || '创建失败');
+        message.error(res.data?.message || '操作失败');
       }
     } catch (error) {
-      console.error('Failed to create order:', error);
+      console.error('Failed to save order:', error);
       message.error('创建失败');
     }
   };
@@ -260,12 +288,13 @@ const PurchaseOrderPage: React.FC = () => {
     {
       title: '操作',
       key: 'action',
-      width: 200,
+      width: 240,
       render: (_: any, record: PurchaseOrder) => (
         <Space>
           <Button type="link" size="small" onClick={() => handleView(record)}>查看</Button>
           {record.status <= 1 && (
             <>
+              <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)}>编辑</Button>
               <Button type="link" size="small" icon={<CheckCircleOutlined />} onClick={() => handleApprove(record.id)}>审核</Button>
               <Popconfirm title="确定取消？" onConfirm={() => handleCancel(record.id)}>
                 <Button type="link" size="small" danger icon={<CloseCircleOutlined />}>取消</Button>
@@ -309,14 +338,14 @@ const PurchaseOrderPage: React.FC = () => {
         scroll={{ x: 1300 }}
       />
 
-      {/* 新增订单弹窗 */}
+      {/* 新增/编辑订单弹窗 */}
       <Modal
-        title="新增采购订单"
+        title={editingRecord ? '编辑采购订单' : '新增采购订单'}
         open={modalVisible}
         onOk={handleModalOk}
         onCancel={() => setModalVisible(false)}
         width={800}
-        okText="创建"
+        okText={editingRecord ? '修改' : '创建'}
         cancelText="取消"
       >
         <Form form={form} layout="vertical">
