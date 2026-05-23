@@ -842,7 +842,10 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
   // 如果当前 tab 不可见，切换到可见的第一个 tab
   useEffect(() => {
     if (!hasTabPermission(activeTab) && visibleTabs.length > 0) {
-      setActiveTab(visibleTabs[0].key);
+      const firstVisible = visibleTabs[0].key;
+      if (firstVisible === 'user' || firstVisible === 'role' || firstVisible === 'menu' || firstVisible === 'permission') {
+        setActiveTab(firstVisible);
+      }
     }
   }, [activeTab, visibleTabs]);
 
@@ -942,7 +945,7 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
             </>),
           };
           return null;
-        })}
+        }).filter(tab => tab !== null)}
       />
 
       {/* 用户弹窗 */}
