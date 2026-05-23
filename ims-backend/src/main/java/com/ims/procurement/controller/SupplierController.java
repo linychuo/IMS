@@ -56,6 +56,15 @@ public class SupplierController {
         return ResponseEntity.ok(supplierService.list(query));
     }
 
+    /**
+     * Alternative path for frontend compatibility
+     */
+    @GetMapping("/list")
+    @Permission(code = "list", name = "查看供应商列表")
+    public ResponseEntity<List<Supplier>> listAlias(Supplier query) {
+        return ResponseEntity.ok(supplierService.list(query));
+    }
+
     @DeleteMapping("/{id}")
     @Permission(code = "delete", name = "删除供应商")
     public ResponseEntity<Void> delete(@PathVariable Long id) {

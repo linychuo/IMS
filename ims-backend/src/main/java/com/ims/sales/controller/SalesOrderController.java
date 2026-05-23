@@ -1,5 +1,6 @@
 package com.ims.sales.controller;
 
+import com.ims.core.result.PageResult;
 import com.ims.core.result.Result;
 import com.ims.sales.dto.SalesOrderRequest;
 import com.ims.sales.entity.SalesOrder;
@@ -105,5 +106,17 @@ public class SalesOrderController {
     @Permission(code = "read", name = "查看销售订单")
     public Result<List<SalesOrder>> list(@ModelAttribute SalesOrder query) {
         return Result.success(salesOrderService.list(query));
+    }
+
+    /**
+     * 分页查询
+     */
+    @GetMapping("/page")
+    @Permission(code = "read", name = "查看销售订单")
+    public Result<PageResult<SalesOrder>> page(
+            @RequestParam(defaultValue = "1") Long current,
+            @RequestParam(defaultValue = "10") Long size,
+            @ModelAttribute SalesOrder query) {
+        return Result.success(salesOrderService.page(current, size, query));
     }
 }

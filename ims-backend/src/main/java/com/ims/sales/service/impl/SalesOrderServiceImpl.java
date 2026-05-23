@@ -1,8 +1,11 @@
 package com.ims.sales.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.ims.common.enums.CommonStatus;
 import com.ims.common.util.OrderNoGenerator;
+import com.ims.core.result.PageResult;
 import com.ims.customer.entity.Customer;
 import com.ims.customer.mapper.CustomerMapper;
 import com.ims.inventory.service.InventoryService;
@@ -164,6 +167,19 @@ public class SalesOrderServiceImpl implements SalesOrderService {
     @Override
     public List<SalesOrder> list(SalesOrder query) {
         return salesOrderMapper.selectList(query);
+    }
+
+    @Override
+    public PageResult<SalesOrder> page(Long current, Long size, SalesOrder query) {
+        Page<SalesOrder> page = new Page<>(current, size);
+        // Use the custom selectList from XML which has proper query logic
+        List<SalesOrder> records = salesOrderMapper.selectList(query);
+        // For pagination, manually slice the list (or use SQL with LIMIT/OFFSET)
+        int start = (int) ((current - 1) * size);
+        int end = (int) (start + size);
+        List<SalesOrder> pagedRecords = records.size() > start ?
+            records.subList(start, Math.min(end, records.size())) : List.of();
+        return PageResult.build(pagedRecords, (long) records.size(), current, size);
     }
 
     @Override

@@ -53,6 +53,48 @@ public class ReportController {
     }
 
     /**
+     * 销售报表 (前端兼容)
+     */
+    @GetMapping("/sales")
+    @Permission(code = "read", name = "查看销售报表")
+    public List<SalesReportDTO> getSalesReport(
+            @RequestParam(required = false) LocalDate startDate,
+            @RequestParam(required = false) LocalDate endDate) {
+        ReportQueryRequest request = new ReportQueryRequest();
+        request.setStartDate(startDate);
+        request.setEndDate(endDate);
+        return reportService.getSalesSummary(request);
+    }
+
+    /**
+     * 库存报表 (前端兼容)
+     */
+    @GetMapping("/inventory")
+    @Permission(code = "read", name = "查看库存报表")
+    public List<InventoryReportDTO> getInventoryReport(
+            @RequestParam(required = false) Long warehouseId,
+            @RequestParam(required = false) Long productId) {
+        ReportQueryRequest request = new ReportQueryRequest();
+        request.setWarehouseId(warehouseId);
+        request.setProductId(productId);
+        return reportService.getInventoryList(request);
+    }
+
+    /**
+     * 财务报表 (前端兼容)
+     */
+    @GetMapping("/finance")
+    @Permission(code = "read", name = "查看财务报表")
+    public FinanceReportDTO getFinanceReport(
+            @RequestParam(required = false) LocalDate startDate,
+            @RequestParam(required = false) LocalDate endDate) {
+        ReportQueryRequest request = new ReportQueryRequest();
+        request.setStartDate(startDate);
+        request.setEndDate(endDate);
+        return reportService.getFinanceSummary(request);
+    }
+
+    /**
      * 采购日报
      */
     @GetMapping("/purchase/daily")

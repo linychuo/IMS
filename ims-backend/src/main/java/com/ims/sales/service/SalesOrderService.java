@@ -1,5 +1,6 @@
 package com.ims.sales.service;
 
+import com.ims.core.result.PageResult;
 import com.ims.sales.entity.SalesOrder;
 import com.ims.sales.entity.SalesOrderDetail;
 
@@ -49,6 +50,11 @@ public interface SalesOrderService {
      * 查询列表
      */
     List<SalesOrder> list(SalesOrder query);
+
+    /**
+     * 分页查询
+     */
+    PageResult<SalesOrder> page(Long current, Long size, SalesOrder query);
 
     /**
      * 删除

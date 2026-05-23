@@ -1,5 +1,6 @@
 package com.ims.sales.mapper;
 
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.ims.sales.entity.SalesOrder;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -10,12 +11,7 @@ import java.util.List;
  * 销售订单 Mapper
  */
 @Mapper
-public interface SalesOrderMapper {
-
-    /**
-     * 根据ID查询
-     */
-    SalesOrder selectById(@Param("id") Long id);
+public interface SalesOrderMapper extends BaseMapper<SalesOrder> {
 
     /**
      * 根据订单号查询
@@ -28,17 +24,7 @@ public interface SalesOrderMapper {
     List<SalesOrder> selectList(SalesOrder query);
 
     /**
-     * 新增
-     */
-    int insert(SalesOrder entity);
-
-    /**
      * 更新
      */
     int update(SalesOrder entity);
-
-    /**
-     * 删除
-     */
-    int deleteById(@Param("id") Long id);
 }
