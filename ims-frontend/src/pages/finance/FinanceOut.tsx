@@ -101,7 +101,8 @@ const FinanceOutPage: React.FC = () => {
 
   const handleAudit = async (id: number) => {
     try {
-      await financeApi.put(`/finance/out/audit/${id}`);
+      const userId = localStorage.getItem('userId');
+      await financeApi.put(`/finance/out/audit/${id}`, null, { params: { auditorId: userId } });
       message.success('审核成功');
       fetchData();
     } catch (error) {
