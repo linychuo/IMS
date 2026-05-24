@@ -14,11 +14,12 @@
         <result column="price" property="price"/>
         <result column="amount" property="amount"/>
         <result column="out_quantity" property="outQuantity"/>
-        <result column="created_at" property="createdAt"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
     </resultMap>
 
     <sql id="baseColumns">
-        id, order_id, order_no, product_id, product_name, spec, unit, quantity, price, amount, out_quantity, created_at
+        id, order_id, order_no, product_id, product_name, spec, unit, quantity, price, amount, out_quantity, create_time, update_time
     </sql>
 
     <select id="selectById" resultMap="BaseResultMap">
@@ -41,18 +42,18 @@
 
     <insert id="insert" parameterType="com.ims.sales.entity.SalesOrderDetail">
         INSERT INTO sales_order_detail (
-            id, order_id, order_no, product_id, product_name, spec, unit, quantity, price, amount, out_quantity, created_at
+            id, order_id, order_no, product_id, product_name, spec, unit, quantity, price, amount, out_quantity, create_time, update_time
         ) VALUES (
-            #{id}, #{orderId}, #{orderNo}, #{productId}, #{productName}, #{spec}, #{unit}, #{quantity}, #{price}, #{amount}, #{outQuantity}, #{createdAt}
+            #{id}, #{orderId}, #{orderNo}, #{productId}, #{productName}, #{spec}, #{unit}, #{quantity}, #{price}, #{amount}, #{outQuantity}, #{createTime}, #{updateTime}
         )
     </insert>
 
     <insert id="batchInsert" parameterType="list">
         INSERT INTO sales_order_detail (
-            id, order_id, order_no, product_id, product_name, spec, unit, quantity, price, amount, out_quantity, created_at
+            id, order_id, order_no, product_id, product_name, spec, unit, quantity, price, amount, out_quantity, create_time, update_time
         ) VALUES
         <foreach collection="list" item="item" separator=",">
-            (#{item.id}, #{item.orderId}, #{item.orderNo}, #{item.productId}, #{item.productName}, #{item.spec}, #{item.unit}, #{item.quantity}, #{item.price}, #{item.amount}, #{item.outQuantity}, #{item.createdAt})
+            (nextval('sys_user_seq'), #{item.orderId}, #{item.orderNo}, #{item.productId}, #{item.productName}, #{item.spec}, #{item.unit}, #{item.quantity}, #{item.price}, #{item.amount}, #{item.outQuantity}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
         </foreach>
     </insert>
 

@@ -11,7 +11,7 @@ public class SalesOrderDetail extends BaseEntity {
 
     private Long orderId;
     private String orderNo;
-    private String productId;
+    private Long productId;
     private String productName;
     private String spec;
     private String unit;
@@ -24,8 +24,8 @@ public class SalesOrderDetail extends BaseEntity {
     public void setOrderId(Long orderId) { this.orderId = orderId; }
     public String getOrderNo() { return orderNo; }
     public void setOrderNo(String orderNo) { this.orderNo = orderNo; }
-    public String getProductId() { return productId; }
-    public void setProductId(String productId) { this.productId = productId; }
+    public Long getProductId() { return productId; }
+    public void setProductId(Long productId) { this.productId = productId; }
     public String getProductName() { return productName; }
     public void setProductName(String productName) { this.productName = productName; }
     public String getSpec() { return spec; }

@@ -73,7 +73,7 @@ public class SalesOrderServiceImpl implements SalesOrderService {
         for (SalesOrderDetail detail : details) {
             BigDecimal finalPrice = priceStrategyService.getPrice(
                 customerId,
-                Long.parseLong(detail.getProductId()),
+                detail.getProductId(),
                 detail.getPrice()
             );
             detail.setPrice(finalPrice);
@@ -148,7 +148,7 @@ public class SalesOrderServiceImpl implements SalesOrderService {
         List<SalesOrderDetail> details = salesOrderDetailMapper.selectByOrderId(id);
         for (SalesOrderDetail detail : details) {
             try {
-                Long productId = Long.parseLong(detail.getProductId());
+                Long productId = detail.getProductId();
                 inventoryService.freezeStock(productId, 1L, detail.getQuantity());
             } catch (Exception e) {
                 log.warn("预占库存失败: orderId={}, productId={}, error={}", id, detail.getProductId(), e.getMessage());
@@ -184,7 +184,7 @@ public class SalesOrderServiceImpl implements SalesOrderService {
             List<SalesOrderDetail> details = salesOrderDetailMapper.selectByOrderId(id);
             for (SalesOrderDetail detail : details) {
                 try {
-                    Long productId = Long.parseLong(detail.getProductId());
+                    Long productId = detail.getProductId();
                     inventoryService.unfreezeStock(productId, 1L, detail.getQuantity());
                 } catch (Exception e) {
                     log.warn("释放预占库存失败: orderId={}, productId={}, error={}", id, detail.getProductId(), e.getMessage());
