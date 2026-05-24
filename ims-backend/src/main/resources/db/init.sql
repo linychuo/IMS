@@ -474,6 +474,21 @@ CREATE TABLE sales_order (
     deleted INTEGER DEFAULT 0
 );
 
+CREATE TABLE sales_order_status_history (
+    id BIGINT PRIMARY KEY DEFAULT nextval('sys_user_seq'),
+    order_id BIGINT,
+    order_no VARCHAR(50),
+    from_status INTEGER,
+    to_status INTEGER,
+    operator_id BIGINT,
+    operator_name VARCHAR(100),
+    operate_time TIMESTAMP,
+    remark VARCHAR(500),
+    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted INTEGER DEFAULT 0
+);
+
 CREATE TABLE sales_order_detail (
     id BIGINT PRIMARY KEY DEFAULT nextval('sys_user_seq'),
     order_id BIGINT NOT NULL,
