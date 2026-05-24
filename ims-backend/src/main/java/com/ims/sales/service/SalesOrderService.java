@@ -5,6 +5,7 @@ import com.ims.sales.entity.SalesOrder;
 import com.ims.sales.entity.SalesOrderDetail;
 import com.ims.sales.entity.SalesOrderStatusHistory;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -66,4 +67,9 @@ public interface SalesOrderService {
      * 获取订单状态历史
      */
     List<SalesOrderStatusHistory> getStatusHistory(Long orderId);
+
+    /**
+     * 获取商品价格（应用客户等级价格策略）
+     */
+    BigDecimal getPrice(Long customerId, Long productId, BigDecimal standardPrice);
 }

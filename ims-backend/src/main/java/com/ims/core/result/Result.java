@@ -63,6 +63,10 @@ public class Result<T> implements Serializable {
         return new Result<>(code, message);
     }
 
+    public static <T> Result<T> fail(String message) {
+        return new Result<>(500, message);
+    }
+
     public boolean isSuccess() {
         return this.code != null && this.code == 200;
     }

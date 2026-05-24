@@ -44,6 +44,7 @@ interface User {
   status: number;
   roleId?: number;
   roleName?: string;
+  dataScope?: number;
   createTime?: string;
 }
 
@@ -620,7 +621,7 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
   const fetchApprovals = async () => {
     setApprovalLoading(true);
     try {
-      const res = await systemApi.get('/approval-rule/list');
+      const res = await systemApi.get('/api/system/approval-rule/list');
       if (res.data.code === 200) {
         setApprovalData(res.data.data || []);
       }
@@ -650,7 +651,7 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
 
   const handleDeleteApproval = async (id: number) => {
     try {
-      const res = await systemApi.delete(`/approval-rule/${id}`);
+      const res = await systemApi.delete(`/api/system/approval-rule/${id}`);
       if (res.data.code === 200) {
         message.success('删除成功');
         fetchApprovals();
@@ -666,7 +667,7 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
     try {
       const values = await approvalForm.validateFields();
       if (editingApproval?.id) {
-        const res = await systemApi.put('/approval-rule', { ...values, id: editingApproval.id });
+        const res = await systemApi.put('/api/system/approval-rule', { ...values, id: editingApproval.id });
         if (res.data.code === 200) {
           message.success('修改成功');
           setApprovalModalVisible(false);
@@ -675,7 +676,7 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
           message.error(res.data.message || '修改失败');
         }
       } else {
-        const res = await systemApi.post('/approval-rule', values);
+        const res = await systemApi.post('/api/system/approval-rule', values);
         if (res.data.code === 200) {
           message.success('新增成功');
           setApprovalModalVisible(false);
@@ -1680,6 +1681,15 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
             <Select>
               <Select.Option value={1}>启用</Select.Option>
               <Select.Option value={0}>禁用</Select.Option>
+            </Select>
+          </Form.Item>
+          <Form.Item name="dataScope" label="数据权限" initialValue={1}>
+            <Select>
+              <Select.Option value={1}>全部数据</Select.Option>
+              <Select.Option value={2}>本部门</Select.Option>
+              <Select.Option value={3}>本部门及以下</Select.Option>
+              <Select.Option value={4}>仅本人</Select.Option>
+              <Select.Option value={5}>按仓库分配</Select.Option>
             </Select>
           </Form.Item>
         </Form>

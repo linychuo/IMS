@@ -26,6 +26,10 @@ import {
 import {
   Timeline,
   Card,
+  Steps,
+  Typography,
+  Row,
+  Col,
 } from 'antd';
 import { salesApi, customerApi, productApi } from '../../api';
 
@@ -79,6 +83,8 @@ interface StatusHistory {
   remark: string;
 }
 
+const { Text } = Typography;
+
 const SalesOrderPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<SalesOrder[]>([]);
@@ -93,6 +99,7 @@ const SalesOrderPage: React.FC = () => {
   const [orderDetails, setOrderDetails] = useState<SalesOrderDetail[]>([]);
   const [statusHistory, setStatusHistory] = useState<StatusHistory[]>([]);
   const [customerLevel, setCustomerLevel] = useState<number>(0);
+  const [selectedCustomerCredit, setSelectedCustomerCredit] = useState<{ creditLimit: number; receivableAmount: number } | null>(null);
 
   useEffect(() => {
     fetchCustomers();
@@ -159,7 +166,7 @@ const SalesOrderPage: React.FC = () => {
         setViewModalVisible(true);
         // 获取状态历史
         try {
-          const historyRes = await salesApi.get(`/order/${record.id}/status-history`);
+          const historyRes = await salesApi.get(`/sales/order/${record.id}/status-history`);
           if (historyRes.data?.code === 200) {
             setStatusHistory(historyRes.data.data || []);
           } else {
@@ -242,33 +249,46 @@ const SalesOrderPage: React.FC = () => {
     setOrderDetails(newDetails);
   };
 
-  const handleProductSelect = (index: number, productId: string) => {
+  const handleCustomerSelect = (customerId: string) => {
+    const customer = customerList.find(c => c.id === customerId);
+    if (customer) {
+      // 调用接口获取客户完整的信用信息
+      customerApi.get(`/customer/${customerId}`).then(res => {
+        if (res.data?.code === 200 && res.data.data) {
+          setSelectedCustomerCredit({
+            creditLimit: res.data.data.creditLimit || 0,
+            receivableAmount: res.data.data.receivableAmount || 0,
+          });
+        }
+      }).catch(() => {});
+    }
+  };
+
+  const handleProductSelect = async (index: number, productId: string) => {
     const product = productList.find(p => p.id === productId);
     if (product) {
-      const newDetails = [...orderDetails];
-      // 获取客户等级价格
+      const customerId = form.getFieldValue('customerId');
       let finalPrice = product.price || 0;
-      if (customerList.find(c => c.id === form.getFieldValue('customerId')) && productId && form.getFieldValue('customerId')) {
-        // 调用价格策略接口获取等级价格
-        salesApi.get('/price-strategy/price', {
-          params: {
-            customerId: form.getFieldValue('customerId'),
-            productId: productId,
-            standardPrice: product.price || 0
-          }
-        }).then(res => {
-          if (res.data?.code === 200 && res.data.data) {
-            const newPrice = res.data.data;
-            const detailIdx = newDetails.findIndex(d => d.productId === productId);
-            if (detailIdx !== -1) {
-              newDetails[detailIdx].price = newPrice;
-              newDetails[detailIdx].amount = (newDetails[detailIdx].quantity || 0) * newPrice;
-              setOrderDetails([...newDetails]);
+
+      // 获取客户等级价格
+      if (customerId && productId) {
+        try {
+          const res = await salesApi.get('/sales/price-strategy/price', {
+            params: {
+              customerId: customerId,
+              productId: productId,
+              standardPrice: product.price || 0
             }
+          });
+          if (res.data?.code === 200 && res.data.data) {
+            finalPrice = res.data.data;
           }
-        }).catch(() => {});
-        finalPrice = product.price || 0;
+        } catch (e) {
+          console.error('获取等级价格失败', e);
+        }
       }
+
+      const newDetails = [...orderDetails];
       newDetails[index] = {
         ...newDetails[index],
         productId,
@@ -276,7 +296,7 @@ const SalesOrderPage: React.FC = () => {
         spec: product.spec || '',
         unit: product.unit || '',
         price: finalPrice,
-        amount: (newDetails[index].quantity || 0) * finalPrice,
+        amount: (newDetails[index].quantity || 1) * finalPrice,
       };
       setOrderDetails(newDetails);
     }
@@ -409,7 +429,7 @@ const SalesOrderPage: React.FC = () => {
         <Form form={form} layout="vertical">
           <Space style={{ width: '100%' }} size="large">
             <Form.Item name="customerId" label="客户" rules={[{ required: true, message: '请选择客户' }]} style={{ flex: 1 }}>
-              <Select placeholder="请选择客户">
+              <Select placeholder="请选择客户" onChange={handleCustomerSelect}>
                 {customerList.map(c => (
                   <Select.Option key={c.id} value={c.id}>{c.name}</Select.Option>
                 ))}
@@ -427,6 +447,15 @@ const SalesOrderPage: React.FC = () => {
               <Input.TextArea rows={2} placeholder="请输入备注" />
             </Form.Item>
           </Space>
+          {selectedCustomerCredit && (
+            <div style={{ background: '#f5f5f5', padding: '12px 16px', borderRadius: 4, marginBottom: 16 }}>
+              <Space size="large">
+                <span>信用额度: <strong style={{ color: '#1890ff' }}>¥{selectedCustomerCredit.creditLimit?.toFixed(2) || '0.00'}</strong></span>
+                <span>已用额度: <strong style={{ color: '#ff4d4f' }}>¥{selectedCustomerCredit.receivableAmount?.toFixed(2) || '0.00'}</strong></span>
+                <span>可用额度: <strong style={{ color: '#52c41a' }}>¥{((selectedCustomerCredit.creditLimit || 0) - (selectedCustomerCredit.receivableAmount || 0)).toFixed(2)}</strong></span>
+              </Space>
+            </div>
+          )}
         </Form>
 
         <Divider>订单明细</Divider>
@@ -477,11 +506,14 @@ const SalesOrderPage: React.FC = () => {
           <Descriptions.Item label="订单编号">{editingRecord?.orderNo}</Descriptions.Item>
           <Descriptions.Item label="客户">{editingRecord?.customerName}</Descriptions.Item>
           <Descriptions.Item label="订单日期">{editingRecord?.orderDate}</Descriptions.Item>
-          <Descriptions.Item label="要求交货日期">{editingRecord?.expectedDate}</Descriptions.Item>
+          <Descriptions.Item label="要求交货日期">{editingRecord?.expectedDate || '-'}</Descriptions.Item>
           <Descriptions.Item label="订单金额">¥{editingRecord?.totalAmount?.toFixed(2)}</Descriptions.Item>
           <Descriptions.Item label="优惠金额">¥{editingRecord?.discountAmount?.toFixed(2) || '-'}</Descriptions.Item>
-          <Descriptions.Item label="实际金额">¥{editingRecord?.netAmount?.toFixed(2)}</Descriptions.Item>
+          <Descriptions.Item label="实际金额"><Text strong>¥{editingRecord?.netAmount?.toFixed(2)}</Text></Descriptions.Item>
           <Descriptions.Item label="状态">{renderStatus(editingRecord?.status || 0)}</Descriptions.Item>
+          <Descriptions.Item label="审核人">{editingRecord?.auditedBy || '-'}</Descriptions.Item>
+          <Descriptions.Item label="审核时间">{editingRecord?.auditedAt || '-'}</Descriptions.Item>
+          {editingRecord?.remark && <Descriptions.Item label="备注" span={2}>{editingRecord.remark}</Descriptions.Item>}
         </Descriptions>
         {editingRecord?.details && editingRecord.details.length > 0 && (
           <>
@@ -498,14 +530,31 @@ const SalesOrderPage: React.FC = () => {
         {statusHistory.length > 0 && (
           <>
             <Divider>订单跟踪</Divider>
-            <Card size="small" style={{ maxHeight: 300, overflow: 'auto' }}>
+            <Card size="small" style={{ marginBottom: 16 }}>
+              <Steps
+                current={statusHistory.length - 1}
+                size="small"
+                items={statusHistory.map(h => ({
+                  title: getStatusName(h.toStatus),
+                  description: (
+                    <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                      {h.operatorName} {h.operateTime}
+                    </Typography.Text>
+                  ),
+                  status: h.toStatus === 9 ? 'error' : h.toStatus === 3 ? 'finish' : 'process',
+                }))}
+              />
+            </Card>
+            <Card size="small" title="操作记录" style={{ maxHeight: 200, overflow: 'auto' }}>
               <Timeline
                 items={statusHistory.map(h => ({
                   color: h.toStatus === 9 ? 'red' : h.toStatus === 3 ? 'green' : 'blue',
                   children: (
                     <div>
                       <div>
-                        {getStatusName(h.fromStatus)} → {getStatusName(h.toStatus)}
+                        <Tag color={h.toStatus === 9 ? 'red' : h.toStatus === 3 ? 'green' : 'blue'}>
+                          {getStatusName(h.fromStatus)} → {getStatusName(h.toStatus)}
+                        </Tag>
                       </div>
                       <div style={{ fontSize: 12, color: '#888' }}>
                         操作人: {h.operatorName} | {h.operateTime}

@@ -50,6 +50,7 @@ interface Location {
   name: string;
   warehouseId?: number;
   warehouseName?: string;
+  zone?: string;
   shelfNo?: string;
   row?: number;
   col?: number;
@@ -415,6 +416,12 @@ const WarehousePage: React.FC<{ defaultTab?: string }> = ({ defaultTab }) => {
       width: 120,
     },
     {
+      title: '库区',
+      dataIndex: 'zone',
+      key: 'zone',
+      width: 80,
+    },
+    {
       title: '货架号',
       dataIndex: 'shelfNo',
       key: 'shelfNo',
@@ -681,6 +688,9 @@ const WarehousePage: React.FC<{ defaultTab?: string }> = ({ defaultTab }) => {
             </Form.Item>
             <Form.Item name="shelfNo" label="货架号" style={{ flex: 1 }}>
               <Input placeholder="请输入货架号" />
+            </Form.Item>
+            <Form.Item name="zone" label="库区" style={{ flex: 1 }}>
+              <Input placeholder="如: A区/B区" />
             </Form.Item>
           </Space>
           <Space style={{ width: '100%' }} size="large">

@@ -135,4 +135,36 @@ public class InventoryController {
     public Result<List<Inventory>> getHighStockList() {
         return Result.success(inventoryService.getHighStockList());
     }
+
+    /**
+     * 冻结库存
+     */
+    @PostMapping("/{id}/freeze")
+    @Permission(code = "update", name = "冻结库存")
+    public Result<Void> freezeStock(
+            @PathVariable Long id,
+            @RequestParam BigDecimal quantity) {
+        Inventory inventory = inventoryService.getById(id);
+        if (inventory == null) {
+            return Result.fail("库存记录不存在");
+        }
+        inventoryService.freezeStock(inventory.getProductId(), inventory.getWarehouseId(), quantity);
+        return Result.success(null);
+    }
+
+    /**
+     * 解冻库存
+     */
+    @PostMapping("/{id}/unfreeze")
+    @Permission(code = "update", name = "解冻库存")
+    public Result<Void> unfreezeStock(
+            @PathVariable Long id,
+            @RequestParam BigDecimal quantity) {
+        Inventory inventory = inventoryService.getById(id);
+        if (inventory == null) {
+            return Result.fail("库存记录不存在");
+        }
+        inventoryService.unfreezeStock(inventory.getProductId(), inventory.getWarehouseId(), quantity);
+        return Result.success(null);
+    }
 }

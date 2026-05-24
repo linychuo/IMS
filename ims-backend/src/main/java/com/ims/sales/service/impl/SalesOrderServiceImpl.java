@@ -16,6 +16,7 @@ import com.ims.sales.mapper.SalesOrderDetailMapper;
 import com.ims.sales.mapper.SalesOrderMapper;
 import com.ims.sales.mapper.SalesOrderStatusHistoryMapper;
 import com.ims.sales.service.SalesOrderService;
+import com.ims.sales.service.SalesPriceStrategyService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -39,19 +40,22 @@ public class SalesOrderServiceImpl implements SalesOrderService {
     private final OrderNoGenerator orderNoGenerator;
     private final CustomerMapper customerMapper;
     private final InventoryService inventoryService;
+    private final SalesPriceStrategyService priceStrategyService;
 
     public SalesOrderServiceImpl(SalesOrderMapper salesOrderMapper,
                                   SalesOrderDetailMapper salesOrderDetailMapper,
                                   SalesOrderStatusHistoryMapper statusHistoryMapper,
                                   OrderNoGenerator orderNoGenerator,
                                   CustomerMapper customerMapper,
-                                  InventoryService inventoryService) {
+                                  InventoryService inventoryService,
+                                  SalesPriceStrategyService priceStrategyService) {
         this.salesOrderMapper = salesOrderMapper;
         this.salesOrderDetailMapper = salesOrderDetailMapper;
         this.statusHistoryMapper = statusHistoryMapper;
         this.orderNoGenerator = orderNoGenerator;
         this.customerMapper = customerMapper;
         this.inventoryService = inventoryService;
+        this.priceStrategyService = priceStrategyService;
     }
 
     @Override
@@ -64,10 +68,17 @@ public class SalesOrderServiceImpl implements SalesOrderService {
             throw new RuntimeException("客户不存在");
         }
 
-        // 计算订单总金额
-        BigDecimal orderAmount = details.stream()
-            .map(d -> d.getPrice().multiply(d.getQuantity()))
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
+        // 应用客户等级价格策略
+        BigDecimal orderAmount = BigDecimal.ZERO;
+        for (SalesOrderDetail detail : details) {
+            BigDecimal finalPrice = priceStrategyService.getPrice(
+                customerId,
+                Long.parseLong(detail.getProductId()),
+                detail.getPrice()
+            );
+            detail.setPrice(finalPrice);
+            orderAmount = orderAmount.add(finalPrice.multiply(detail.getQuantity()));
+        }
 
         // 检查客户信用额度 (信用额度 - 已用信用 >= 订单金额)
         if (customer.getCreditLimit() != null && customer.getReceivableAmount() != null) {
@@ -92,7 +103,7 @@ public class SalesOrderServiceImpl implements SalesOrderService {
         }
         salesOrderDetailMapper.batchInsert(details);
 
-        log.info("创建销售订单: {}，金额: {}，信用检查通过", salesOrder.getOrderNo(), orderAmount);
+        log.info("创建销售订单: {}，金额: {}，信用检查通过，应用客户等级价格", salesOrder.getOrderNo(), orderAmount);
         return salesOrder;
     }
 
@@ -242,6 +253,11 @@ public class SalesOrderServiceImpl implements SalesOrderService {
     @Override
     public List<SalesOrderStatusHistory> getStatusHistory(Long orderId) {
         return statusHistoryMapper.selectByOrderId(orderId);
+    }
+
+    @Override
+    public BigDecimal getPrice(Long customerId, Long productId, BigDecimal standardPrice) {
+        return priceStrategyService.getPrice(customerId, productId, standardPrice);
     }
 
     /**

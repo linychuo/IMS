@@ -9,6 +9,7 @@ import com.ims.procurement.mapper.PurchaseOrderMapper;
 import com.ims.procurement.mapper.SupplierMapper;
 import com.ims.procurement.service.PurchaseOrderService;
 import com.ims.common.util.OrderNoGenerator;
+import com.ims.system.service.ApprovalRuleService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -29,13 +30,16 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
     private final PurchaseOrderMapper purchaseOrderMapper;
     private final PurchaseOrderDetailMapper detailMapper;
     private final SupplierMapper supplierMapper;
+    private final ApprovalRuleService approvalRuleService;
 
     public PurchaseOrderServiceImpl(PurchaseOrderMapper purchaseOrderMapper,
                                    PurchaseOrderDetailMapper detailMapper,
-                                   SupplierMapper supplierMapper) {
+                                   SupplierMapper supplierMapper,
+                                   ApprovalRuleService approvalRuleService) {
         this.purchaseOrderMapper = purchaseOrderMapper;
         this.detailMapper = detailMapper;
         this.supplierMapper = supplierMapper;
+        this.approvalRuleService = approvalRuleService;
     }
 
     @Override
@@ -52,7 +56,6 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         order.setSupplierName(supplier.getSupplierName());
         order.setOrderDate(java.time.LocalDate.now());
         order.setExpectedDate(request.getExpectedDate());
-        order.setStatus(0);
         order.setRemark(request.getRemark());
         order.setDiscountAmount(request.getDiscountAmount());
 
@@ -65,6 +68,16 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         order.setNetAmount(totalAmount.subtract(
                 request.getDiscountAmount() != null ? request.getDiscountAmount() : BigDecimal.ZERO
         ));
+
+        // 检查是否需要审批
+        boolean needsApproval = approvalRuleService.requiresApproval("purchase", order.getNetAmount());
+        if (needsApproval) {
+            order.setStatus(0); // 新建状态，需要审批
+            log.info("创建采购订单: {}，金额: {}，需要审批", order.getOrderNo(), order.getNetAmount());
+        } else {
+            order.setStatus(1); // 直接已审核状态
+            log.info("创建采购订单: {}，金额: {}，免审直接通过", order.getOrderNo(), order.getNetAmount());
+        }
 
         purchaseOrderMapper.insert(order);
 

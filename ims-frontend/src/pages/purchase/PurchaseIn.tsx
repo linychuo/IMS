@@ -22,6 +22,7 @@ import {
   CloseCircleOutlined,
   EditOutlined,
   DeleteOutlined,
+  SafetyCertificateOutlined,
 } from '@ant-design/icons';
 import { procurementApi, supplierApi, warehouseApi, productApi } from '../../api';
 
@@ -76,6 +77,9 @@ const PurchaseInPage: React.FC = () => {
   const [productList, setProductList] = useState<Product[]>([]);
   const [form] = Form.useForm();
   const [inDetails, setInDetails] = useState<PurchaseInDetail[]>([]);
+  const [inspectModalVisible, setInspectModalVisible] = useState(false);
+  const [inspectingRecord, setInspectingRecord] = useState<PurchaseIn | null>(null);
+  const [inspectForm] = Form.useForm();
 
   useEffect(() => {
     fetchSuppliers();
@@ -207,6 +211,50 @@ const PurchaseInPage: React.FC = () => {
     }
   };
 
+  const handleInspect = async (record: PurchaseIn) => {
+    try {
+      const res = await procurementApi.get(`/purchase-in/${record.id}`);
+      if (res.data) {
+        setInspectingRecord(res.data);
+        // 初始化检验数据
+        const initItems = (res.data.details || []).map((d: PurchaseInDetail) => ({
+          detailId: d.id,
+          productName: d.productName,
+          spec: d.spec,
+          unit: d.unit,
+          quantity: d.quantity,
+          checkStatus: 0,
+          checkedQty: d.quantity,
+          remark: '',
+        }));
+        inspectForm.setFieldsValue({ items: initItems });
+        setInspectModalVisible(true);
+      }
+    } catch (error) {
+      message.error('获取入库单详情失败');
+    }
+  };
+
+  const handleInspectOk = async () => {
+    try {
+      const values = await inspectForm.validateFields();
+      // 确保每个item包含detailId
+      const items = values.items.map((item: any, index: number) => ({
+        detailId: inspectingRecord?.details?.[index]?.id,
+        checkStatus: item.checkStatus,
+        checkedQty: item.checkedQty,
+        remark: item.remark,
+      }));
+      await procurementApi.post(`/purchase-in/${inspectingRecord?.id}/inspect`, { items });
+      message.success('检验成功');
+      setInspectModalVisible(false);
+      fetchData();
+    } catch (error) {
+      console.error('Failed to inspect:', error);
+      message.error('检验失败');
+    }
+  };
+
   // 新增/编辑
   const handleAdd = () => {
     setEditingRecord(null);
@@ -280,9 +328,10 @@ const PurchaseInPage: React.FC = () => {
 
   const renderStatus = (status: number) => {
     const map: Record<number, { text: string; color: string }> = {
-      0: { text: '待入库', color: 'orange' },
-      1: { text: '部分入库', color: 'cyan' },
-      2: { text: '已完成', color: 'green' },
+      0: { text: '待审核', color: 'orange' },
+      1: { text: '待检验', color: 'blue' },
+      2: { text: '检验中', color: 'cyan' },
+      3: { text: '已完成', color: 'green' },
       9: { text: '已取消', color: 'red' },
     };
     const s = map[status] || { text: '未知', color: 'default' };
@@ -314,6 +363,9 @@ const PurchaseInPage: React.FC = () => {
             </>
           )}
           {record.status === 1 && (
+            <Button type="link" size="small" icon={<SafetyCertificateOutlined />} onClick={() => handleInspect(record)}>检验</Button>
+          )}
+          {record.status === 2 && (
             <Button type="link" size="small" icon={<CheckCircleOutlined />} onClick={() => handleComplete(record.id)}>完成</Button>
           )}
         </Space>
@@ -455,6 +507,69 @@ const PurchaseInPage: React.FC = () => {
             </Descriptions>
           </>
         )}
+      </Modal>
+
+      {/* 质检弹窗 */}
+      <Modal
+        title="入库检验"
+        open={inspectModalVisible}
+        onOk={handleInspectOk}
+        onCancel={() => setInspectModalVisible(false)}
+        width={700}
+      >
+        <Form form={inspectForm} layout="vertical">
+          <Divider>检验明细</Divider>
+          <Form.List name="items">
+            {(fields, { add, remove }) => (
+              <>
+                {fields.map(({ key, name, ...restField }) => (
+                  <Space key={key} style={{ display: 'flex', marginBottom: 8 }} align="start">
+                    <Form.Item
+                      {...restField}
+                      name={[name, 'productName']}
+                      style={{ width: 150, marginBottom: 0 }}
+                    >
+                      <Input disabled placeholder="商品名称" />
+                    </Form.Item>
+                    <Form.Item
+                      {...restField}
+                      name={[name, 'quantity']}
+                      style={{ width: 80, marginBottom: 0 }}
+                    >
+                      <Input disabled placeholder="数量" />
+                    </Form.Item>
+                    <Form.Item
+                      {...restField}
+                      name={[name, 'checkStatus']}
+                      rules={[{ required: true, message: '请选择检验结果' }]}
+                      style={{ width: 120, marginBottom: 0 }}
+                    >
+                      <Select placeholder="检验结果">
+                        <Select.Option value={1}>合格</Select.Option>
+                        <Select.Option value={2}>不合格</Select.Option>
+                      </Select>
+                    </Form.Item>
+                    <Form.Item
+                      {...restField}
+                      name={[name, 'checkedQty']}
+                      style={{ width: 80, marginBottom: 0 }}
+                    >
+                      <InputNumber min={0} placeholder="合格数量" />
+                    </Form.Item>
+                    <Form.Item
+                      {...restField}
+                      name={[name, 'remark']}
+                      style={{ width: 150, marginBottom: 0 }}
+                    >
+                      <Input placeholder="备注" />
+                    </Form.Item>
+                    <Button type="link" danger onClick={() => remove(name)}>删除</Button>
+                  </Space>
+                ))}
+              </>
+            )}
+          </Form.List>
+        </Form>
       </Modal>
     </div>
   );

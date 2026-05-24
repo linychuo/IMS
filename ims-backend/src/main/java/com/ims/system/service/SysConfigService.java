@@ -1,6 +1,7 @@
 package com.ims.system.service;
 
 import com.ims.system.entity.SysConfig;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import java.util.List;
 
 /**
@@ -47,4 +48,14 @@ public interface SysConfigService {
      * 获取指定类型的配置
      */
     List<SysConfig> listByType(String configType);
+
+    /**
+     * 分页查询
+     */
+    IPage<SysConfig> page(Integer page, Integer pageSize, String keyword);
+
+    /**
+     * 更新状态
+     */
+    boolean updateStatus(Long id, Integer status);
 }

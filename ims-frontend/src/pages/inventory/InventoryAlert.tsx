@@ -6,24 +6,24 @@ import {
   Space,
   Modal,
   Form,
-  InputNumber,
   Select,
+  InputNumber,
   message,
   Tag,
-  Popconfirm,
   Card,
   Row,
   Col,
   Statistic,
+  Tabs,
 } from 'antd';
 import {
   PlusOutlined,
   EditOutlined,
-  DeleteOutlined,
   SearchOutlined,
   AlertOutlined,
+  ClockCircleOutlined,
 } from '@ant-design/icons';
-import { productApi, warehouseApi } from '../../api';
+import { productApi, warehouseApi, inventoryApi } from '../../api';
 import { useAuthStore } from '../../stores/authStore';
 
 interface Product {
@@ -41,6 +41,17 @@ interface Warehouse {
   name: string;
 }
 
+interface ExpiringProduct {
+  productId: number;
+  productName: string;
+  productCode: string;
+  warehouseName: string;
+  batchNo: string;
+  quantity: number;
+  expiryDate: string;
+  daysUntilExpiry: number;
+}
+
 interface AlertConfig {
   minStock: number;
   maxStock: number;
@@ -49,21 +60,50 @@ interface AlertConfig {
 
 const InventoryAlertPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
+  const [expiringLoading, setExpiringLoading] = useState(false);
   const [data, setData] = useState<Product[]>([]);
+  const [expiringData, setExpiringData] = useState<ExpiringProduct[]>([]);
   const [pagination, setPagination] = useState({ current: 1, size: 10, total: 0 });
   const [keyword, setKeyword] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const [editingRecord, setEditingRecord] = useState<Product | null>(null);
   const [form] = Form.useForm();
   const [warehouseList, setWarehouseList] = useState<Warehouse[]>([]);
+  const [activeTab, setActiveTab] = useState<'stock' | 'expiring'>('stock');
+  const [expiryDays, setExpiryDays] = useState<number>(30);
+  const [selectedWarehouseId, setSelectedWarehouseId] = useState<number | null>(null);
 
   useEffect(() => {
     fetchWarehouseList();
   }, []);
 
   useEffect(() => {
-    fetchData();
-  }, [pagination.current, pagination.size, keyword]);
+    if (activeTab === 'stock') {
+      fetchData();
+    } else {
+      fetchExpiringProducts();
+    }
+  }, [pagination.current, pagination.size, keyword, activeTab, expiryDays, selectedWarehouseId]);
+
+  const fetchExpiringProducts = async () => {
+    setExpiringLoading(true);
+    try {
+      const params: Record<string, any> = { days: expiryDays };
+      if (selectedWarehouseId) {
+        params.warehouseId = selectedWarehouseId;
+      }
+      const res = await inventoryApi.get('/inventory/expiring', { params });
+      if (res.data?.code === 200) {
+        setExpiringData(res.data.data || []);
+      } else {
+        setExpiringData(res.data || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch expiring products:', error);
+    } finally {
+      setExpiringLoading(false);
+    }
+  };
 
   const fetchWarehouseList = async () => {
     try {
@@ -165,45 +205,106 @@ const InventoryAlertPage: React.FC = () => {
     },
   ];
 
+  const expiringColumns = [
+    { title: '商品编码', dataIndex: 'productCode', key: 'productCode', width: 120 },
+    { title: '商品名称', dataIndex: 'productName', key: 'productName', width: 180 },
+    { title: '仓库', dataIndex: 'warehouseName', key: 'warehouseName', width: 100 },
+    { title: '批次', dataIndex: 'batchNo', key: 'batchNo', width: 100 },
+    { title: '数量', dataIndex: 'quantity', key: 'quantity', width: 80 },
+    { title: '有效期至', dataIndex: 'expiryDate', key: 'expiryDate', width: 120 },
+    {
+      title: '剩余天数',
+      key: 'daysUntilExpiry',
+      width: 100,
+      render: (_: any, record: ExpiringProduct) => {
+        if (record.daysUntilExpiry <= 0) return <Tag color="red">已过期</Tag>;
+        if (record.daysUntilExpiry <= 7) return <Tag color="red">{record.daysUntilExpiry}天</Tag>;
+        if (record.daysUntilExpiry <= 15) return <Tag color="orange">{record.daysUntilExpiry}天</Tag>;
+        return <Tag color="green">{record.daysUntilExpiry}天</Tag>;
+      },
+    },
+  ];
+
   return (
     <div>
       <h2 style={{ marginBottom: 16 }}>库存预警配置</h2>
-      <Row gutter={16} style={{ marginBottom: 16 }}>
-        <Col span={6}>
-          <Card><Statistic title="商品总数" value={data.length} prefix={<AlertOutlined />} /></Card>
-        </Col>
-        <Col span={6}>
-          <Card><Statistic title="已配置预警" value={data.filter(d => d.lowStockWarning > 0 || d.highStockWarning > 0).length} valueStyle={{ color: '#1890ff' }} /></Card>
-        </Col>
-        <Col span={6}>
-          <Card><Statistic title="未配置预警" value={data.filter(d => !d.lowStockWarning && !d.highStockWarning).length} valueStyle={{ color: '#fa8c16' }} /></Card>
-        </Col>
-      </Row>
-      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between' }}>
-        <Input.Search
-          placeholder="搜索商品名称/编码"
-          allowClear
-          onSearch={handleSearch}
-          style={{ width: 250 }}
-          prefix={<SearchOutlined />}
-        />
-        <Button type="primary" onClick={handleAdd}>批量配置</Button>
-      </div>
-      <Table
-        columns={columns}
-        dataSource={data}
-        rowKey="id"
-        loading={loading}
-        pagination={{
-          current: pagination.current,
-          pageSize: pagination.size,
-          total: pagination.total,
-          showSizeChanger: true,
-          showQuickJumper: true,
-          showTotal: (total) => `共 ${total} 条`,
-          onChange: (current, size) => setPagination({ current, size, total: pagination.total }),
-        }}
-        scroll={{ x: 900 }}
+      <Tabs
+        activeKey={activeTab}
+        onChange={(key) => { setActiveTab(key as any); setPagination(prev => ({ ...prev, current: 1 })); }}
+        items={[
+          {
+            key: 'stock',
+            label: <span><AlertOutlined /> 库存预警</span>,
+            children: (<>
+              <Row gutter={16} style={{ marginBottom: 16 }}>
+                <Col span={6}>
+                  <Card><Statistic title="商品总数" value={data.length} prefix={<AlertOutlined />} /></Card>
+                </Col>
+                <Col span={6}>
+                  <Card><Statistic title="已配置预警" value={data.filter(d => d.lowStockWarning > 0 || d.highStockWarning > 0).length} valueStyle={{ color: '#1890ff' }} /></Card>
+                </Col>
+                <Col span={6}>
+                  <Card><Statistic title="未配置预警" value={data.filter(d => !d.lowStockWarning && !d.highStockWarning).length} valueStyle={{ color: '#fa8c16' }} /></Card>
+                </Col>
+              </Row>
+              <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between' }}>
+                <Input.Search
+                  placeholder="搜索商品名称/编码"
+                  allowClear
+                  onSearch={handleSearch}
+                  style={{ width: 250 }}
+                  prefix={<SearchOutlined />}
+                />
+                <Button type="primary" onClick={handleAdd}>批量配置</Button>
+              </div>
+              <Table
+                columns={columns}
+                dataSource={data}
+                rowKey="id"
+                loading={loading}
+                pagination={{
+                  current: pagination.current,
+                  pageSize: pagination.size,
+                  total: pagination.total,
+                  showSizeChanger: true,
+                  showQuickJumper: true,
+                  showTotal: (total) => `共 ${total} 条`,
+                  onChange: (current, size) => setPagination({ current, size, total: pagination.total }),
+                }}
+                scroll={{ x: 900 }}
+              />
+            </>),
+          },
+          {
+            key: 'expiring',
+            label: <span><ClockCircleOutlined /> 临期预警</span>,
+            children: (<>
+              <Row gutter={16} style={{ marginBottom: 16 }}>
+                <Col span={6}>
+                  <Card><Statistic title="临期商品" value={expiringData.length} prefix={<ClockCircleOutlined />} valueStyle={{ color: expiringData.length > 0 ? '#cf1322' : '#3f8600' }} /></Card>
+                </Col>
+                <Col span={6}>
+                  <Card><Statistic title="预警天数" value={expiryDays} suffix="天" /></Card>
+                </Col>
+              </Row>
+              <div style={{ marginBottom: 16, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <InputNumber min={1} max={365} value={expiryDays} onChange={(v) => setExpiryDays(v || 30)} addonBefore="预警天数" style={{ width: 150 }} />
+                <Select allowClear placeholder="选择仓库" style={{ width: 150 }} onChange={(v) => setSelectedWarehouseId(v)}>
+                  {warehouseList.map(w => <Select.Option key={w.id} value={w.id}>{w.name}</Select.Option>)}
+                </Select>
+                <Button type="primary" onClick={fetchExpiringProducts}>刷新</Button>
+              </div>
+              <Table
+                columns={expiringColumns}
+                dataSource={expiringData}
+                rowKey="productId"
+                loading={expiringLoading}
+                pagination={{ pageSize: 10, showSizeChanger: true, showTotal: (total) => `共 ${total} 条` }}
+                scroll={{ x: 900 }}
+              />
+            </>),
+          },
+        ]}
       />
 
       <Modal

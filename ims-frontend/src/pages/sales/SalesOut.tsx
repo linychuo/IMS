@@ -23,7 +23,7 @@ import {
   EditOutlined,
   DeleteOutlined,
 } from '@ant-design/icons';
-import { salesApi, customerApi, warehouseApi, productApi } from '../../api';
+import { salesApi, customerApi, warehouseApi, productApi, inventoryApi } from '../../api';
 
 interface SalesOutDetail {
   id?: string;
@@ -242,7 +242,7 @@ const SalesOutPage: React.FC = () => {
     setOutDetails(newDetails);
   };
 
-  const handleProductSelect = (index: number, productId: string) => {
+  const handleProductSelect = async (index: number, productId: string) => {
     const product = productList.find(p => p.id === productId);
     if (product) {
       const newDetails = [...outDetails];
@@ -256,6 +256,20 @@ const SalesOutPage: React.FC = () => {
         amount: (newDetails[index].quantity || 0) * (product.price || 0),
       };
       setOutDetails(newDetails);
+
+      // 获取FIFO推荐批次
+      const warehouseId = form.getFieldValue('warehouseId');
+      if (warehouseId) {
+        try {
+          const fifoRes = await inventoryApi.get(`/inventory/fifo/${productId}`, { params: { warehouseId } });
+          if (fifoRes.data?.code === 200 && fifoRes.data.data?.length > 0) {
+            const batchInfo = fifoRes.data.data[0];
+            message.info(`FIFO推荐：从批次 ${batchInfo.batchNo || '默认'} 出库`);
+          }
+        } catch (e) {
+          // 忽略FIFO错误
+        }
+      }
     }
   };
 

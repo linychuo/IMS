@@ -4,6 +4,8 @@ import com.ims.core.result.Result;
 import com.ims.system.entity.SysConfig;
 import com.ims.system.service.SysConfigService;
 import com.ims.system.annotation.Permission;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -42,6 +44,21 @@ public class SysConfigController {
     @Permission(code = "read", name = "查看配置")
     public Result<List<SysConfig>> listByType(@PathVariable String configType) {
         return Result.success(sysConfigService.listByType(configType));
+    }
+
+    @GetMapping("/page")
+    @Permission(code = "read", name = "查看配置")
+    public Result<IPage<SysConfig>> page(
+            @RequestParam(defaultValue = "1") Integer page,
+            @RequestParam(defaultValue = "10") Integer pageSize,
+            @RequestParam(required = false) String keyword) {
+        return Result.success(sysConfigService.page(page, pageSize, keyword));
+    }
+
+    @PutMapping("/{id}/status")
+    @Permission(code = "update", name = "更新配置")
+    public Result<Boolean> updateStatus(@PathVariable Long id, @RequestParam Integer status) {
+        return Result.success(sysConfigService.updateStatus(id, status));
     }
 
     @PostMapping

@@ -12,9 +12,11 @@ import {
   Popconfirm,
   Tag,
   Tabs,
+  Divider,
+  Card,
 } from 'antd';
-import { PlusOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
-import { financeApi, customerApi } from '../../api';
+import { PlusOutlined, CheckCircleOutlined, CloseCircleOutlined, DisconnectOutlined } from '@ant-design/icons';
+import { financeApi, customerApi, salesApi } from '../../api';
 
 interface FinanceIn {
   id: number;
@@ -26,12 +28,27 @@ interface FinanceIn {
   receiptType?: number;
   amount: number;
   discountAmount?: number;
+  writeoffAmount?: number;
   payMethod?: number;
   bankAccount?: string;
   bankName?: string;
   status: number;
   remark?: string;
   createTime?: string;
+}
+
+interface ReceivableOrder {
+  orderId: string;
+  orderNo: string;
+  orderAmount: number;
+  paidAmount: number;
+  pendingAmount: number;
+}
+
+interface WriteoffItem {
+  orderId: string;
+  orderNo: string;
+  writeoffAmount: number;
 }
 
 const FinanceInPage: React.FC = () => {
@@ -44,6 +61,10 @@ const FinanceInPage: React.FC = () => {
   const [form] = Form.useForm();
   const [activeTab, setActiveTab] = useState<'all' | 'sales' | 'advance'>('all');
   const [modalMode, setModalMode] = useState<'sales' | 'advance'>('sales');
+  const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(null);
+  const [receivableOrders, setReceivableOrders] = useState<ReceivableOrder[]>([]);
+  const [writeoffItems, setWriteoffItems] = useState<WriteoffItem[]>([]);
+  const [showWriteoff, setShowWriteoff] = useState(false);
 
   useEffect(() => {
     fetchCustomers();
@@ -97,8 +118,49 @@ const FinanceInPage: React.FC = () => {
     setEditingRecord(null);
     form.resetFields();
     form.setFieldsValue({ receiptType: 2 });
+    setSelectedCustomerId(null);
+    setReceivableOrders([]);
+    setWriteoffItems([]);
+    setShowWriteoff(false);
     setModalVisible(true);
   };
+
+  const handleCustomerSelectForWriteoff = async (customerId: number) => {
+    setSelectedCustomerId(customerId);
+    try {
+      const res = await salesApi.get('/order/list', { params: { customerId, status: 3 } });
+      if (res.data?.code === 200) {
+        const orders = (res.data.data || []).map((o: any) => ({
+          orderId: o.id,
+          orderNo: o.orderNo,
+          orderAmount: o.totalAmount || 0,
+          paidAmount: o.paidAmount || 0,
+          pendingAmount: (o.totalAmount || 0) - (o.paidAmount || 0),
+        })).filter((item: ReceivableOrder) => item.pendingAmount > 0);
+        setReceivableOrders(orders);
+      }
+    } catch (error) {
+      console.error('Failed to fetch receivable orders:', error);
+    }
+  };
+
+  const handleOpenWriteoff = () => {
+    setShowWriteoff(true);
+  };
+
+  const handleWriteoffAmountChange = (orderId: string, amount: number) => {
+    const existing = writeoffItems.find(w => w.orderId === orderId);
+    if (existing) {
+      setWriteoffItems(writeoffItems.map(w => w.orderId === orderId ? { ...w, writeoffAmount: amount } : w));
+    } else {
+      const order = receivableOrders.find(o => o.orderId === orderId);
+      if (order) {
+        setWriteoffItems([...writeoffItems, { orderId, orderNo: order.orderNo, writeoffAmount: amount }]);
+      }
+    }
+  };
+
+  const totalWriteoffAmount = writeoffItems.reduce((sum, item) => sum + item.writeoffAmount, 0);
 
   const handleAudit = async (id: number) => {
     try {
@@ -124,14 +186,21 @@ const FinanceInPage: React.FC = () => {
   const handleModalOk = async () => {
     try {
       const values = await form.validateFields();
+      const params: any = { ...values };
+      // 添加核销明细
+      if (modalMode === 'sales' && writeoffItems.length > 0) {
+        params.writeoffDetails = writeoffItems;
+      }
       if (editingRecord?.id) {
-        await financeApi.put(`/finance/in/${editingRecord.id}`, values);
+        await financeApi.put(`/finance/in/${editingRecord.id}`, params);
         message.success('修改成功');
       } else {
-        await financeApi.post('/finance/in', values);
+        await financeApi.post('/finance/in', params);
         message.success('新增成功');
       }
       setModalVisible(false);
+      setWriteoffItems([]);
+      setShowWriteoff(false);
       fetchData();
     } catch (error) {
       console.error('Failed to save:', error);
@@ -215,12 +284,12 @@ const FinanceInPage: React.FC = () => {
         title={editingRecord ? '编辑收款单' : '新建收款单'}
         open={modalVisible}
         onOk={handleModalOk}
-        onCancel={() => setModalVisible(false)}
-        width={600}
+        onCancel={() => { setModalVisible(false); setShowWriteoff(false); setWriteoffItems([]); }}
+        width={700}
       >
         <Form form={form} layout="vertical">
           <Form.Item name="customerId" label="客户" rules={[{ required: true }]}>
-            <Select placeholder="请选择客户">
+            <Select placeholder="请选择客户" onChange={(value) => { if (modalMode === 'sales') handleCustomerSelectForWriteoff(value); }}>
               {customerList.map((c) => (
                 <Select.Option key={c.id} value={c.id}>{c.name}</Select.Option>
               ))}
@@ -253,6 +322,45 @@ const FinanceInPage: React.FC = () => {
               <Input placeholder="请输入银行账号" />
             </Form.Item>
           </Space>
+
+          {modalMode === 'sales' && receivableOrders.length > 0 && !showWriteoff && (
+            <div style={{ marginBottom: 16 }}>
+              <Button type="link" icon={<DisconnectOutlined />} onClick={handleOpenWriteoff}>
+                核销应收单据 (可选 {receivableOrders.length} 笔)
+              </Button>
+            </div>
+          )}
+
+          {modalMode === 'sales' && showWriteoff && (
+            <>
+              <Divider>核销应收单据</Divider>
+              <Card size="small" style={{ marginBottom: 16 }}>
+                {receivableOrders.map(order => (
+                  <div key={order.orderId} style={{ display: 'flex', alignItems: 'center', marginBottom: 8 }}>
+                    <span style={{ width: 150 }}>{order.orderNo}</span>
+                    <span style={{ width: 100 }}>应付: ¥{order.orderAmount?.toFixed(2)}</span>
+                    <span style={{ width: 100 }}>已付: ¥{order.paidAmount?.toFixed(2)}</span>
+                    <span style={{ width: 100, color: '#ff4d4f' }}>待付: ¥{order.pendingAmount?.toFixed(2)}</span>
+                    <InputNumber
+                      min={0}
+                      max={order.pendingAmount}
+                      precision={2}
+                      placeholder="核销金额"
+                      onChange={(value) => handleWriteoffAmountChange(order.orderId, value || 0)}
+                      style={{ width: 120 }}
+                    />
+                  </div>
+                ))}
+                <div style={{ borderTop: '1px solid #f0f0f0', paddingTop: 8, marginTop: 8 }}>
+                  <Space size="large">
+                    <span>共 {receivableOrders.length} 笔应收</span>
+                    <span>本次核销总额: <strong style={{ color: '#1890ff' }}>¥{totalWriteoffAmount.toFixed(2)}</strong></span>
+                  </Space>
+                </div>
+              </Card>
+            </>
+          )}
+
           <Form.Item name="remark" label="备注">
             <Input.TextArea rows={2} placeholder="请输入备注" />
           </Form.Item>

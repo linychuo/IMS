@@ -14,7 +14,8 @@ import {
   Tag,
 } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
-import { salesApi, customerApi } from '../../api';
+import { salesApi, customerApi, productApi } from '../../api';
+import type { SelectProps } from 'antd';
 
 interface PriceStrategy {
   id?: string;
@@ -42,10 +43,14 @@ const SalesPriceStrategyPage: React.FC = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [editingRecord, setEditingRecord] = useState<PriceStrategy | null>(null);
   const [customerList, setCustomerList] = useState<{ id: string; name: string }[]>([]);
+  const [productList, setProductList] = useState<{ id: number; name: string; productCode: string }[]>([]);
+  const [categoryList, setCategoryList] = useState<{ id: number; name: string }[]>([]);
   const [form] = Form.useForm();
 
   useEffect(() => {
     fetchCustomers();
+    fetchProducts();
+    fetchCategories();
     fetchData();
   }, [pagination.current, pagination.size]);
 
@@ -60,10 +65,32 @@ const SalesPriceStrategyPage: React.FC = () => {
     }
   };
 
+  const fetchProducts = async () => {
+    try {
+      const res = await productApi.get('/product/list');
+      if (res.data.code === 200) {
+        setProductList(res.data.data || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch products:', error);
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const res = await productApi.get('/category/list');
+      if (res.data.code === 200) {
+        setCategoryList(res.data.data || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch categories:', error);
+    }
+  };
+
   const fetchData = async () => {
     setLoading(true);
     try {
-      const res = await salesApi.get('/price-strategy/list');
+      const res = await salesApi.get('/sales/price-strategy/list');
       setData(res.data.data || []);
       setPagination((prev) => ({ ...prev, total: res.data.data?.length || 0 }));
     } catch (error) {
@@ -89,7 +116,7 @@ const SalesPriceStrategyPage: React.FC = () => {
   const handleToggleStatus = async (id: string, currentStatus: number) => {
     const newStatus = currentStatus === 1 ? 0 : 1;
     try {
-      await salesApi.post(`/price-strategy/${id}/status`, null, { params: { status: newStatus } });
+      await salesApi.post(`/sales/price-strategy/${id}/status`, null, { params: { status: newStatus } });
       message.success(newStatus === 1 ? '启用成功' : '禁用成功');
       fetchData();
     } catch (error) {
@@ -99,7 +126,7 @@ const SalesPriceStrategyPage: React.FC = () => {
 
   const handleDelete = async (id: string) => {
     try {
-      await salesApi.delete(`/price-strategy/${id}`);
+      await salesApi.delete(`/sales/price-strategy/${id}`);
       message.success('删除成功');
       fetchData();
     } catch (error) {
@@ -110,11 +137,17 @@ const SalesPriceStrategyPage: React.FC = () => {
   const handleModalOk = async () => {
     try {
       const values = await form.validateFields();
+      const params: Record<string, any> = {
+        ...values,
+        customerName: customerList.find(c => c.id === values.customerId)?.name || '',
+        productName: productList.find(p => p.id === values.productId)?.name || '',
+        productCategoryName: categoryList.find(c => c.id === values.productCategoryId)?.name || '',
+      };
       if (editingRecord?.id) {
-        await salesApi.put(`/price-strategy/${editingRecord.id}`, values);
+        await salesApi.put(`/sales/price-strategy/${editingRecord.id}`, params);
         message.success('修改成功');
       } else {
-        await salesApi.post('/price-strategy', values);
+        await salesApi.post('/sales/price-strategy', params);
         message.success('新增成功');
       }
       setModalVisible(false);
@@ -131,7 +164,7 @@ const SalesPriceStrategyPage: React.FC = () => {
     { title: '商品', dataIndex: 'productName', key: 'productName', width: 120, render: (v: string) => v || '全部商品' },
     { title: '分类', dataIndex: 'productCategoryName', key: 'productCategoryName', width: 100, render: (v: string) => v || '-' },
     { title: '价格类型', dataIndex: 'priceType', key: 'priceType', width: 100, render: (v: number) => v === 1 ? '固定价' : '折扣率' },
-    { title: '价格/折扣', dataIndex: 'price', key: 'price', width: 100, render: (v: number, record: PriceStrategy) => record.priceType === 1 ? `¥${v?.toFixed(2)}` : `${v ? (v * 100).toFixed(0) : 0}%` },
+    { title: '价格/折扣', dataIndex: 'price', key: 'price', width: 100, render: (v: number, record: PriceStrategy) => record.priceType === 1 ? `¥${v?.toFixed(2)}` : `${record.discountRate ? (record.discountRate * 100).toFixed(0) : 0}%` },
     { title: '开始日期', dataIndex: 'startDate', key: 'startDate', width: 120 },
     { title: '结束日期', dataIndex: 'endDate', key: 'endDate', width: 120 },
     { title: '状态', dataIndex: 'status', key: 'status', width: 80, render: (status: number) => <Tag color={status === 1 ? 'green' : 'red'}>{status === 1 ? '启用' : '禁用'}</Tag> },
@@ -211,7 +244,31 @@ const SalesPriceStrategyPage: React.FC = () => {
               </Select>
             </Form.Item>
             <Form.Item name="productId" label="商品" style={{ flex: 1 }}>
-              <Input placeholder="请输入商品ID" />
+              <Select
+                placeholder="选择商品(空表示全部)"
+                allowClear
+                showSearch
+                filterOption={(input, option) =>
+                  (option?.label as any)?.toLowerCase().includes(input.toLowerCase())
+                }
+                options={productList.map(p => ({ value: p.id, label: `${p.name} (${p.productCode})` }))}
+              />
+            </Form.Item>
+          </Space>
+          <Space style={{ width: '100%' }} size="large">
+            <Form.Item name="productCategoryId" label="商品分类" style={{ flex: 1 }}>
+              <Select
+                placeholder="选择分类(空表示全部)"
+                allowClear
+                onChange={() => form.setFieldValue('productId', undefined)}
+                options={categoryList.map(c => ({ value: c.id, label: c.name }))}
+              />
+            </Form.Item>
+            <Form.Item name="priceType" label="价格类型" rules={[{ required: true, message: '请选择价格类型' }]} style={{ flex: 1 }}>
+              <Select placeholder="请选择">
+                <Select.Option value={1}>固定价</Select.Option>
+                <Select.Option value={2}>折扣率</Select.Option>
+              </Select>
             </Form.Item>
           </Space>
           <Space style={{ width: '100%' }} size="large">
@@ -222,19 +279,6 @@ const SalesPriceStrategyPage: React.FC = () => {
               <DatePicker style={{ width: '100%' }} />
             </Form.Item>
           </Space>
-          <Space style={{ width: '100%' }} size="large">
-            <Form.Item
-              name="priceType"
-              label="价格类型"
-              rules={[{ required: true, message: '请选择价格类型' }]}
-              style={{ flex: 1 }}
-            >
-              <Select placeholder="请选择">
-                <Select.Option value={1}>固定价</Select.Option>
-                <Select.Option value={2}>折扣率</Select.Option>
-              </Select>
-            </Form.Item>
-          </Space>
           <Form.Item noStyle shouldUpdate={(prev, curr) => prev.priceType !== curr.priceType}>
             {({ getFieldValue }) => (
               <Space style={{ width: '100%' }} size="large">
@@ -243,8 +287,8 @@ const SalesPriceStrategyPage: React.FC = () => {
                     <InputNumber min={0} precision={2} style={{ width: '100%' }} placeholder="请输入价格" />
                   </Form.Item>
                 ) : (
-                  <Form.Item name="price" label="折扣率" rules={[{ required: true }]} style={{ flex: 1 }}>
-                    <InputNumber min={0} max={1} precision={2} style={{ width: '100%' }} placeholder="如: 0.85 表示85折" />
+                  <Form.Item name="discountRate" label="折扣率" rules={[{ required: true }]} style={{ flex: 1 }}>
+                    <InputNumber min={0} max={100} precision={2} style={{ width: '100%' }} placeholder="如: 85 表示85折" />
                   </Form.Item>
                 )}
               </Space>

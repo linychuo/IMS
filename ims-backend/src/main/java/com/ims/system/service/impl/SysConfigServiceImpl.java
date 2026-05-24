@@ -1,12 +1,15 @@
 package com.ims.system.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.ims.system.entity.SysConfig;
 import com.ims.system.mapper.SysConfigMapper;
 import com.ims.system.service.SysConfigService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -74,5 +77,28 @@ public class SysConfigServiceImpl implements SysConfigService {
                 .eq(SysConfig::getStatus, 1)
                 .orderByAsc(SysConfig::getSortOrder);
         return sysConfigMapper.selectList(wrapper);
+    }
+
+    @Override
+    public IPage<SysConfig> page(Integer page, Integer pageSize, String keyword) {
+        Page<SysConfig> pageParam = new Page<>(page, pageSize);
+        LambdaQueryWrapper<SysConfig> wrapper = new LambdaQueryWrapper<>();
+        if (StringUtils.hasText(keyword)) {
+            wrapper.like(SysConfig::getConfigName, keyword)
+                    .or()
+                    .like(SysConfig::getConfigKey, keyword);
+        }
+        wrapper.orderByDesc(SysConfig::getId);
+        return sysConfigMapper.selectPage(pageParam, wrapper);
+    }
+
+    @Override
+    @Transactional
+    public boolean updateStatus(Long id, Integer status) {
+        SysConfig config = new SysConfig();
+        config.setId(id);
+        config.setStatus(status);
+        config.setUpdateTime(LocalDateTime.now());
+        return sysConfigMapper.updateById(config) > 0;
     }
 }

@@ -10,17 +10,45 @@ import {
   Statistic,
   Tabs,
   Tag,
+  message,
+  Dropdown,
 } from 'antd';
 import {
   BarChartOutlined,
   LineChartOutlined,
   PieChartOutlined,
   TableOutlined,
+  DownOutlined,
 } from '@ant-design/icons';
 import { reportApi, financeApi } from '../../api';
 import { useAuthStore } from '../../stores/authStore';
 import dayjs from 'dayjs';
 const { RangePicker } = DatePicker;
+
+// CSV导出工具函数
+const exportToCSV = (columns: any[], data: any[], filename: string) => {
+  if (data.length === 0) {
+    message.warning('没有数据可导出');
+    return;
+  }
+  const headers = columns.map(c => c.title).join(',');
+  const rows = data.map((row: any) =>
+    columns.map(c => {
+      const val = c.render ? c.render(row[c.dataIndex], row) : (row[c.dataIndex] ?? '');
+      const str = typeof val === 'string' ? val.replace(/,/g, ' ') : val;
+      return str;
+    }).join(',')
+  );
+  const csv = [headers, ...rows].join('\n');
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `${filename}_${dayjs().format('YYYYMMDD')}.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
+  message.success('导出成功');
+};
 
 // ============ 销售报表数据类型 ============
 interface SalesReport {
@@ -525,7 +553,7 @@ const ReportPage: React.FC = () => {
     <div>
       <h2 style={{ marginBottom: 16 }}>报表中心</h2>
 
-      <div style={{ marginBottom: 16 }}>
+      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between' }}>
         <Space>
           <RangePicker onChange={(dates) => setDateRange(dates as any)} />
           <Button type="primary" onClick={handleSearch}>查询</Button>
@@ -543,6 +571,9 @@ const ReportPage: React.FC = () => {
               <Col span={6}><Card><Statistic title="总订单数" value={salesSummary?.totalOrderCount || 0} loading={salesLoading} /></Card></Col>
               <Col span={6}><Card><Statistic title="退货金额" value={salesSummary?.returnAmount || 0} precision={2} prefix="¥" loading={salesLoading} /></Card></Col>
             </Row>
+            <div style={{ marginBottom: 8, textAlign: 'right' }}>
+              <Button onClick={() => exportToCSV(salesColumns, salesData, 'sales_report')}>导出CSV</Button>
+            </div>
             <Table title={() => '销售汇总'} columns={salesColumns} dataSource={salesData} rowKey="reportDate" loading={salesLoading} pagination={{ pageSize: 10 }} scroll={{ x: 800 }} />
           </>),
         };
@@ -556,6 +587,9 @@ const ReportPage: React.FC = () => {
               <Col span={6}><Card><Statistic title="总订单数" value={purchaseSummary?.totalOrderCount || 0} loading={purchaseLoading} /></Card></Col>
               <Col span={6}><Card><Statistic title="退货金额" value={purchaseSummary?.returnAmount || 0} precision={2} prefix="¥" loading={purchaseLoading} /></Card></Col>
             </Row>
+            <div style={{ marginBottom: 8, textAlign: 'right' }}>
+              <Button onClick={() => exportToCSV(purchaseColumns, purchaseData, 'purchase_report')}>导出CSV</Button>
+            </div>
             <Table title={() => '采购汇总'} columns={purchaseColumns} dataSource={purchaseData} rowKey="reportDate" loading={purchaseLoading} pagination={{ pageSize: 10 }} scroll={{ x: 700 }} />
           </>),
         };
@@ -568,6 +602,9 @@ const ReportPage: React.FC = () => {
               <Col span={8}><Card title="低库存预警"><Statistic title="预警商品数" value={lowStockData.length} loading={inventoryLoading} valueStyle={{ color: lowStockData.length > 0 ? '#cf1322' : '#3f8600' }} /></Card></Col>
               <Col span={8}><Card title="呆滞库存"><Statistic title="呆滞商品数" value={inventoryData.filter(item => item.status === 'IDLE').length} loading={inventoryLoading} /></Card></Col>
             </Row>
+            <div style={{ marginBottom: 8, textAlign: 'right' }}>
+              <Button onClick={() => exportToCSV(lowStockColumns, lowStockData, 'low_stock')}>导出低库存</Button>
+            </div>
             <Table title={() => '低库存预警'} columns={lowStockColumns} dataSource={lowStockData} rowKey="productId" loading={inventoryLoading} pagination={{ pageSize: 10 }} scroll={{ x: 800 }} />
             <Table title={() => '库存列表'} columns={inventoryColumns} dataSource={inventoryData} rowKey="productId" loading={inventoryLoading} pagination={{ pageSize: 10 }} scroll={{ x: 900 }} style={{ marginTop: 16 }} />
           </>),
@@ -586,17 +623,32 @@ const ReportPage: React.FC = () => {
         if (tab.key === 'customerAnalysis') return {
           key: 'customerAnalysis',
           label: <span><BarChartOutlined /> 客户分析</span>,
-          children: <Table title={() => '客户销售排行'} columns={customerAnalysisColumns} dataSource={customerAnalysisData} rowKey="customerId" loading={customerAnalysisLoading} pagination={{ pageSize: 10 }} scroll={{ x: 1000 }} />,
+          children: (<>
+            <div style={{ marginBottom: 8, textAlign: 'right' }}>
+              <Button onClick={() => exportToCSV(customerAnalysisColumns, customerAnalysisData, 'customer_analysis')}>导出CSV</Button>
+            </div>
+            <Table title={() => '客户销售排行'} columns={customerAnalysisColumns} dataSource={customerAnalysisData} rowKey="customerId" loading={customerAnalysisLoading} pagination={{ pageSize: 10 }} scroll={{ x: 1000 }} />
+          </>),
         };
         if (tab.key === 'productAnalysis') return {
           key: 'productAnalysis',
           label: <span><LineChartOutlined /> 商品分析</span>,
-          children: <Table title={() => '商品销售利润分析'} columns={productAnalysisColumns} dataSource={productAnalysisData} rowKey="productId" loading={productAnalysisLoading} pagination={{ pageSize: 10 }} scroll={{ x: 1200 }} />,
+          children: (<>
+            <div style={{ marginBottom: 8, textAlign: 'right' }}>
+              <Button onClick={() => exportToCSV(productAnalysisColumns, productAnalysisData, 'product_analysis')}>导出CSV</Button>
+            </div>
+            <Table title={() => '商品销售利润分析'} columns={productAnalysisColumns} dataSource={productAnalysisData} rowKey="productId" loading={productAnalysisLoading} pagination={{ pageSize: 10 }} scroll={{ x: 1200 }} />
+          </>),
         };
         if (tab.key === 'supplierAnalysis') return {
           key: 'supplierAnalysis',
           label: <span><PieChartOutlined /> 供应商分析</span>,
-          children: <Table title={() => '供应商采购排行'} columns={supplierAnalysisColumns} dataSource={supplierAnalysisData} rowKey="supplierId" loading={supplierAnalysisLoading} pagination={{ pageSize: 10 }} scroll={{ x: 1000 }} />,
+          children: (<>
+            <div style={{ marginBottom: 8, textAlign: 'right' }}>
+              <Button onClick={() => exportToCSV(supplierAnalysisColumns, supplierAnalysisData, 'supplier_analysis')}>导出CSV</Button>
+            </div>
+            <Table title={() => '供应商采购排行'} columns={supplierAnalysisColumns} dataSource={supplierAnalysisData} rowKey="supplierId" loading={supplierAnalysisLoading} pagination={{ pageSize: 10 }} scroll={{ x: 1000 }} />
+          </>),
         };
         if (tab.key === 'aging') return {
           key: 'aging',

@@ -5,8 +5,13 @@ import {
   Input,
   Select,
   message,
+  Modal,
+  InputNumber,
+  Space,
+  Tag,
+  Form,
 } from 'antd';
-import { SearchOutlined } from '@ant-design/icons';
+import { SearchOutlined, LockOutlined, UnlockOutlined } from '@ant-design/icons';
 import { inventoryApi, warehouseApi } from '../../api';
 
 interface Inventory {
@@ -31,6 +36,10 @@ const InventoryAccountPage: React.FC = () => {
   const [productId, setProductId] = useState<number | null>(null);
   const [warehouseId, setWarehouseId] = useState<number | null>(null);
   const [warehouseList, setWarehouseList] = useState<{ id: number; name: string }[]>([]);
+  const [freezeModalVisible, setFreezeModalVisible] = useState(false);
+  const [selectedInventory, setSelectedInventory] = useState<Inventory | null>(null);
+  const [freezeQuantity, setFreezeQuantity] = useState<number>(0);
+  const [actionType, setActionType] = useState<'freeze' | 'unfreeze'>('freeze');
 
   useEffect(() => {
     fetchWarehouses();
@@ -77,6 +86,38 @@ const InventoryAccountPage: React.FC = () => {
     }
   };
 
+  const handleFreeze = (record: Inventory) => {
+    setSelectedInventory(record);
+    setActionType('freeze');
+    setFreezeQuantity(record.quantity - record.frozenQuantity);
+    setFreezeModalVisible(true);
+  };
+
+  const handleUnfreeze = (record: Inventory) => {
+    setSelectedInventory(record);
+    setActionType('unfreeze');
+    setFreezeQuantity(record.frozenQuantity);
+    setFreezeModalVisible(true);
+  };
+
+  const handleFreezeOk = async () => {
+    if (!selectedInventory || freezeQuantity <= 0) return;
+    try {
+      const params = { quantity: freezeQuantity };
+      if (actionType === 'freeze') {
+        await inventoryApi.post(`/inventory/${selectedInventory.id}/freeze`, null, { params });
+        message.success('冻结成功');
+      } else {
+        await inventoryApi.post(`/inventory/${selectedInventory.id}/unfreeze`, null, { params });
+        message.success('解冻成功');
+      }
+      setFreezeModalVisible(false);
+      fetchData();
+    } catch (error) {
+      message.error('操作失败');
+    }
+  };
+
   const columns = [
     { title: '商品编码', dataIndex: 'productCode', key: 'productCode', width: 120 },
     { title: '商品名称', dataIndex: 'productName', key: 'productName', width: 180 },
@@ -84,8 +125,22 @@ const InventoryAccountPage: React.FC = () => {
     { title: '库位', dataIndex: 'locationName', key: 'locationName', width: 100 },
     { title: '批次号', dataIndex: 'batchNo', key: 'batchNo', width: 120 },
     { title: '库存数量', dataIndex: 'quantity', key: 'quantity', width: 100 },
-    { title: '冻结数量', dataIndex: 'frozenQuantity', key: 'frozenQuantity', width: 100 },
+    { title: '冻结数量', dataIndex: 'frozenQuantity', key: 'frozenQuantity', width: 100, render: (v: number) => v > 0 ? <Tag color="orange">{v}</Tag> : v },
+    { title: '可用数量', key: 'available', width: 100, render: (_: any, record: Inventory) => record.quantity - record.frozenQuantity },
     { title: '成本单价', dataIndex: 'cost', key: 'cost', width: 100, render: (v: number) => v ? `¥${v.toFixed(2)}` : '-' },
+    {
+      title: '操作',
+      key: 'action',
+      width: 150,
+      render: (_: any, record: Inventory) => (
+        <Space>
+          <Button type="link" size="small" icon={<LockOutlined />} onClick={() => handleFreeze(record)}>冻结</Button>
+          {record.frozenQuantity > 0 && (
+            <Button type="link" size="small" icon={<UnlockOutlined />} onClick={() => handleUnfreeze(record)}>解冻</Button>
+          )}
+        </Space>
+      ),
+    },
   ];
 
   return (
@@ -126,6 +181,29 @@ const InventoryAccountPage: React.FC = () => {
         }}
         scroll={{ x: 1000 }}
       />
+
+      <Modal
+        title={actionType === 'freeze' ? '冻结库存' : '解冻库存'}
+        open={freezeModalVisible}
+        onOk={handleFreezeOk}
+        onCancel={() => setFreezeModalVisible(false)}
+        width={400}
+      >
+        <Space direction="vertical" style={{ width: '100%' }}>
+          <div>商品：{selectedInventory?.productName}</div>
+          <div>仓库：{selectedInventory?.warehouseName}</div>
+          <div>当前库存：{selectedInventory?.quantity}，已冻结：{selectedInventory?.frozenQuantity}</div>
+          <Form.Item label={actionType === 'freeze' ? '冻结数量' : '解冻数量'}>
+            <InputNumber
+              min={0}
+              max={actionType === 'freeze' ? selectedInventory?.quantity! - selectedInventory?.frozenQuantity! : selectedInventory?.frozenQuantity!}
+              value={freezeQuantity}
+              onChange={(v) => setFreezeQuantity(v || 0)}
+              style={{ width: '100%' }}
+            />
+          </Form.Item>
+        </Space>
+      </Modal>
     </div>
   );
 };
