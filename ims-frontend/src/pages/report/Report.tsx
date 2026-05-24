@@ -22,18 +22,78 @@ import {
 } from '@ant-design/icons';
 import { reportApi, financeApi } from '../../api';
 import { useAuthStore } from '../../stores/authStore';
+import { useExportTemplateStore } from '../../stores/exportTemplateStore';
+import ExportFieldSelector from '../../components/ExportFieldSelector';
 import dayjs from 'dayjs';
 const { RangePicker } = DatePicker;
 
+// 报表字段配置
+const reportFieldsConfig: Record<string, { key: string; title: string }[]> = {
+  sales: [
+    { key: 'reportDate', title: '日期' },
+    { key: 'totalSalesAmount', title: '销售额' },
+    { key: 'totalOrderCount', title: '订单数' },
+    { key: 'avgOrderAmount', title: '平均订单金额' },
+    { key: 'discountAmount', title: '折扣金额' },
+    { key: 'returnAmount', title: '退货金额' },
+    { key: 'netAmount', title: '净销售额' },
+  ],
+  purchase: [
+    { key: 'reportDate', title: '日期' },
+    { key: 'totalPurchaseAmount', title: '采购额' },
+    { key: 'totalOrderCount', title: '订单数' },
+    { key: 'avgOrderAmount', title: '平均订单金额' },
+    { key: 'returnAmount', title: '退货金额' },
+    { key: 'netAmount', title: '净采购额' },
+  ],
+  customerAnalysis: [
+    { key: 'customerName', title: '客户名称' },
+    { key: 'totalSalesAmount', title: '销售总额' },
+    { key: 'orderCount', title: '订单数' },
+    { key: 'avgOrderAmount', title: '平均订单金额' },
+    { key: 'paymentReceived', title: '已收款' },
+    { key: 'paymentRate', title: '收款率' },
+  ],
+  productAnalysis: [
+    { key: 'productCode', title: '商品编码' },
+    { key: 'productName', title: '商品名称' },
+    { key: 'categoryName', title: '分类' },
+    { key: 'totalSalesAmount', title: '销售额' },
+    { key: 'totalPurchaseAmount', title: '采购额' },
+    { key: 'profit', title: '利润' },
+    { key: 'profitRate', title: '利润率' },
+  ],
+  supplierAnalysis: [
+    { key: 'supplierName', title: '供应商名称' },
+    { key: 'totalPurchaseAmount', title: '采购总额' },
+    { key: 'orderCount', title: '订单数' },
+    { key: 'avgOrderAmount', title: '平均订单金额' },
+    { key: 'paymentMade', title: '已付款' },
+    { key: 'paymentRate', title: '付款率' },
+  ],
+  lowStock: [
+    { key: 'productCode', title: '商品编码' },
+    { key: 'productName', title: '商品名称' },
+    { key: 'warehouseName', title: '仓库' },
+    { key: 'quantity', title: '当前库存' },
+    { key: 'minQuantity', title: '最低库存' },
+    { key: 'level', title: '预警等级' },
+  ],
+};
+
 // CSV导出工具函数
-const exportToCSV = (columns: any[], data: any[], filename: string) => {
+const exportToCSV = (columns: any[], data: any[], filename: string, selectedFields?: string[]) => {
   if (data.length === 0) {
     message.warning('没有数据可导出');
     return;
   }
-  const headers = columns.map(c => c.title).join(',');
+  // 如果指定了字段，只导出选中字段
+  const colsToExport = selectedFields
+    ? columns.filter(c => selectedFields.includes(c.key))
+    : columns;
+  const headers = colsToExport.map(c => c.title).join(',');
   const rows = data.map((row: any) =>
-    columns.map(c => {
+    colsToExport.map(c => {
       const val = c.render ? c.render(row[c.dataIndex], row) : (row[c.dataIndex] ?? '');
       const str = typeof val === 'string' ? val.replace(/,/g, ' ') : val;
       return str;
@@ -160,6 +220,16 @@ interface PayableAging {
 const ReportPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('sales');
   const { permissions } = useAuthStore();
+  const { templates, addTemplate, getTemplatesByType } = useExportTemplateStore();
+
+  // 导出模态框状态
+  const [exportModalVisible, setExportModalVisible] = useState(false);
+  const [exportModalData, setExportModalData] = useState<{
+    reportType: string;
+    columns: any[];
+    data: any[];
+    filename: string;
+  } | null>(null);
 
   const tabPermissionMap: Record<string, string[]> = {
     sales: ['report:dashboard', 'report:dashboard:read'],
@@ -572,7 +642,10 @@ const ReportPage: React.FC = () => {
               <Col span={6}><Card><Statistic title="退货金额" value={salesSummary?.returnAmount || 0} precision={2} prefix="¥" loading={salesLoading} /></Card></Col>
             </Row>
             <div style={{ marginBottom: 8, textAlign: 'right' }}>
-              <Button onClick={() => exportToCSV(salesColumns, salesData, 'sales_report')}>导出CSV</Button>
+              <Button onClick={() => {
+                setExportModalData({ reportType: 'sales', columns: salesColumns, data: salesData, filename: 'sales_report' });
+                setExportModalVisible(true);
+              }}>导出CSV</Button>
             </div>
             <Table title={() => '销售汇总'} columns={salesColumns} dataSource={salesData} rowKey="reportDate" loading={salesLoading} pagination={{ pageSize: 10 }} scroll={{ x: 800 }} />
           </>),
@@ -588,7 +661,10 @@ const ReportPage: React.FC = () => {
               <Col span={6}><Card><Statistic title="退货金额" value={purchaseSummary?.returnAmount || 0} precision={2} prefix="¥" loading={purchaseLoading} /></Card></Col>
             </Row>
             <div style={{ marginBottom: 8, textAlign: 'right' }}>
-              <Button onClick={() => exportToCSV(purchaseColumns, purchaseData, 'purchase_report')}>导出CSV</Button>
+              <Button onClick={() => {
+                setExportModalData({ reportType: 'purchase', columns: purchaseColumns, data: purchaseData, filename: 'purchase_report' });
+                setExportModalVisible(true);
+              }}>导出CSV</Button>
             </div>
             <Table title={() => '采购汇总'} columns={purchaseColumns} dataSource={purchaseData} rowKey="reportDate" loading={purchaseLoading} pagination={{ pageSize: 10 }} scroll={{ x: 700 }} />
           </>),
@@ -603,7 +679,10 @@ const ReportPage: React.FC = () => {
               <Col span={8}><Card title="呆滞库存"><Statistic title="呆滞商品数" value={inventoryData.filter(item => item.status === 'IDLE').length} loading={inventoryLoading} /></Card></Col>
             </Row>
             <div style={{ marginBottom: 8, textAlign: 'right' }}>
-              <Button onClick={() => exportToCSV(lowStockColumns, lowStockData, 'low_stock')}>导出低库存</Button>
+              <Button onClick={() => {
+                setExportModalData({ reportType: 'lowStock', columns: lowStockColumns, data: lowStockData, filename: 'low_stock' });
+                setExportModalVisible(true);
+              }}>导出低库存</Button>
             </div>
             <Table title={() => '低库存预警'} columns={lowStockColumns} dataSource={lowStockData} rowKey="productId" loading={inventoryLoading} pagination={{ pageSize: 10 }} scroll={{ x: 800 }} />
             <Table title={() => '库存列表'} columns={inventoryColumns} dataSource={inventoryData} rowKey="productId" loading={inventoryLoading} pagination={{ pageSize: 10 }} scroll={{ x: 900 }} style={{ marginTop: 16 }} />
@@ -625,7 +704,10 @@ const ReportPage: React.FC = () => {
           label: <span><BarChartOutlined /> 客户分析</span>,
           children: (<>
             <div style={{ marginBottom: 8, textAlign: 'right' }}>
-              <Button onClick={() => exportToCSV(customerAnalysisColumns, customerAnalysisData, 'customer_analysis')}>导出CSV</Button>
+              <Button onClick={() => {
+                setExportModalData({ reportType: 'customerAnalysis', columns: customerAnalysisColumns, data: customerAnalysisData, filename: 'customer_analysis' });
+                setExportModalVisible(true);
+              }}>导出CSV</Button>
             </div>
             <Table title={() => '客户销售排行'} columns={customerAnalysisColumns} dataSource={customerAnalysisData} rowKey="customerId" loading={customerAnalysisLoading} pagination={{ pageSize: 10 }} scroll={{ x: 1000 }} />
           </>),
@@ -635,7 +717,10 @@ const ReportPage: React.FC = () => {
           label: <span><LineChartOutlined /> 商品分析</span>,
           children: (<>
             <div style={{ marginBottom: 8, textAlign: 'right' }}>
-              <Button onClick={() => exportToCSV(productAnalysisColumns, productAnalysisData, 'product_analysis')}>导出CSV</Button>
+              <Button onClick={() => {
+                setExportModalData({ reportType: 'productAnalysis', columns: productAnalysisColumns, data: productAnalysisData, filename: 'product_analysis' });
+                setExportModalVisible(true);
+              }}>导出CSV</Button>
             </div>
             <Table title={() => '商品销售利润分析'} columns={productAnalysisColumns} dataSource={productAnalysisData} rowKey="productId" loading={productAnalysisLoading} pagination={{ pageSize: 10 }} scroll={{ x: 1200 }} />
           </>),
@@ -645,7 +730,10 @@ const ReportPage: React.FC = () => {
           label: <span><PieChartOutlined /> 供应商分析</span>,
           children: (<>
             <div style={{ marginBottom: 8, textAlign: 'right' }}>
-              <Button onClick={() => exportToCSV(supplierAnalysisColumns, supplierAnalysisData, 'supplier_analysis')}>导出CSV</Button>
+              <Button onClick={() => {
+                setExportModalData({ reportType: 'supplierAnalysis', columns: supplierAnalysisColumns, data: supplierAnalysisData, filename: 'supplier_analysis' });
+                setExportModalVisible(true);
+              }}>导出CSV</Button>
             </div>
             <Table title={() => '供应商采购排行'} columns={supplierAnalysisColumns} dataSource={supplierAnalysisData} rowKey="supplierId" loading={supplierAnalysisLoading} pagination={{ pageSize: 10 }} scroll={{ x: 1000 }} />
           </>),
@@ -696,6 +784,31 @@ const ReportPage: React.FC = () => {
         };
         return null;
       }).filter(Boolean) as any[]} />
+
+      {/* 导出字段选择模态框 */}
+      <ExportFieldSelector
+        visible={exportModalVisible}
+        onClose={() => setExportModalVisible(false)}
+        onExport={(selectedFields) => {
+          if (exportModalData) {
+            exportToCSV(exportModalData.columns, exportModalData.data, exportModalData.filename, selectedFields);
+          }
+        }}
+        fields={exportModalData ? (reportFieldsConfig[exportModalData.reportType] || []) : []}
+        reportType={exportModalData?.reportType || ''}
+        savedTemplates={exportModalData ? getTemplatesByType(exportModalData.reportType).map(t => ({ id: t.id, name: t.name, fields: t.fields })) : []}
+        onSaveTemplate={(name, fields) => {
+          if (exportModalData) {
+            addTemplate(name, exportModalData.reportType, fields);
+          }
+        }}
+        onLoadTemplate={(templateId) => {
+          const template = templates.find(t => t.id === templateId);
+          if (template) {
+            setExportModalData(prev => prev ? { ...prev, columns: prev.columns.map(col => ({ ...col, key: col.key || col.dataIndex })) } : null);
+          }
+        }}
+      />
     </div>
   );
 };
