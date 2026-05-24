@@ -11,6 +11,7 @@ import {
   message,
   Popconfirm,
   Tag,
+  Input,
 } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { salesApi } from '../../api';
@@ -192,7 +193,7 @@ const PromotionPage: React.FC = () => {
           showSizeChanger: true,
           showQuickJumper: true,
           showTotal: (total) => `共 ${total} 条`,
-          onChange: (current, size) => setPagination({ current, size, total }),
+          onChange: (current, size) => setPagination({ current, size, total: pagination.total }),
         }}
         scroll={{ x: 1400 }}
       />

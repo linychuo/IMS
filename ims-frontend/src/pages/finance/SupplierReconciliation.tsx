@@ -101,11 +101,13 @@ const SupplierReconciliationPage: React.FC = () => {
         rowKey="id"
         loading={loading}
         pagination={{
-          ...pagination,
+          current: pagination.current,
+          pageSize: pagination.size,
+          total: pagination.total,
           showSizeChanger: true,
           showQuickJumper: true,
           showTotal: (total) => `共 ${total} 条`,
-          onChange: (current, size) => setPagination({ current, size, total }),
+          onChange: (current, size) => setPagination({ current, size, total: pagination.total }),
         }}
         scroll={{ x: 1000 }}
       />

@@ -11,6 +11,7 @@ import {
   message,
   Popconfirm,
   Tag,
+  Tabs,
 } from 'antd';
 import { PlusOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import { financeApi, customerApi } from '../../api';
@@ -22,6 +23,7 @@ interface FinanceIn {
   customerName: string;
   orderId?: number;
   orderNo?: string;
+  receiptType?: number;
   amount: number;
   discountAmount?: number;
   payMethod?: number;
@@ -40,11 +42,16 @@ const FinanceInPage: React.FC = () => {
   const [editingRecord, setEditingRecord] = useState<FinanceIn | null>(null);
   const [customerList, setCustomerList] = useState<{ id: number; name: string }[]>([]);
   const [form] = Form.useForm();
+  const [activeTab, setActiveTab] = useState<'all' | 'sales' | 'advance'>('all');
+  const [modalMode, setModalMode] = useState<'sales' | 'advance'>('sales');
 
   useEffect(() => {
     fetchCustomers();
+  }, []);
+
+  useEffect(() => {
     fetchData();
-  }, [pagination.current, pagination.size]);
+  }, [pagination.current, pagination.size, activeTab]);
 
   const fetchCustomers = async () => {
     try {
@@ -60,9 +67,11 @@ const FinanceInPage: React.FC = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const res = await financeApi.get('/finance/in/page', {
-        params: { page: pagination.current, pageSize: pagination.size },
-      });
+      const params: Record<string, any> = { page: pagination.current, pageSize: pagination.size };
+      // 根据Tab筛选收款类型
+      if (activeTab === 'sales') params.receiptType = 1;
+      if (activeTab === 'advance') params.receiptType = 2;
+      const res = await financeApi.get('/finance/in/page', { params });
       if (res.data.code === 200) {
         setData(res.data.data?.records || []);
         setPagination((prev) => ({ ...prev, total: res.data.data?.total || 0 }));
@@ -75,9 +84,19 @@ const FinanceInPage: React.FC = () => {
     }
   };
 
-  const handleAdd = () => {
+  const handleAddSales = () => {
+    setModalMode('sales');
     setEditingRecord(null);
     form.resetFields();
+    form.setFieldsValue({ receiptType: 1 });
+    setModalVisible(true);
+  };
+
+  const handleAddAdvance = () => {
+    setModalMode('advance');
+    setEditingRecord(null);
+    form.resetFields();
+    form.setFieldsValue({ receiptType: 2 });
     setModalVisible(true);
   };
 
@@ -160,8 +179,19 @@ const FinanceInPage: React.FC = () => {
   return (
     <div>
       <h2 style={{ marginBottom: 16 }}>收款单</h2>
-      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-end' }}>
-        <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>新建收款单</Button>
+      <Tabs
+        activeKey={activeTab}
+        onChange={(key) => { setActiveTab(key as any); setPagination(prev => ({ ...prev, current: 1 })); }}
+        items={[
+          { key: 'all', label: '全部' },
+          { key: 'sales', label: '销售收款' },
+          { key: 'advance', label: '预收款' },
+        ]}
+        style={{ marginBottom: 16 }}
+      />
+      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+        <Button type="primary" icon={<PlusOutlined />} onClick={handleAddSales}>销售收款</Button>
+        <Button icon={<PlusOutlined />} onClick={handleAddAdvance}>预收款</Button>
       </div>
       <Table
         columns={columns}

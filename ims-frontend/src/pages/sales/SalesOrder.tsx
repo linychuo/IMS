@@ -21,7 +21,12 @@ import {
   CheckCircleOutlined,
   CloseCircleOutlined,
   EditOutlined,
+  ClockCircleOutlined,
 } from '@ant-design/icons';
+import {
+  Timeline,
+  Card,
+} from 'antd';
 import { salesApi, customerApi, productApi } from '../../api';
 
 interface SalesOrderDetail {
@@ -62,6 +67,18 @@ interface Product {
   price?: number;
 }
 
+interface StatusHistory {
+  id: string;
+  orderId: string;
+  orderNo: string;
+  fromStatus: number;
+  toStatus: number;
+  operatorId: string;
+  operatorName: string;
+  operateTime: string;
+  remark: string;
+}
+
 const SalesOrderPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<SalesOrder[]>([]);
@@ -74,6 +91,8 @@ const SalesOrderPage: React.FC = () => {
   const [productList, setProductList] = useState<Product[]>([]);
   const [form] = Form.useForm();
   const [orderDetails, setOrderDetails] = useState<SalesOrderDetail[]>([]);
+  const [statusHistory, setStatusHistory] = useState<StatusHistory[]>([]);
+  const [customerLevel, setCustomerLevel] = useState<number>(0);
 
   useEffect(() => {
     fetchCustomers();
@@ -138,6 +157,17 @@ const SalesOrderPage: React.FC = () => {
       if (res.data) {
         setEditingRecord(res.data);
         setViewModalVisible(true);
+        // 获取状态历史
+        try {
+          const historyRes = await salesApi.get(`/order/${record.id}/status-history`);
+          if (historyRes.data?.code === 200) {
+            setStatusHistory(historyRes.data.data || []);
+          } else {
+            setStatusHistory([]);
+          }
+        } catch (e) {
+          setStatusHistory([]);
+        }
       }
     } catch (error) {
       message.error('获取订单详情失败');
@@ -150,6 +180,7 @@ const SalesOrderPage: React.FC = () => {
       if (res.data) {
         setEditingRecord(res.data);
         setOrderDetails(res.data.details || []);
+        setStatusHistory([]);
         form.setFieldsValue({
           customerId: res.data.customerId,
           orderDate: res.data.orderDate,
@@ -187,6 +218,8 @@ const SalesOrderPage: React.FC = () => {
   const handleAddOrder = () => {
     form.resetFields();
     setOrderDetails([]);
+    setStatusHistory([]);
+    setEditingRecord(null);
     setModalVisible(true);
   };
 
@@ -213,14 +246,37 @@ const SalesOrderPage: React.FC = () => {
     const product = productList.find(p => p.id === productId);
     if (product) {
       const newDetails = [...orderDetails];
+      // 获取客户等级价格
+      let finalPrice = product.price || 0;
+      if (customerList.find(c => c.id === form.getFieldValue('customerId')) && productId && form.getFieldValue('customerId')) {
+        // 调用价格策略接口获取等级价格
+        salesApi.get('/price-strategy/price', {
+          params: {
+            customerId: form.getFieldValue('customerId'),
+            productId: productId,
+            standardPrice: product.price || 0
+          }
+        }).then(res => {
+          if (res.data?.code === 200 && res.data.data) {
+            const newPrice = res.data.data;
+            const detailIdx = newDetails.findIndex(d => d.productId === productId);
+            if (detailIdx !== -1) {
+              newDetails[detailIdx].price = newPrice;
+              newDetails[detailIdx].amount = (newDetails[detailIdx].quantity || 0) * newPrice;
+              setOrderDetails([...newDetails]);
+            }
+          }
+        }).catch(() => {});
+        finalPrice = product.price || 0;
+      }
       newDetails[index] = {
         ...newDetails[index],
         productId,
         productName: product.name,
         spec: product.spec || '',
         unit: product.unit || '',
-        price: product.price || 0,
-        amount: (newDetails[index].quantity || 0) * (product.price || 0),
+        price: finalPrice,
+        amount: (newDetails[index].quantity || 0) * finalPrice,
       };
       setOrderDetails(newDetails);
     }
@@ -265,6 +321,17 @@ const SalesOrderPage: React.FC = () => {
     };
     const s = map[status] || { text: '未知', color: 'default' };
     return <Tag color={s.color}>{s.text}</Tag>;
+  };
+
+  const getStatusName = (status: number): string => {
+    const map: Record<number, string> = {
+      0: '新建',
+      1: '已审核',
+      2: '部分出库',
+      3: '已完成',
+      9: '已取消',
+    };
+    return map[status] || `状态${status}`;
   };
 
   const columns = [
@@ -401,9 +468,9 @@ const SalesOrderPage: React.FC = () => {
       <Modal
         title="订单详情"
         open={viewModalVisible}
-        onOk={() => setViewModalVisible(false)}
-        onCancel={() => setViewModalVisible(false)}
-        footer={[<Button key="close" onClick={() => setViewModalVisible(false)}>关闭</Button>]}
+        onOk={() => { setViewModalVisible(false); setStatusHistory([]); }}
+        onCancel={() => { setViewModalVisible(false); setStatusHistory([]); }}
+        footer={[<Button key="close" onClick={() => { setViewModalVisible(false); setStatusHistory([]); }}>关闭</Button>]}
         width={700}
       >
         <Descriptions column={2} size="small">
@@ -426,6 +493,29 @@ const SalesOrderPage: React.FC = () => {
                 </Descriptions.Item>
               ))}
             </Descriptions>
+          </>
+        )}
+        {statusHistory.length > 0 && (
+          <>
+            <Divider>订单跟踪</Divider>
+            <Card size="small" style={{ maxHeight: 300, overflow: 'auto' }}>
+              <Timeline
+                items={statusHistory.map(h => ({
+                  color: h.toStatus === 9 ? 'red' : h.toStatus === 3 ? 'green' : 'blue',
+                  children: (
+                    <div>
+                      <div>
+                        {getStatusName(h.fromStatus)} → {getStatusName(h.toStatus)}
+                      </div>
+                      <div style={{ fontSize: 12, color: '#888' }}>
+                        操作人: {h.operatorName} | {h.operateTime}
+                        {h.remark && ` | ${h.remark}`}
+                      </div>
+                    </div>
+                  ),
+                }))}
+              />
+            </Card>
           </>
         )}
       </Modal>

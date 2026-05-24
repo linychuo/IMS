@@ -17,7 +17,7 @@ import {
   PieChartOutlined,
   TableOutlined,
 } from '@ant-design/icons';
-import { reportApi } from '../../api';
+import { reportApi, financeApi } from '../../api';
 import { useAuthStore } from '../../stores/authStore';
 import dayjs from 'dayjs';
 const { RangePicker } = DatePicker;
@@ -106,6 +106,29 @@ interface SupplierAnalysis {
   paymentRate: number;
 }
 
+// ============ 账龄分析数据类型 ============
+interface ReceivableAging {
+  customerId: number;
+  customerName: string;
+  totalAmount: number;
+  amount0to30: number;
+  amount31to60: number;
+  amount61to90: number;
+  amountOver90: number;
+  overdueAmount: number;
+}
+
+interface PayableAging {
+  supplierId: number;
+  supplierName: string;
+  totalAmount: number;
+  amount0to30: number;
+  amount31to60: number;
+  amount61to90: number;
+  amountOver90: number;
+  overdueAmount: number;
+}
+
 const ReportPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('sales');
   const { permissions } = useAuthStore();
@@ -118,6 +141,7 @@ const ReportPage: React.FC = () => {
     customerAnalysis: ['customer:customer', 'customer:customer:read'],
     productAnalysis: ['product:product', 'product:product:read'],
     supplierAnalysis: ['supplier', 'supplier:read'],
+    aging: ['finance:receivable', 'finance:payable'],
   };
 
   const hasTabPermission = (tab: string): boolean => {
@@ -135,6 +159,7 @@ const ReportPage: React.FC = () => {
     { key: 'purchase', label: '采购报表', icon: <LineChartOutlined /> },
     { key: 'inventory', label: '库存报表', icon: <PieChartOutlined /> },
     { key: 'finance', label: '财务分析', icon: <TableOutlined /> },
+    { key: 'aging', label: '账龄分析', icon: <BarChartOutlined /> },
     { key: 'customerAnalysis', label: '客户分析', icon: <BarChartOutlined /> },
     { key: 'productAnalysis', label: '商品分析', icon: <LineChartOutlined /> },
     { key: 'supplierAnalysis', label: '供应商分析', icon: <PieChartOutlined /> },
@@ -179,6 +204,11 @@ const ReportPage: React.FC = () => {
   // 供应商分析状态
   const [supplierAnalysisLoading, setSupplierAnalysisLoading] = useState(false);
   const [supplierAnalysisData, setSupplierAnalysisData] = useState<SupplierAnalysis[]>([]);
+
+  // 账龄分析状态
+  const [agingLoading, setAgingLoading] = useState(false);
+  const [receivableAgingData, setReceivableAgingData] = useState<ReceivableAging[]>([]);
+  const [payableAgingData, setPayableAgingData] = useState<PayableAging[]>([]);
 
   useEffect(() => {
     fetchSalesReport();
@@ -354,6 +384,36 @@ const ReportPage: React.FC = () => {
     }
   };
 
+  // ============ 账龄分析 ============
+  const fetchReceivableAging = async () => {
+    setAgingLoading(true);
+    try {
+      const res = await financeApi.get('/receivable/aging');
+      if (res.data?.code === 200) {
+        setReceivableAgingData(res.data.data || []);
+      } else {
+        setReceivableAgingData(res.data || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch receivable aging:', error);
+    } finally {
+      setAgingLoading(false);
+    }
+  };
+
+  const fetchPayableAging = async () => {
+    try {
+      const res = await financeApi.get('/payable/aging');
+      if (res.data?.code === 200) {
+        setPayableAgingData(res.data.data || []);
+      } else {
+        setPayableAgingData(res.data || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch payable aging:', error);
+    }
+  };
+
   const handleSearch = () => {
     if (activeTab === 'sales') {
       fetchSalesReport();
@@ -361,6 +421,9 @@ const ReportPage: React.FC = () => {
       fetchPurchaseReport();
     } else if (activeTab === 'finance') {
       fetchFinanceSummary();
+    } else if (activeTab === 'aging') {
+      fetchReceivableAging();
+      fetchPayableAging();
     } else if (activeTab === 'customerAnalysis') {
       fetchCustomerAnalysis();
     } else if (activeTab === 'productAnalysis') {
@@ -534,6 +597,50 @@ const ReportPage: React.FC = () => {
           key: 'supplierAnalysis',
           label: <span><PieChartOutlined /> 供应商分析</span>,
           children: <Table title={() => '供应商采购排行'} columns={supplierAnalysisColumns} dataSource={supplierAnalysisData} rowKey="supplierId" loading={supplierAnalysisLoading} pagination={{ pageSize: 10 }} scroll={{ x: 1000 }} />,
+        };
+        if (tab.key === 'aging') return {
+          key: 'aging',
+          label: <span><BarChartOutlined /> 账龄分析</span>,
+          children: (
+            <>
+              <Card title="应收账款账龄" style={{ marginBottom: 16 }}>
+                <Table
+                  columns={[
+                    { title: '客户名称', dataIndex: 'customerName', key: 'customerName', width: 150 },
+                    { title: '应收总额', dataIndex: 'totalAmount', key: 'totalAmount', width: 120, render: (v: number) => `¥${v?.toFixed(2) || '0.00'}` },
+                    { title: '0-30天', dataIndex: 'amount0to30', key: 'amount0to30', width: 100, render: (v: number) => `¥${v?.toFixed(2) || '0.00'}` },
+                    { title: '31-60天', dataIndex: 'amount31to60', key: 'amount31to60', width: 100, render: (v: number) => `¥${v?.toFixed(2) || '0.00'}` },
+                    { title: '61-90天', dataIndex: 'amount61to90', key: 'amount61to90', width: 100, render: (v: number) => `¥${v?.toFixed(2) || '0.00'}` },
+                    { title: '90天以上', dataIndex: 'amountOver90', key: 'amountOver90', width: 100, render: (v: number) => `¥${v?.toFixed(2) || '0.00'}` },
+                    { title: '逾期金额', dataIndex: 'overdueAmount', key: 'overdueAmount', width: 100, render: (v: number) => v > 0 ? <Tag color="red">¥{v?.toFixed(2)}</Tag> : '-' },
+                  ]}
+                  dataSource={receivableAgingData}
+                  rowKey="customerId"
+                  loading={agingLoading}
+                  pagination={{ pageSize: 5 }}
+                  scroll={{ x: 800 }}
+                />
+              </Card>
+              <Card title="应付账款账龄">
+                <Table
+                  columns={[
+                    { title: '供应商名称', dataIndex: 'supplierName', key: 'supplierName', width: 150 },
+                    { title: '应付总额', dataIndex: 'totalAmount', key: 'totalAmount', width: 120, render: (v: number) => `¥${v?.toFixed(2) || '0.00'}` },
+                    { title: '0-30天', dataIndex: 'amount0to30', key: 'amount0to30', width: 100, render: (v: number) => `¥${v?.toFixed(2) || '0.00'}` },
+                    { title: '31-60天', dataIndex: 'amount31to60', key: 'amount31to60', width: 100, render: (v: number) => `¥${v?.toFixed(2) || '0.00'}` },
+                    { title: '61-90天', dataIndex: 'amount61to90', key: 'amount61to90', width: 100, render: (v: number) => `¥${v?.toFixed(2) || '0.00'}` },
+                    { title: '90天以上', dataIndex: 'amountOver90', key: 'amountOver90', width: 100, render: (v: number) => `¥${v?.toFixed(2) || '0.00'}` },
+                    { title: '逾期金额', dataIndex: 'overdueAmount', key: 'overdueAmount', width: 100, render: (v: number) => v > 0 ? <Tag color="red">¥{v?.toFixed(2)}</Tag> : '-' },
+                  ]}
+                  dataSource={payableAgingData}
+                  rowKey="supplierId"
+                  loading={agingLoading}
+                  pagination={{ pageSize: 5 }}
+                  scroll={{ x: 800 }}
+                />
+              </Card>
+            </>
+          ),
         };
         return null;
       }).filter(Boolean) as any[]} />

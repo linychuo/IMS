@@ -87,7 +87,7 @@ interface SysConfig {
   configName: string;
   configValue: string;
   configType: string;
-  description?: string;
+  remark?: string;
   status: number;
   createTime?: string;
 }
@@ -266,6 +266,7 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
   const [dataPermModalVisible, setDataPermModalVisible] = useState(false);
   const [selectedUserForPerm, setSelectedUserForPerm] = useState<UserWarehouse | null>(null);
   const [dataPermForm] = Form.useForm();
+  const [warehouseList, setWarehouseList] = useState<{ id: number; name: string }[]>([]);
 
   // 数据导入状态
   const [importLoading, setImportLoading] = useState(false);
@@ -299,6 +300,7 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
       fetchLoginLogs();
     } else if (activeTab === 'dataPermission') {
       fetchDataPermUsers();
+      fetchWarehouseList();
     } else if (activeTab === 'dataImport') {
       setImportResult(null);
     } else if (activeTab === 'dataExport') {
@@ -544,7 +546,7 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
   const fetchConfigs = async () => {
     setConfigLoading(true);
     try {
-      const res = await systemApi.get('/config/list');
+      const res = await systemApi.get('/api/system/config');
       if (res.data.code === 200) {
         setConfigData(res.data.data || []);
       }
@@ -563,13 +565,19 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
 
   const handleEditConfig = (record: SysConfig) => {
     setEditingConfig(record);
-    configForm.setFieldsValue(record);
+    configForm.setFieldsValue({
+      configKey: record.configKey,
+      configName: record.configName,
+      configValue: record.configValue,
+      configType: record.configType,
+      remark: record.remark,
+    });
     setConfigModalVisible(true);
   };
 
   const handleDeleteConfig = async (id: number) => {
     try {
-      const res = await systemApi.delete(`/config/${id}`);
+      const res = await systemApi.delete(`/api/system/config/${id}`);
       if (res.data.code === 200) {
         message.success('删除成功');
         fetchConfigs();
@@ -585,7 +593,7 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
     try {
       const values = await configForm.validateFields();
       if (editingConfig?.id) {
-        const res = await systemApi.put('/config', { ...values, id: editingConfig.id });
+        const res = await systemApi.put(`/api/system/config/${editingConfig.id}`, values);
         if (res.data.code === 200) {
           message.success('修改成功');
           setConfigModalVisible(false);
@@ -594,7 +602,7 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
           message.error(res.data.message || '修改失败');
         }
       } else {
-        const res = await systemApi.post('/config', values);
+        const res = await systemApi.post('/api/system/config', values);
         if (res.data.code === 200) {
           message.success('新增成功');
           setConfigModalVisible(false);
@@ -729,13 +737,13 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
   const fetchDataPermUsers = async () => {
     setDataPermLoading(true);
     try {
-      const res = await systemApi.get('/user/list');
+      const res = await systemApi.get('/api/user/list');
       if (res.data.code === 200) {
         const users = res.data.data || [];
         // 获取每个用户的仓库权限
         const usersWithWarehouses = await Promise.all(users.map(async (u: User) => {
           try {
-            const wRes = await systemApi.get(`/data-permission/user/${u.id}/warehouses`);
+            const wRes = await systemApi.get(`/api/system/data-permission/user/${u.id}/warehouses`);
             return { ...u, warehouseIds: wRes.data.code === 200 ? wRes.data.data || [] : [] };
           } catch {
             return { ...u, warehouseIds: [] };
@@ -751,6 +759,17 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
     }
   };
 
+  const fetchWarehouseList = async () => {
+    try {
+      const res = await systemApi.get('/api/warehouse/list');
+      if (res.data.code === 200) {
+        setWarehouseList(res.data.data || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch warehouses:', error);
+    }
+  };
+
   const handleAssignWarehouse = () => {
     if (dataPermUsers.length > 0) {
       setSelectedUserForPerm(dataPermUsers[0]);
@@ -762,7 +781,7 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
     if (!selectedUserForPerm) return;
     try {
       const values = await dataPermForm.validateFields();
-      await systemApi.post(`/data-permission/user/${selectedUserForPerm.id}/warehouses`, values.warehouseIds || []);
+      await systemApi.post(`/api/system/data-permission/user/${selectedUserForPerm.id}/warehouses`, values.warehouseIds || []);
       message.success('分配成功');
       setDataPermModalVisible(false);
       fetchDataPermUsers();
@@ -1162,7 +1181,7 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
     { title: '配置名称', dataIndex: 'configName', key: 'configName', width: 180 },
     { title: '配置值', dataIndex: 'configValue', key: 'configValue', ellipsis: true },
     { title: '类型', dataIndex: 'configType', key: 'configType', width: 100 },
-    { title: '描述', dataIndex: 'description', key: 'description', ellipsis: true },
+    { title: '描述', dataIndex: 'remark', key: 'remark', ellipsis: true },
     {
       title: '操作',
       key: 'action',
@@ -1905,10 +1924,9 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
         <Form form={dataPermForm} layout="vertical">
           <Form.Item name="warehouseIds" label="可访问仓库">
             <Select mode="multiple" placeholder="请选择可访问的仓库" allowClear>
-              <Select.Option value={1}>北京仓库</Select.Option>
-              <Select.Option value={2}>上海仓库</Select.Option>
-              <Select.Option value={3}>广州仓库</Select.Option>
-              <Select.Option value={4}>深圳仓库</Select.Option>
+              {warehouseList.map(w => (
+                <Select.Option key={w.id} value={w.id}>{w.name}</Select.Option>
+              ))}
             </Select>
           </Form.Item>
         </Form>
