@@ -20,6 +20,8 @@ interface DashboardData {
   pendingSalesCount: number;
   pendingReceiveCount: number;
   pendingPaymentCount: number;
+  salesPerformanceList?: SalesPerformanceItem[];
+  hotProductList?: HotProductItem[];
 }
 
 interface SalesTrend {
@@ -41,6 +43,18 @@ interface AgingItem {
   customerName: string;
   amount: number;
   percent: number;
+}
+
+interface SalesPerformanceItem {
+  userName: string;
+  salesAmount: number;
+  orderCount: number;
+}
+
+interface HotProductItem {
+  productId: number;
+  productName: string;
+  salesQuantity: number;
 }
 
 const COLORS = ['#1890ff', '#52c41a', '#faad14', '#ff4d4f', '#722ed1', '#13c2c2'];
@@ -139,11 +153,12 @@ const Dashboard: React.FC = () => {
     { title: '预警值', dataIndex: 'minQuantity', key: 'minQuantity', width: 80 },
   ];
 
-  const pieData = data.totalInventoryCount > 0 ? [
-    { name: '已完成', value: data.todaySalesAmount },
-    { name: '进行中', value: data.pendingSalesCount * 1000 },
-    { name: '库存', value: data.totalInventoryCount },
-  ] : [];
+  const pieData = [
+    { name: '待审核', value: (data.pendingSalesCount || 0) + (data.pendingPurchaseCount || 0) },
+    { name: '待收款', value: data.pendingReceiveCount || 0 },
+    { name: '待付款', value: data.pendingPaymentCount || 0 },
+    { name: '已处理', value: Math.max(1, (data.pendingSalesCount || 0) + (data.pendingPurchaseCount || 0)) },
+  ];
 
   return (
     <div>

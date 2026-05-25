@@ -534,6 +534,7 @@ CREATE TABLE sales_out_detail (
     quantity DECIMAL(12,2),
     price DECIMAL(12,2),
     amount DECIMAL(14,2),
+    cost DECIMAL(12,2),
     create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     deleted INTEGER DEFAULT 0

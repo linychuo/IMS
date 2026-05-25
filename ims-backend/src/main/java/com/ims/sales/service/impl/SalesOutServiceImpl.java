@@ -95,7 +95,7 @@ public class SalesOutServiceImpl implements SalesOutService {
             }
 
             // 扣减实际库存
-            boolean reduced = inventoryService.reduceStock(
+            BigDecimal unitCost = inventoryService.reduceStock(
                 productId,
                 warehouseId,
                 locationId,
@@ -104,13 +104,18 @@ public class SalesOutServiceImpl implements SalesOutService {
                 "SALES_OUT",
                 id
             );
-            if (!reduced) {
-                throw new RuntimeException("库存扣减失败: " + detail.getProductName() + " 库存不足");
-            }
-            log.info("审核扣减库存: 商品{} 数量{}", detail.getProductName(), quantity);
+            detail.setCost(unitCost);
+            log.info("审核扣减库存: 商品{} 数量{} 单位成本{}", detail.getProductName(), quantity, unitCost);
 
             // 计算总金额
             totalAmount = totalAmount.add(detail.getPrice().multiply(quantity));
+        }
+
+        // 更新出库明细的成本
+        for (SalesOutDetail detail : details) {
+            if (detail.getCost() != null) {
+                salesOutDetailMapper.updateById(detail);
+            }
         }
 
         // 自动生成应收款
@@ -152,18 +157,19 @@ public class SalesOutServiceImpl implements SalesOutService {
                 Long locationId = detail.getLocationId();
                 BigDecimal quantity = detail.getQuantity();
 
-                // 恢复库存 (使用 addStock 退回)
+                // 恢复库存 (使用 cost 退回，保持成本一致)
+                BigDecimal cost = detail.getCost() != null ? detail.getCost() : detail.getPrice();
                 inventoryService.addStock(
                     productId,
                     warehouseId,
                     locationId,
                     quantity,
-                    detail.getPrice(),
+                    cost,
                     salesOut.getOutNo(),
                     "SALES_OUT_CANCEL",
                     id
                 );
-                log.info("取消恢复库存: 商品{} 数量{}", detail.getProductName(), quantity);
+                log.info("取消恢复库存: 商品{} 数量{} 成本{}", detail.getProductName(), quantity, cost);
             }
         }
 
@@ -201,7 +207,7 @@ public class SalesOutServiceImpl implements SalesOutService {
                 log.warn("解冻库存失败: {}", e.getMessage());
             }
 
-            boolean reduced = inventoryService.reduceStock(
+            BigDecimal unitCost = inventoryService.reduceStock(
                 productId,
                 warehouseId,
                 locationId,
@@ -210,12 +216,17 @@ public class SalesOutServiceImpl implements SalesOutService {
                 "SALES_OUT",
                 id
             );
-            if (!reduced) {
-                throw new RuntimeException("库存扣减失败: " + detail.getProductName() + " 库存不足");
-            }
-            log.info("扣减库存: 商品{} 数量{}", detail.getProductName(), quantity);
+            detail.setCost(unitCost);
+            log.info("扣减库存: 商品{} 数量{} 单位成本{}", detail.getProductName(), quantity, unitCost);
 
             totalAmount = totalAmount.add(detail.getPrice().multiply(quantity));
+        }
+
+        // 更新出库明细的成本
+        for (SalesOutDetail detail : details) {
+            if (detail.getCost() != null) {
+                salesOutDetailMapper.updateById(detail);
+            }
         }
 
         // 自动生成应收款

@@ -158,7 +158,7 @@ public class PurchaseReturnServiceImpl implements PurchaseReturnService {
             BigDecimal quantity = detail.getQuantity();
             BigDecimal price = detail.getPrice() != null ? detail.getPrice() : BigDecimal.ZERO;
 
-            boolean reduced = inventoryService.reduceStock(
+            inventoryService.reduceStock(
                 productId,
                 warehouseId,
                 locationId,
@@ -167,9 +167,6 @@ public class PurchaseReturnServiceImpl implements PurchaseReturnService {
                 "PURCHASE_RETURN",
                 id
             );
-            if (!reduced) {
-                throw new RuntimeException("库存扣减失败: " + detail.getProductName());
-            }
             log.info("采购退货出库扣减库存: 商品{} 数量{}", detail.getProductName(), quantity);
         }
 

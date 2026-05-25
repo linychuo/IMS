@@ -131,7 +131,7 @@ public class InventoryTransferServiceImpl extends ServiceImpl<InventoryTransferM
 
         for (InventoryTransferDetail detail : details) {
             // 从源仓库扣减库存
-            boolean reduced = inventoryService.reduceStock(
+            inventoryService.reduceStock(
                 detail.getProductId(),
                 transfer.getFromWarehouseId(),
                 detail.getFromLocationId(),
@@ -140,9 +140,6 @@ public class InventoryTransferServiceImpl extends ServiceImpl<InventoryTransferM
                 "TRANSFER_OUT",
                 id
             );
-            if (!reduced) {
-                throw new RuntimeException("调拨出库失败: " + detail.getProductName() + " 库存不足");
-            }
             log.info("调拨出库: {} 数量 {}", detail.getProductName(), detail.getQuantity());
         }
 

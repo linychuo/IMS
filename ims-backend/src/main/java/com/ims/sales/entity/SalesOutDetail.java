@@ -21,6 +21,7 @@ public class SalesOutDetail extends BaseEntity {
     private BigDecimal quantity;
     private BigDecimal price;
     private BigDecimal amount;
+    private BigDecimal cost;
 
     public Long getOutId() { return outId; }
     public void setOutId(Long outId) { this.outId = outId; }
@@ -46,4 +47,6 @@ public class SalesOutDetail extends BaseEntity {
     public void setPrice(BigDecimal price) { this.price = price; }
     public BigDecimal getAmount() { return amount; }
     public void setAmount(BigDecimal amount) { this.amount = amount; }
+    public BigDecimal getCost() { return cost; }
+    public void setCost(BigDecimal cost) { this.cost = cost; }
 }

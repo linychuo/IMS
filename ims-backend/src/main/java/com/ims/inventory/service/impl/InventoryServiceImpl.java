@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -84,7 +85,7 @@ public class InventoryServiceImpl extends ServiceImpl<InventoryMapper, Inventory
 
     @Override
     @Transactional
-    public boolean reduceStock(Long productId, Long warehouseId, Long locationId,
+    public BigDecimal reduceStock(Long productId, Long warehouseId, Long locationId,
                               BigDecimal quantity, String batchNo,
                               String orderType, Long orderId) {
         // 查询库存台账
@@ -123,12 +124,13 @@ public class InventoryServiceImpl extends ServiceImpl<InventoryMapper, Inventory
         recordChange(productId, warehouseId, locationId, "OUT", quantity,
                      beforeQuantity, beforeQuantity.subtract(quantity), orderType, orderId, batchNo, "出库");
 
-        return true;
+        // 返回该批次的单位成本
+        return inventory.getCost();
     }
 
     @Override
     @Transactional
-    public boolean reduceStockByFifo(Long productId, Long warehouseId, Long locationId,
+    public BigDecimal reduceStockByFifo(Long productId, Long warehouseId, Long locationId,
                                       BigDecimal quantity, String batchNo,
                                       String orderType, Long orderId) {
         // 如果指定了批次，按指定批次扣减
@@ -152,8 +154,11 @@ public class InventoryServiceImpl extends ServiceImpl<InventoryMapper, Inventory
             throw new RuntimeException("库存不足，没有可用批次");
         }
 
-        // 按FIFO顺序扣减
+        // 按FIFO顺序扣减，计算加权平均成本
         BigDecimal remainingQuantity = quantity;
+        BigDecimal totalCost = BigDecimal.ZERO;
+        BigDecimal totalQuantity = BigDecimal.ZERO;
+
         for (Inventory inventory : inventoryList) {
             if (remainingQuantity.compareTo(BigDecimal.ZERO) <= 0) {
                 break;
@@ -171,6 +176,12 @@ public class InventoryServiceImpl extends ServiceImpl<InventoryMapper, Inventory
             inventory.setQuantity(inventory.getQuantity().subtract(deductQty));
             this.updateById(inventory);
 
+            // 累计成本：批次成本 × 扣减数量
+            if (inventory.getCost() != null) {
+                totalCost = totalCost.add(inventory.getCost().multiply(deductQty));
+                totalQuantity = totalQuantity.add(deductQty);
+            }
+
             // 记录库存变动
             recordChange(productId, warehouseId, inventory.getLocationId(), "OUT", deductQty,
                          beforeQuantity, beforeQuantity.subtract(deductQty), orderType, orderId,
@@ -186,7 +197,11 @@ public class InventoryServiceImpl extends ServiceImpl<InventoryMapper, Inventory
             throw new RuntimeException("库存不足，无法完成FIFO扣减，缺少: " + remainingQuantity);
         }
 
-        return true;
+        // 返回加权平均单位成本
+        if (totalQuantity.compareTo(BigDecimal.ZERO) > 0) {
+            return totalCost.divide(totalQuantity, 2, RoundingMode.HALF_UP);
+        }
+        return BigDecimal.ZERO;
     }
 
     @Override

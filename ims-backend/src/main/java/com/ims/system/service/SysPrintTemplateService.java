@@ -38,4 +38,14 @@ public interface SysPrintTemplateService {
    * 删除模板
    */
   boolean delete(Long id);
+
+  /**
+   * 按类型获取默认模板
+   */
+  SysPrintTemplate getDefaultByType(Integer templateType);
+
+  /**
+   * 按类型获取所有模板
+   */
+  List<SysPrintTemplate> getByType(Integer templateType);
 }

@@ -20,4 +20,6 @@ public interface SalesOutDetailMapper {
     int batchInsert(List<SalesOutDetail> entities);
 
     int deleteByOutId(@Param("outId") Long outId);
+
+    int updateById(SalesOutDetail entity);
 }

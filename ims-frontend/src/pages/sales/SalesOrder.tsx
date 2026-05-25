@@ -14,6 +14,7 @@ import {
   Tag,
   Descriptions,
   Divider,
+  Radio,
 } from 'antd';
 import {
   PlusOutlined,
@@ -22,6 +23,7 @@ import {
   CloseCircleOutlined,
   EditOutlined,
   ClockCircleOutlined,
+  PrinterOutlined,
 } from '@ant-design/icons';
 import {
   Timeline,
@@ -100,6 +102,10 @@ const SalesOrderPage: React.FC = () => {
   const [statusHistory, setStatusHistory] = useState<StatusHistory[]>([]);
   const [customerLevel, setCustomerLevel] = useState<number>(0);
   const [selectedCustomerCredit, setSelectedCustomerCredit] = useState<{ creditLimit: number; receivableAmount: number } | null>(null);
+  const [printModalVisible, setPrintModalVisible] = useState(false);
+  const [printTemplates, setPrintTemplates] = useState<{ id: number; templateName: string }[]>([]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<number | null>(null);
+  const [printLoading, setPrintLoading] = useState(false);
 
   useEffect(() => {
     fetchCustomers();
@@ -218,6 +224,67 @@ const SalesOrderPage: React.FC = () => {
       fetchData();
     } catch (error) {
       message.error('取消失败');
+    }
+  };
+
+  // 打印相关
+  const handlePrint = async (record: SalesOrder) => {
+    try {
+      setPrintLoading(true);
+      const res = await salesApi.get(`/order/${record.id}/print-data`);
+      if (res.data?.code === 200) {
+        const data = res.data.data;
+        setPrintTemplates(data.templates || []);
+        setSelectedTemplateId(data.defaultTemplateId || null);
+        setEditingRecord(data.order);
+        setPrintModalVisible(true);
+      } else {
+        message.error(res.data?.message || '获取打印数据失败');
+      }
+    } catch (error) {
+      console.error('Failed to fetch print data:', error);
+      message.error('获取打印数据失败');
+    } finally {
+      setPrintLoading(false);
+    }
+  };
+
+  const handlePreview = async () => {
+    if (!editingRecord) return;
+    const win = window.open('', '_blank');
+    if (!win) {
+      message.error('无法打开打印预览，请检查浏览器弹窗设置');
+      return;
+    }
+    try {
+      const url = `/api/sales/order/${editingRecord.id}/print-preview${selectedTemplateId ? '?templateId=' + selectedTemplateId : ''}`;
+      const res = await salesApi.get(url, { responseType: 'text' });
+      win.document.write(res.data);
+      win.document.close();
+    } catch (error) {
+      console.error('Failed to load print preview:', error);
+      message.error('加载打印预览失败');
+      win.close();
+    }
+  };
+
+  const handleDirectPrint = async () => {
+    if (!editingRecord) return;
+    const win = window.open('', '_blank');
+    if (!win) {
+      message.error('无法打开打印，请检查浏览器弹窗设置');
+      return;
+    }
+    try {
+      const url = `/api/sales/order/${editingRecord.id}/print-preview${selectedTemplateId ? '?templateId=' + selectedTemplateId : ''}`;
+      const res = await salesApi.get(url, { responseType: 'text' });
+      win.document.write(res.data);
+      win.document.close();
+      win.print();
+    } catch (error) {
+      console.error('Failed to print:', error);
+      message.error('打印失败');
+      win.close();
     }
   };
 
@@ -370,6 +437,7 @@ const SalesOrderPage: React.FC = () => {
       render: (_: any, record: SalesOrder) => (
         <Space>
           <Button type="link" size="small" onClick={() => handleView(record)}>查看</Button>
+          <Button type="link" size="small" icon={<PrinterOutlined />} onClick={() => handlePrint(record)}>打印</Button>
           {record.status === 0 && (
             <>
               <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)}>编辑</Button>
@@ -566,6 +634,36 @@ const SalesOrderPage: React.FC = () => {
               />
             </Card>
           </>
+        )}
+      </Modal>
+
+      {/* 打印弹窗 */}
+      <Modal
+        title="打印销售订单"
+        open={printModalVisible}
+        onCancel={() => { setPrintModalVisible(false); setPrintTemplates([]); setSelectedTemplateId(null); }}
+        footer={[
+          <Button key="cancel" onClick={() => setPrintModalVisible(false)}>关闭</Button>,
+          <Button key="preview" onClick={handlePreview}>预览</Button>,
+          <Button key="print" type="primary" icon={<PrinterOutlined />} onClick={handleDirectPrint}>直接打印</Button>,
+        ]}
+        width={500}
+      >
+        {printTemplates.length > 0 ? (
+          <div>
+            <p style={{ marginBottom: 12 }}>选择打印模板：</p>
+            <Radio.Group
+              value={selectedTemplateId}
+              onChange={(e) => setSelectedTemplateId(e.target.value)}
+              style={{ display: 'flex', flexDirection: 'column', gap: 8 }}
+            >
+              {printTemplates.map(t => (
+                <Radio key={t.id} value={t.id}>{t.templateName}</Radio>
+              ))}
+            </Radio.Group>
+          </div>
+        ) : (
+          <p style={{ color: '#888' }}>暂无可用模板，将使用默认格式打印</p>
         )}
       </Modal>
     </div>

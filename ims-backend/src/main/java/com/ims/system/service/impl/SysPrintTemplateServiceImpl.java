@@ -62,4 +62,23 @@ public class SysPrintTemplateServiceImpl implements SysPrintTemplateService {
   public boolean delete(Long id) {
     return printTemplateMapper.deleteById(id) > 0;
   }
+
+  @Override
+  public SysPrintTemplate getDefaultByType(Integer templateType) {
+    LambdaQueryWrapper<SysPrintTemplate> wrapper = new LambdaQueryWrapper<>();
+    wrapper.eq(SysPrintTemplate::getTemplateType, templateType)
+           .eq(SysPrintTemplate::getIsDefault, 1)
+           .eq(SysPrintTemplate::getStatus, 1);
+    return printTemplateMapper.selectOne(wrapper);
+  }
+
+  @Override
+  public List<SysPrintTemplate> getByType(Integer templateType) {
+    LambdaQueryWrapper<SysPrintTemplate> wrapper = new LambdaQueryWrapper<>();
+    wrapper.eq(SysPrintTemplate::getTemplateType, templateType)
+           .eq(SysPrintTemplate::getStatus, 1)
+           .orderByDesc(SysPrintTemplate::getIsDefault)
+           .orderByDesc(SysPrintTemplate::getId);
+    return printTemplateMapper.selectList(wrapper);
+  }
 }

@@ -30,16 +30,18 @@ public interface InventoryService extends IService<Inventory> {
 
     /**
      * 扣减库存
+     * @return 实际扣减批次的单位成本
      */
-    boolean reduceStock(Long productId, Long warehouseId, Long locationId,
+    BigDecimal reduceStock(Long productId, Long warehouseId, Long locationId,
                        BigDecimal quantity, String batchNo,
                        String orderType, Long orderId);
 
     /**
      * 按FIFO原则扣减库存（按生产日期升序选择批次）
      * 如果指定批次则用指定批次，否则按FIFO自动选择
+     * @return FIFO加权平均单位成本
      */
-    boolean reduceStockByFifo(Long productId, Long warehouseId, Long locationId,
+    BigDecimal reduceStockByFifo(Long productId, Long warehouseId, Long locationId,
                               BigDecimal quantity, String batchNo,
                               String orderType, Long orderId);
 

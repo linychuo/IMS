@@ -14,7 +14,9 @@
             (SELECT COALESCE(SUM(quantity), 0) FROM inventory) as totalInventoryCount,
             (SELECT COUNT(*) FROM inventory i JOIN product p ON i.product_id = p.id WHERE i.quantity &lt;= p.min_stock) as warningInventoryCount,
             (SELECT COUNT(*) FROM purchase_order WHERE status = 0) as pendingPurchaseCount,
-            (SELECT COUNT(*) FROM sales_order WHERE status = 0) as pendingSalesCount
+            (SELECT COUNT(*) FROM sales_order WHERE status = 0) as pendingSalesCount,
+            (SELECT COUNT(*) FROM receivable WHERE status IN (1, 2)) as pendingReceiveCount,
+            (SELECT COUNT(*) FROM payable WHERE status IN (1, 2)) as pendingPaymentCount
     </select>
 
     <!-- 获取今日销售数据 -->
