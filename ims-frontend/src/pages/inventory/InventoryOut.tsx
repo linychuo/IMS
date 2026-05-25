@@ -12,7 +12,8 @@ import {
   Tag,
   Descriptions,
 } from 'antd';
-import { PlusOutlined, CheckCircleOutlined, CloseCircleOutlined, EyeOutlined } from '@ant-design/icons';
+import { PlusOutlined, CheckCircleOutlined, CloseCircleOutlined, EyeOutlined, CameraOutlined } from '@ant-design/icons';
+import BarcodeScanner from '../../components/BarcodeScanner';
 import { inventoryApi, warehouseApi } from '../../api';
 
 interface InventoryOut {
@@ -34,6 +35,7 @@ const InventoryOutPage: React.FC = () => {
   const [warehouseList, setWarehouseList] = useState<{ id: number; name: string }[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingRecord, setEditingRecord] = useState<InventoryOut | null>(null);
+  const [scannerVisible, setScannerVisible] = useState(false);
   const [form] = Form.useForm();
 
   useEffect(() => {
@@ -111,6 +113,21 @@ const InventoryOutPage: React.FC = () => {
       fetchData();
     } catch (error) {
       console.error('Failed to save:', error);
+    }
+  };
+
+  const handleScanCallback = async (barcode: string) => {
+    try {
+      const res = await inventoryApi.get(`/inventory/out/barcode/${barcode}`);
+      if (res.data?.code === 200) {
+        const product = res.data.data;
+        message.success(`已识别商品: ${product.productName}`);
+        console.log('Scanned product:', product);
+      } else {
+        message.error(res.data?.message || '商品不存在');
+      }
+    } catch (error) {
+      message.error('获取商品信息失败');
     }
   };
 
@@ -214,9 +231,20 @@ const InventoryOutPage: React.FC = () => {
             <Form.Item name="remark" label="备注">
               <Input.TextArea rows={2} placeholder="请输入备注" />
             </Form.Item>
+            <Form.Item label="扫码出库">
+              <Button icon={<CameraOutlined />} onClick={() => setScannerVisible(true)}>
+                扫码添加商品
+              </Button>
+            </Form.Item>
           </Form>
         )}
       </Modal>
+
+      <BarcodeScanner
+        visible={scannerVisible}
+        onClose={() => setScannerVisible(false)}
+        onScan={handleScanCallback}
+      />
     </div>
   );
 };

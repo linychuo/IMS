@@ -12,7 +12,8 @@ import {
   Tag,
   Descriptions,
 } from 'antd';
-import { PlusOutlined, SearchOutlined, CheckCircleOutlined, CloseCircleOutlined, EyeOutlined } from '@ant-design/icons';
+import { PlusOutlined, SearchOutlined, CheckCircleOutlined, CloseCircleOutlined, EyeOutlined, CameraOutlined } from '@ant-design/icons';
+import BarcodeScanner from '../../components/BarcodeScanner';
 import { inventoryApi, warehouseApi } from '../../api';
 
 interface InventoryIn {
@@ -34,6 +35,7 @@ const InventoryInPage: React.FC = () => {
   const [warehouseList, setWarehouseList] = useState<{ id: number; name: string }[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingRecord, setEditingRecord] = useState<InventoryIn | null>(null);
+  const [scannerVisible, setScannerVisible] = useState(false);
   const [form] = Form.useForm();
 
   useEffect(() => {
@@ -99,6 +101,22 @@ const InventoryInPage: React.FC = () => {
       fetchData();
     } catch (error) {
       message.error('取消失败');
+    }
+  };
+
+  const handleScanCallback = async (barcode: string) => {
+    try {
+      const res = await inventoryApi.get(`/inventory/in/barcode/${barcode}`);
+      if (res.data?.code === 200) {
+        const product = res.data.data;
+        message.success(`已识别商品: ${product.productName}`);
+        // TODO: 自动填充到表单
+        console.log('Scanned product:', product);
+      } else {
+        message.error(res.data?.message || '商品不存在');
+      }
+    } catch (error) {
+      message.error('获取商品信息失败');
     }
   };
 
@@ -214,9 +232,20 @@ const InventoryInPage: React.FC = () => {
             <Form.Item name="remark" label="备注">
               <Input.TextArea rows={2} placeholder="请输入备注" />
             </Form.Item>
+            <Form.Item label="扫码入库">
+              <Button icon={<CameraOutlined />} onClick={() => setScannerVisible(true)}>
+                扫码添加商品
+              </Button>
+            </Form.Item>
           </Form>
         )}
       </Modal>
+
+      <BarcodeScanner
+        visible={scannerVisible}
+        onClose={() => setScannerVisible(false)}
+        onScan={handleScanCallback}
+      />
     </div>
   );
 };
