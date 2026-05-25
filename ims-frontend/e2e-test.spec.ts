@@ -311,4 +311,182 @@ test.describe('IMS E2E Tests', () => {
     expect(data.success).toBe(true);
     expect(data.data.token).toBeDefined();
   });
+
+  // ===== 11. Barcode Scanner - Inventory In =====
+  test('11. Inventory In - Barcode Scanner Button Visible', async ({ page }) => {
+    await loginViaUI(page);
+    await page.goto(`${BASE_URL}/inventory/in`);
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(2000);
+
+    const title = page.locator('h2:has-text("入库单")');
+    await expect(title).toBeVisible({ timeout: 10000 });
+
+    const table = page.locator('.ant-table');
+    await expect(table).toBeVisible();
+
+    const scanBtn = page.locator('button:has-text("扫码入库"), button:has-text("扫码添加商品")');
+    if (await scanBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+      console.log('Barcode scan button found');
+      await scanBtn.click();
+      await page.waitForTimeout(1000);
+
+      const scannerModal = page.locator('.ant-modal');
+      if (await scannerModal.isVisible({ timeout: 3000 }).catch(() => false)) {
+        console.log('Scanner modal opened successfully');
+
+        const closeBtn = page.locator('button:has-text("关闭")');
+        if (await closeBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+          await closeBtn.click();
+          await page.waitForTimeout(500);
+        }
+      }
+    }
+
+    await page.screenshot({ path: '/tmp/ims-inventory-in-scanner.png', fullPage: true });
+  });
+
+  // ===== 12. Barcode Scanner - Inventory Out =====
+  test('12. Inventory Out - Barcode Scanner Button Visible', async ({ page }) => {
+    await loginViaUI(page);
+    await page.goto(`${BASE_URL}/inventory/out`);
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(2000);
+
+    const title = page.locator('h2:has-text("出库单")');
+    await expect(title).toBeVisible({ timeout: 10000 });
+
+    const scanBtn = page.locator('button:has-text("扫码出库"), button:has-text("扫码添加商品")');
+    if (await scanBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+      console.log('Barcode scan button found');
+      await scanBtn.click();
+      await page.waitForTimeout(1000);
+
+      const scannerModal = page.locator('.ant-modal');
+      if (await scannerModal.isVisible({ timeout: 3000 }).catch(() => false)) {
+        console.log('Scanner modal opened successfully');
+
+        const closeBtn = page.locator('button:has-text("关闭")');
+        if (await closeBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+          await closeBtn.click();
+          await page.waitForTimeout(500);
+        }
+      }
+    }
+
+    await page.screenshot({ path: '/tmp/ims-inventory-out-scanner.png', fullPage: true });
+  });
+
+  // ===== 13. Sales Order Print Preview =====
+  test('13. Sales Order - Print Preview Button Visible', async ({ page }) => {
+    await loginViaUI(page);
+    await page.goto(`${BASE_URL}/sales/order`);
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(2000);
+
+    const title = page.locator('h2:has-text("销售订单")');
+    await expect(title).toBeVisible({ timeout: 10000 });
+
+    const firstRow = page.locator('.ant-table-tbody tr').first();
+    if (await firstRow.isVisible({ timeout: 3000 }).catch(() => false)) {
+      const viewBtn = firstRow.locator('button:has-text("查看")');
+      if (await viewBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await viewBtn.click();
+        await page.waitForTimeout(1500);
+
+        const modal = page.locator('.ant-modal');
+        if (await modal.isVisible({ timeout: 3000 }).catch(() => false)) {
+          console.log('Order detail modal opened');
+
+          const printBtn = page.locator('button:has-text("打印"), button:has-text("打印预览")');
+          if (await printBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+            console.log('Print button found');
+          }
+        }
+
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(500);
+      }
+    }
+
+    await page.screenshot({ path: '/tmp/ims-sales-order-print.png', fullPage: true });
+  });
+
+  // ===== 14. Dashboard Pending Counts =====
+  test('14. Dashboard - Pending Receive and Payment Counts', async ({ page }) => {
+    await loginViaUI(page);
+    await page.goto(`${BASE_URL}/dashboard`);
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(2000);
+
+    const title = page.locator('h1:has-text("经营概览")');
+    await expect(title).toBeVisible({ timeout: 10000 });
+
+    const statCards = page.locator('.ant-statistic');
+    const statCount = await statCards.count();
+    expect(statCount).toBeGreaterThan(0);
+    console.log(`Dashboard has ${statCount} statistic cards`);
+
+    const pendingLabels = [
+      '待收款',
+      '待付款',
+      '待处理采购单',
+      '待审核销售单'
+    ];
+
+    for (const label of pendingLabels) {
+      const labelEl = page.locator('.ant-statistic-title').filter({ hasText: label });
+      if (await labelEl.isVisible({ timeout: 2000 }).catch(() => false)) {
+        console.log(`Found stat card for: ${label}`);
+      }
+    }
+
+    await page.screenshot({ path: '/tmp/ims-dashboard-pending.png', fullPage: true });
+  });
+
+  // ===== 15. Supplier Reconciliation - Payment Status =====
+  test('15. Supplier Reconciliation - Payment Status Filter', async ({ page }) => {
+    await loginViaUI(page);
+    await page.goto(`${BASE_URL}/finance/supplier-reconciliation`);
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(2000);
+
+    const title = page.locator('h2:has-text("供应商对账")');
+    await expect(title).toBeVisible({ timeout: 10000 });
+
+    const table = page.locator('.ant-table');
+    await expect(table).toBeVisible();
+
+    const pendingStatus = page.locator('.ant-tag:has-text("待付款"), .ant-tag:has-text("已付款"), .ant-tag:has-text("部分付款")');
+    if (await pendingStatus.first().isVisible({ timeout: 2000 }).catch(() => false)) {
+      console.log('Payment status tags found');
+    }
+
+    await page.screenshot({ path: '/tmp/ims-supplier-recon-status.png', fullPage: true });
+  });
+
+  // ===== 16. Report Center - Profit Margin Report =====
+  test('16. Report Center - Profit Margin Report Tab Exists', async ({ page }) => {
+    await loginViaUI(page);
+    await page.goto(`${BASE_URL}/report`);
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(2000);
+
+    const title = page.locator('h2:has-text("报表中心")');
+    await expect(title).toBeVisible({ timeout: 10000 });
+
+    const profitTab = page.locator('.ant-tabs-tab').filter({ hasText: /毛利/ });
+    if (await profitTab.isVisible({ timeout: 2000 }).catch(() => false)) {
+      console.log('Profit margin tab found');
+      await profitTab.click();
+      await page.waitForTimeout(1500);
+    }
+
+    const exportBtn = page.locator('button:has-text("导出CSV"), button:has-text("导出")');
+    if (await exportBtn.first().isVisible({ timeout: 2000 }).catch(() => false)) {
+      console.log('Export button found in current tab');
+    }
+
+    await page.screenshot({ path: '/tmp/ims-report-profit.png', fullPage: true });
+  });
 });

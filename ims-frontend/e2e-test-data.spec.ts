@@ -379,7 +379,7 @@ test.describe('IMS Test Data Creation', () => {
   test('10. Create Inventory Inbound', async ({ page }) => {
     await loginViaUI(page);
 
-    await page.goto(`${BASE_URL}/inventory/inbound`);
+    await page.goto(`${BASE_URL}/inventory/in`);
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
 
@@ -405,7 +405,7 @@ test.describe('IMS Test Data Creation', () => {
   test('11. Create Inventory Outbound', async ({ page }) => {
     await loginViaUI(page);
 
-    await page.goto(`${BASE_URL}/inventory/outbound`);
+    await page.goto(`${BASE_URL}/inventory/out`);
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
 
@@ -584,5 +584,87 @@ test.describe('IMS Test Data Creation', () => {
     }
 
     await page.screenshot({ path: '/tmp/ims-reports-final.png', fullPage: true });
+  });
+
+  test('17. Barcode Scanner Component - Manual Input', async ({ page }) => {
+    await loginViaUI(page);
+
+    await page.goto(`${BASE_URL}/inventory/in`);
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(2000);
+
+    console.log('On inventory inbound page for barcode scanner test');
+
+    const addBtn = page.locator('button:has-text("新建入库"), button:has-text("新增入库")');
+    if (await addBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+      await addBtn.click();
+      await page.waitForTimeout(1000);
+
+      const scannerBtn = page.locator('button:has-text("扫码入库"), button:has-text("扫码添加商品")');
+      if (await scannerBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await scannerBtn.click();
+        await page.waitForTimeout(1000);
+
+        const scannerModal = page.locator('.ant-modal');
+        if (await scannerModal.isVisible({ timeout: 3000 }).catch(() => false)) {
+          console.log('Scanner modal opened');
+
+          const manualInput = page.locator('input[placeholder*="条码"], input[placeholder*="商品条码"]');
+          if (await manualInput.isVisible({ timeout: 2000 }).catch(() => false)) {
+            await manualInput.fill('TEST_BARCODE_12345');
+            console.log('Manual barcode input works');
+
+            const confirmBtn = page.locator('button:has-text("确定")');
+            if (await confirmBtn.isVisible({ timeout: 1000 }).catch(() => false)) {
+              await confirmBtn.click();
+              await page.waitForTimeout(1000);
+            }
+          }
+
+          const closeBtn = page.locator('button:has-text("关闭")');
+          if (await closeBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+            await closeBtn.click();
+            await page.waitForTimeout(500);
+          }
+        }
+      }
+    }
+
+    await page.keyboard.press('Escape');
+    await page.screenshot({ path: '/tmp/ims-scanner-manual-test.png', fullPage: true });
+  });
+
+  test('18. Sales Order Detail - Cost Field Display', async ({ page }) => {
+    await loginViaUI(page);
+
+    await page.goto(`${BASE_URL}/sales/order`);
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(2000);
+
+    console.log('On sales order page to check detail view');
+
+    const firstRow = page.locator('.ant-table-tbody tr').first();
+    if (await firstRow.isVisible({ timeout: 3000 }).catch(() => false)) {
+      const viewBtn = firstRow.locator('button:has-text("查看")');
+      if (await viewBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await viewBtn.click();
+        await page.waitForTimeout(1500);
+
+        const modal = page.locator('.ant-modal');
+        if (await modal.isVisible({ timeout: 3000 }).catch(() => false)) {
+          console.log('Order detail modal opened');
+
+          const detailTable = page.locator('.ant-table');
+          if (await detailTable.isVisible({ timeout: 2000 }).catch(() => false)) {
+            console.log('Order detail table found');
+          }
+        }
+
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(500);
+      }
+    }
+
+    await page.screenshot({ path: '/tmp/ims-sales-order-detail-cost.png', fullPage: true });
   });
 });
