@@ -7,8 +7,10 @@ import com.ims.finance.service.PayableService;
 import com.ims.procurement.dto.request.InspectionRequest;
 import com.ims.procurement.entity.PurchaseIn;
 import com.ims.procurement.entity.PurchaseInDetail;
+import com.ims.procurement.entity.PurchaseInStatusHistory;
 import com.ims.procurement.mapper.PurchaseInDetailMapper;
 import com.ims.procurement.mapper.PurchaseInMapper;
+import com.ims.procurement.mapper.PurchaseInStatusHistoryMapper;
 import com.ims.procurement.service.PurchaseInService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,17 +32,32 @@ public class PurchaseInServiceImpl implements PurchaseInService {
 
     private final PurchaseInMapper purchaseInMapper;
     private final PurchaseInDetailMapper purchaseInDetailMapper;
+    private final PurchaseInStatusHistoryMapper statusHistoryMapper;
     private final OrderNoGenerator orderNoGenerator;
     private final PayableService payableService;
 
     public PurchaseInServiceImpl(PurchaseInMapper purchaseInMapper,
                                   PurchaseInDetailMapper purchaseInDetailMapper,
+                                  PurchaseInStatusHistoryMapper statusHistoryMapper,
                                   OrderNoGenerator orderNoGenerator,
                                   PayableService payableService) {
         this.purchaseInMapper = purchaseInMapper;
         this.purchaseInDetailMapper = purchaseInDetailMapper;
+        this.statusHistoryMapper = statusHistoryMapper;
         this.orderNoGenerator = orderNoGenerator;
         this.payableService = payableService;
+    }
+
+    private void recordStatusChange(PurchaseIn in, Integer fromStatus, Integer toStatus, String userId, String remark) {
+        PurchaseInStatusHistory history = new PurchaseInStatusHistory();
+        history.setInId(in.getId());
+        history.setInNo(in.getInNo());
+        history.setFromStatus(fromStatus);
+        history.setToStatus(toStatus);
+        try { history.setOperatorId(Long.parseLong(userId)); } catch (Exception e) {}
+        history.setOperateTime(LocalDateTime.now());
+        history.setRemark(remark);
+        statusHistoryMapper.insert(history);
     }
 
     @Override
@@ -84,6 +101,8 @@ public class PurchaseInServiceImpl implements PurchaseInService {
         purchaseIn.setStatus(CommonStatus.APPROVED.getCode());
         purchaseInMapper.update(purchaseIn);
 
+        recordStatusChange(purchaseIn, CommonStatus.PENDING.getCode(), CommonStatus.APPROVED.getCode(), userId, "审核通过");
+
         Payable payable = new Payable();
         payable.setSupplierId(purchaseIn.getSupplierId());
         payable.setSupplierName(purchaseIn.getSupplierName());
@@ -107,9 +126,11 @@ public class PurchaseInServiceImpl implements PurchaseInService {
         if (purchaseIn.getStatus() == com.ims.common.enums.CommonStatus.COMPLETED.getCode()) {
             throw new RuntimeException("已完成不能取消");
         }
+        Integer prevStatus = purchaseIn.getStatus();
         purchaseIn.setStatus(com.ims.common.enums.CommonStatus.CANCELLED.getCode());
         purchaseIn.setRemark(reason);
         purchaseInMapper.update(purchaseIn);
+        recordStatusChange(purchaseIn, prevStatus, com.ims.common.enums.CommonStatus.CANCELLED.getCode(), "0", reason);
         log.info("取消采购入库单: {}, 原因: {}", id, reason);
     }
 
@@ -123,8 +144,10 @@ public class PurchaseInServiceImpl implements PurchaseInService {
         if (purchaseIn.getStatus() == com.ims.common.enums.CommonStatus.COMPLETED.getCode()) {
             throw new RuntimeException("已完成");
         }
+        Integer prevStatus = purchaseIn.getStatus();
         purchaseIn.setStatus(CommonStatus.COMPLETED.getCode());
         purchaseInMapper.update(purchaseIn);
+        recordStatusChange(purchaseIn, prevStatus, CommonStatus.COMPLETED.getCode(), "0", "完成入库");
         log.info("完成采购入库: {}", id);
     }
 

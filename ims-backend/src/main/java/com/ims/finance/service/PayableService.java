@@ -67,4 +67,16 @@ public interface PayableService extends IService<Payable> {
      * 获取供应商对账单
      */
     SupplierStatementDTO getSupplierStatement(Long supplierId, LocalDate startDate, LocalDate endDate);
+
+    /**
+     * 获取逾期应付列表
+     * @param overdueDays 逾期天数（默认1天）
+     */
+    List<Payable> getOverduePayables(Integer overdueDays);
+
+    /**
+     * 获取即将到期应付列表
+     * @param days 未来N天内到期（默认7天）
+     */
+    List<Payable> getDueSoonPayables(Integer days);
 }

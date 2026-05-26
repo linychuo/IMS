@@ -12,7 +12,7 @@ import {
   Tag,
   Descriptions,
 } from 'antd';
-import { PlusOutlined, EyeOutlined } from '@ant-design/icons';
+import { PlusOutlined, EyeOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import { inventoryApi, warehouseApi } from '../../api';
 
 interface InventoryTransfer {
@@ -81,6 +81,26 @@ const InventoryTransferPage: React.FC = () => {
       }
     } catch (error) {
       message.error('获取调拨单详情失败');
+    }
+  };
+
+  const handleApprove = async (id: number) => {
+    try {
+      await inventoryApi.put(`/inventory/transfer/${id}/approve`, null, { params: { auditorId: 1 } });
+      message.success('审核通过');
+      fetchData();
+    } catch (error) {
+      message.error('操作失败');
+    }
+  };
+
+  const handleReject = async (id: number) => {
+    try {
+      await inventoryApi.put(`/inventory/transfer/${id}/reject`, null, { params: { reason: '不符合调拨要求' } });
+      message.success('已拒绝');
+      fetchData();
+    } catch (error) {
+      message.error('操作失败');
     }
   };
 
@@ -173,10 +193,14 @@ const InventoryTransferPage: React.FC = () => {
         <Space>
           <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => handleView(record)}>查看</Button>
           {record.status === 0 && (
-            <Button type="link" size="small" onClick={() => handleStart(record.id)}>开始调拨</Button>
+            <>
+              <Button type="link" size="small" icon={<CheckCircleOutlined />} onClick={() => handleApprove(record.id)}>审核</Button>
+              <Button type="link" size="small" danger icon={<CloseCircleOutlined />} onClick={() => handleReject(record.id)}>拒绝</Button>
+            </>
           )}
           {record.status === 1 && (
             <>
+              <Button type="link" size="small" onClick={() => handleStart(record.id)}>开始调拨</Button>
               <Button type="link" size="small" onClick={() => handleConfirmOut(record.id)}>确认出库</Button>
               <Button type="link" size="small" onClick={() => handleConfirmIn(record.id)}>确认入库</Button>
               <Button type="link" size="small" onClick={() => handleFinish(record.id)}>完成</Button>

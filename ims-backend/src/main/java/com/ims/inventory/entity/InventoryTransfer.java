@@ -68,6 +68,21 @@ public class InventoryTransfer extends BaseEntity {
     private LocalDateTime transferTime;
 
     /**
+     * 审核人ID
+     */
+    private Long auditorId;
+
+    /**
+     * 审核人姓名
+     */
+    private String auditorName;
+
+    /**
+     * 审核时间
+     */
+    private LocalDateTime auditedAt;
+
+    /**
      * 创建时间
      */
     private LocalDateTime createTime;
@@ -175,6 +190,30 @@ public class InventoryTransfer extends BaseEntity {
 
     public void setTransferTime(LocalDateTime transferTime) {
         this.transferTime = transferTime;
+    }
+
+    public Long getAuditorId() {
+        return auditorId;
+    }
+
+    public void setAuditorId(Long auditorId) {
+        this.auditorId = auditorId;
+    }
+
+    public String getAuditorName() {
+        return auditorName;
+    }
+
+    public void setAuditorName(String auditorName) {
+        this.auditorName = auditorName;
+    }
+
+    public LocalDateTime getAuditedAt() {
+        return auditedAt;
+    }
+
+    public void setAuditedAt(LocalDateTime auditedAt) {
+        this.auditedAt = auditedAt;
     }
 
     public LocalDateTime getCreateTime() {

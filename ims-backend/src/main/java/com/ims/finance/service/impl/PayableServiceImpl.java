@@ -302,4 +302,47 @@ public class PayableServiceImpl extends ServiceImpl<PayableMapper, Payable> impl
             default -> "未知";
         };
     }
+
+    @Override
+    public List<Payable> getOverduePayables(Integer overdueDays) {
+        LocalDate today = LocalDate.now();
+        LocalDate overdueDate = today.minusDays(overdueDays);
+        LambdaQueryWrapper<Payable> wrapper = new LambdaQueryWrapper<>();
+        wrapper.lt(Payable::getDueDate, overdueDate)
+              .ne(Payable::getStatus, 3) // 排除已结清
+              .gt(Payable::getPendingAmount, BigDecimal.ZERO) // 有待付金额
+              .orderByAsc(Payable::getDueDate);
+        List<Payable> list = this.list(wrapper);
+        // 计算逾期天数
+        for (Payable p : list) {
+            if (p.getDueDate() != null) {
+                p.setOverdueDays((int) java.time.temporal.ChronoUnit.DAYS.between(p.getDueDate(), today));
+            } else {
+                p.setOverdueDays(0);
+            }
+        }
+        return list;
+    }
+
+    @Override
+    public List<Payable> getDueSoonPayables(Integer days) {
+        LocalDate today = LocalDate.now();
+        LocalDate dueSoonDate = today.plusDays(days);
+        LambdaQueryWrapper<Payable> wrapper = new LambdaQueryWrapper<>();
+        wrapper.le(Payable::getDueDate, dueSoonDate)
+              .gt(Payable::getDueDate, today) // 未来N天内到期
+              .ne(Payable::getStatus, 3) // 排除已结清
+              .gt(Payable::getPendingAmount, BigDecimal.ZERO) // 有待付金额
+              .orderByAsc(Payable::getDueDate);
+        List<Payable> list = this.list(wrapper);
+        // 计算到期天数
+        for (Payable p : list) {
+            if (p.getDueDate() != null) {
+                p.setOverdueDays((int) java.time.temporal.ChronoUnit.DAYS.between(today, p.getDueDate()));
+            } else {
+                p.setOverdueDays(0);
+            }
+        }
+        return list;
+    }
 }

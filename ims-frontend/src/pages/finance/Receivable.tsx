@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Table, Tag, message, Button, Input, Space, Modal, Form, DatePicker, Select, InputNumber } from 'antd';
-import { PlusOutlined, SearchOutlined, EditOutlined } from '@ant-design/icons';
+import { Table, Tag, message, Button, Input, Space, Modal, Form, DatePicker, Select, InputNumber, Tabs } from 'antd';
+import { PlusOutlined, SearchOutlined, EditOutlined, WarningOutlined, ClockCircleOutlined } from '@ant-design/icons';
 import { financeApi, customerApi } from '../../api';
 
 interface Receivable {
@@ -14,6 +14,7 @@ interface Receivable {
   balance: number;
   status: number;
   dueDate?: string;
+  overdueDays?: number;
   remark?: string;
 }
 
@@ -26,6 +27,7 @@ const ReceivablePage: React.FC = () => {
   const [editingRecord, setEditingRecord] = useState<Receivable | null>(null);
   const [customerList, setCustomerList] = useState<{ id: string; name: string }[]>([]);
   const [form] = Form.useForm();
+  const [activeTab, setActiveTab] = useState<string>('normal');
 
   useEffect(() => {
     fetchCustomers();
@@ -33,7 +35,13 @@ const ReceivablePage: React.FC = () => {
 
   useEffect(() => {
     fetchData();
-  }, [pagination.current, pagination.size]);
+  }, [pagination.current, pagination.size, activeTab]);
+
+  useEffect(() => {
+    if (activeTab !== 'normal') {
+      fetchAlertData(activeTab);
+    }
+  }, [activeTab]);
 
   const fetchCustomers = async () => {
     try {
@@ -59,6 +67,24 @@ const ReceivablePage: React.FC = () => {
     } catch (error) {
       console.error('Failed to fetch receivables:', error);
       message.error('获取应收账款失败');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchAlertData = async (type: string) => {
+    setLoading(true);
+    try {
+      const endpoint = type === 'overdue' ? '/finance/receivable/overdue' : '/finance/receivable/due-soon';
+      const res = await financeApi.get(endpoint, {
+        params: type === 'overdue' ? { overdueDays: 1 } : { days: 7 },
+      });
+      if (res.data.code === 200) {
+        setData(res.data.data || []);
+        setPagination((prev) => ({ ...prev, total: res.data.data?.length || 0 }));
+      }
+    } catch (error) {
+      message.error('获取数据失败');
     } finally {
       setLoading(false);
     }
@@ -107,7 +133,10 @@ const ReceivablePage: React.FC = () => {
     }
   };
 
-  const renderStatus = (status: number) => {
+  const renderStatus = (status: number, overdueDays?: number) => {
+    if (overdueDays && overdueDays > 0) {
+      return <Tag color="red" icon={<WarningOutlined />}>{overdueDays}天逾期</Tag>;
+    }
     const map: Record<number, { text: string; color: string }> = {
       1: { text: '未结清', color: 'orange' },
       2: { text: '部分收款', color: 'blue' },
@@ -117,14 +146,15 @@ const ReceivablePage: React.FC = () => {
     return <Tag color={s.color}>{s.text}</Tag>;
   };
 
-  const columns = [
+  const getColumns = () => {
+    const baseColumns = [
     { title: '客户', dataIndex: 'customerName', key: 'customerName', width: 150 },
     { title: '关联订单', dataIndex: 'orderNo', key: 'orderNo', width: 150 },
     { title: '应收金额', dataIndex: 'amount', key: 'amount', width: 120, render: (v: number) => `¥${v?.toFixed(2) || '0.00'}` },
     { title: '已收金额', dataIndex: 'receivedAmount', key: 'receivedAmount', width: 120, render: (v: number) => v ? `¥${v.toFixed(2)}` : '-' },
     { title: '待收金额', dataIndex: 'balance', key: 'balance', width: 120, render: (v: number) => `¥${v?.toFixed(2) || '0.00'}` },
     { title: '到期日期', dataIndex: 'dueDate', key: 'dueDate', width: 120 },
-    { title: '状态', dataIndex: 'status', key: 'status', width: 100, render: renderStatus },
+    { title: '状态', dataIndex: 'status', key: 'status', width: 120, render: (s: number, r: Receivable) => renderStatus(s, r.overdueDays) },
     {
       title: '操作',
       key: 'action',
@@ -136,10 +166,21 @@ const ReceivablePage: React.FC = () => {
       ),
     },
   ];
+    return baseColumns;
+  };
 
   return (
     <div>
       <h2 style={{ marginBottom: 16 }}>应收账款</h2>
+      <Tabs activeKey={activeTab} onChange={setActiveTab} style={{ marginBottom: 16 }}
+        items={[
+          { key: 'normal', label: '应收列表' },
+          { key: 'overdue', label: <span><WarningOutlined /> 逾期预警</span> },
+          { key: 'due-soon', label: <span><ClockCircleOutlined /> 即将到期</span> },
+        ]}
+      />
+      {activeTab === 'normal' && (
+      <>
       <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between' }}>
         <Input.Search
           placeholder="搜索"
@@ -152,7 +193,7 @@ const ReceivablePage: React.FC = () => {
         </Button>
       </div>
       <Table
-        columns={columns}
+        columns={getColumns()}
         dataSource={data}
         rowKey="id"
         loading={loading}
@@ -167,6 +208,27 @@ const ReceivablePage: React.FC = () => {
         }}
         scroll={{ x: 1100 }}
       />
+      </>)}
+      {activeTab === 'overdue' && (
+        <Table
+          columns={getColumns()}
+          dataSource={data}
+          rowKey="id"
+          loading={loading}
+          pagination={{ showSizeChanger: true, showTotal: (total) => `共 ${total} 条` }}
+          scroll={{ x: 1100 }}
+        />
+      )}
+      {activeTab === 'due-soon' && (
+        <Table
+          columns={getColumns()}
+          dataSource={data}
+          rowKey="id"
+          loading={loading}
+          pagination={{ showSizeChanger: true, showTotal: (total) => `共 ${total} 条` }}
+          scroll={{ x: 1100 }}
+        />
+      )}
 
       <Modal
         title={editingRecord ? '编辑应收账款' : '新增应收账款'}

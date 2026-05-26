@@ -7,8 +7,10 @@ import com.ims.finance.service.ReceivableService;
 import com.ims.inventory.service.InventoryService;
 import com.ims.sales.entity.SalesOut;
 import com.ims.sales.entity.SalesOutDetail;
+import com.ims.sales.entity.SalesOutStatusHistory;
 import com.ims.sales.mapper.SalesOutDetailMapper;
 import com.ims.sales.mapper.SalesOutMapper;
+import com.ims.sales.mapper.SalesOutStatusHistoryMapper;
 import com.ims.sales.service.SalesOutService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,20 +32,35 @@ public class SalesOutServiceImpl implements SalesOutService {
 
     private final SalesOutMapper salesOutMapper;
     private final SalesOutDetailMapper salesOutDetailMapper;
+    private final SalesOutStatusHistoryMapper statusHistoryMapper;
     private final OrderNoGenerator orderNoGenerator;
     private final InventoryService inventoryService;
     private final ReceivableService receivableService;
 
     public SalesOutServiceImpl(SalesOutMapper salesOutMapper,
                                 SalesOutDetailMapper salesOutDetailMapper,
+                                SalesOutStatusHistoryMapper statusHistoryMapper,
                                 OrderNoGenerator orderNoGenerator,
                                 InventoryService inventoryService,
                                 ReceivableService receivableService) {
         this.salesOutMapper = salesOutMapper;
         this.salesOutDetailMapper = salesOutDetailMapper;
+        this.statusHistoryMapper = statusHistoryMapper;
         this.orderNoGenerator = orderNoGenerator;
         this.inventoryService = inventoryService;
         this.receivableService = receivableService;
+    }
+
+    private void recordStatusChange(SalesOut out, Integer fromStatus, Integer toStatus, String userId, String remark) {
+        SalesOutStatusHistory history = new SalesOutStatusHistory();
+        history.setOutId(out.getId());
+        history.setOutNo(out.getOutNo());
+        history.setFromStatus(fromStatus);
+        history.setToStatus(toStatus);
+        try { history.setOperatorId(Long.parseLong(userId)); } catch (Exception e) {}
+        history.setOperateTime(LocalDateTime.now());
+        history.setRemark(remark);
+        statusHistoryMapper.insert(history);
     }
 
     @Override
@@ -134,6 +151,7 @@ public class SalesOutServiceImpl implements SalesOutService {
         salesOut.setAuditedAt(LocalDateTime.now());
         salesOut.setStatus(CommonStatus.APPROVED.getCode());
         salesOutMapper.update(salesOut);
+        recordStatusChange(salesOut, CommonStatus.PENDING.getCode(), CommonStatus.APPROVED.getCode(), userId, "审核通过");
         log.info("审核销售出库单: {} by {}", id, userId);
     }
 
@@ -147,6 +165,8 @@ public class SalesOutServiceImpl implements SalesOutService {
         if (salesOut.getStatus() == CommonStatus.COMPLETED.getCode()) {
             throw new RuntimeException("已完成不能取消");
         }
+
+        Integer prevStatus = salesOut.getStatus();
 
         // 如果已审核，需要恢复库存
         if (salesOut.getStatus() == CommonStatus.APPROVED.getCode()) {
@@ -176,6 +196,7 @@ public class SalesOutServiceImpl implements SalesOutService {
         salesOut.setStatus(CommonStatus.CANCELLED.getCode());
         salesOut.setRemark(reason);
         salesOutMapper.update(salesOut);
+        recordStatusChange(salesOut, prevStatus, CommonStatus.CANCELLED.getCode(), "0", reason);
         log.info("取消销售出库单: {}, 原因: {}", id, reason);
     }
 
@@ -245,6 +266,7 @@ public class SalesOutServiceImpl implements SalesOutService {
 
         salesOut.setStatus(CommonStatus.COMPLETED.getCode());
         salesOutMapper.update(salesOut);
+        recordStatusChange(salesOut, CommonStatus.APPROVED.getCode(), CommonStatus.COMPLETED.getCode(), "0", "完成出库");
         log.info("完成销售出库: {}", id);
     }
 

@@ -7,8 +7,10 @@ import com.ims.finance.mapper.FinanceOutMapper;
 import com.ims.inventory.service.InventoryService;
 import com.ims.sales.entity.SalesReturn;
 import com.ims.sales.entity.SalesReturnDetail;
+import com.ims.sales.entity.SalesReturnStatusHistory;
 import com.ims.sales.mapper.SalesReturnDetailMapper;
 import com.ims.sales.mapper.SalesReturnMapper;
+import com.ims.sales.mapper.SalesReturnStatusHistoryMapper;
 import com.ims.sales.service.SalesReturnService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,20 +29,35 @@ public class SalesReturnServiceImpl implements SalesReturnService {
 
     private final SalesReturnMapper salesReturnMapper;
     private final SalesReturnDetailMapper salesReturnDetailMapper;
+    private final SalesReturnStatusHistoryMapper statusHistoryMapper;
     private final OrderNoGenerator orderNoGenerator;
     private final InventoryService inventoryService;
     private final FinanceOutMapper financeOutMapper;
 
     public SalesReturnServiceImpl(SalesReturnMapper salesReturnMapper,
                                    SalesReturnDetailMapper salesReturnDetailMapper,
+                                   SalesReturnStatusHistoryMapper statusHistoryMapper,
                                    OrderNoGenerator orderNoGenerator,
                                    InventoryService inventoryService,
                                    FinanceOutMapper financeOutMapper) {
         this.salesReturnMapper = salesReturnMapper;
         this.salesReturnDetailMapper = salesReturnDetailMapper;
+        this.statusHistoryMapper = statusHistoryMapper;
         this.orderNoGenerator = orderNoGenerator;
         this.inventoryService = inventoryService;
         this.financeOutMapper = financeOutMapper;
+    }
+
+    private void recordStatusChange(SalesReturn ret, Integer fromStatus, Integer toStatus, String userId, String remark) {
+        SalesReturnStatusHistory history = new SalesReturnStatusHistory();
+        history.setReturnId(ret.getId());
+        history.setReturnNo(ret.getReturnNo());
+        history.setFromStatus(fromStatus);
+        history.setToStatus(toStatus);
+        try { history.setOperatorId(Long.parseLong(userId)); } catch (Exception e) {}
+        history.setOperateTime(LocalDateTime.now());
+        history.setRemark(remark);
+        statusHistoryMapper.insert(history);
     }
 
     @Override
@@ -98,6 +115,7 @@ public class SalesReturnServiceImpl implements SalesReturnService {
         salesReturn.setAuditedAt(LocalDateTime.now());
         salesReturn.setStatus(CommonStatus.APPROVED.getCode());
         salesReturnMapper.update(salesReturn);
+        recordStatusChange(salesReturn, CommonStatus.PENDING.getCode(), CommonStatus.APPROVED.getCode(), userId, "审核通过");
         log.info("审核通过销售退货单: {} by {}", id, userId);
     }
 
@@ -114,6 +132,7 @@ public class SalesReturnServiceImpl implements SalesReturnService {
         salesReturn.setStatus(CommonStatus.REJECTED.getCode());
         salesReturn.setRemark(reason);
         salesReturnMapper.update(salesReturn);
+        recordStatusChange(salesReturn, CommonStatus.PENDING.getCode(), CommonStatus.REJECTED.getCode(), "0", reason);
         log.info("拒绝销售退货单: {}, 原因: {}", id, reason);
     }
 
@@ -127,9 +146,11 @@ public class SalesReturnServiceImpl implements SalesReturnService {
         if (salesReturn.getStatus() == CommonStatus.COMPLETED.getCode()) {
             throw new RuntimeException("已完成不能取消");
         }
+        Integer prevStatus = salesReturn.getStatus();
         salesReturn.setStatus(CommonStatus.CANCELLED.getCode());
         salesReturn.setRemark(reason);
         salesReturnMapper.update(salesReturn);
+        recordStatusChange(salesReturn, prevStatus, CommonStatus.CANCELLED.getCode(), "0", reason);
         log.info("取消销售退货单: {}, 原因: {}", id, reason);
     }
 
@@ -176,6 +197,7 @@ public class SalesReturnServiceImpl implements SalesReturnService {
 
         salesReturn.setStatus(CommonStatus.COMPLETED.getCode());
         salesReturnMapper.update(salesReturn);
+        recordStatusChange(salesReturn, CommonStatus.APPROVED.getCode(), CommonStatus.COMPLETED.getCode(), userId, "退货入库完成");
         log.info("销售退货单入库完成: {} by {}", id, userId);
     }
 

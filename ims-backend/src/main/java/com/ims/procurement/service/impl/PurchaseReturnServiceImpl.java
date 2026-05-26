@@ -8,8 +8,10 @@ import com.ims.finance.service.PayableService;
 import com.ims.inventory.service.InventoryService;
 import com.ims.procurement.entity.PurchaseReturn;
 import com.ims.procurement.entity.PurchaseReturnDetail;
+import com.ims.procurement.entity.PurchaseReturnStatusHistory;
 import com.ims.procurement.mapper.PurchaseReturnDetailMapper;
 import com.ims.procurement.mapper.PurchaseReturnMapper;
+import com.ims.procurement.mapper.PurchaseReturnStatusHistoryMapper;
 import com.ims.procurement.service.PurchaseReturnService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,6 +32,7 @@ public class PurchaseReturnServiceImpl implements PurchaseReturnService {
 
     private final PurchaseReturnMapper purchaseReturnMapper;
     private final PurchaseReturnDetailMapper purchaseReturnDetailMapper;
+    private final PurchaseReturnStatusHistoryMapper statusHistoryMapper;
     private final OrderNoGenerator orderNoGenerator;
     private final InventoryService inventoryService;
     private final FinanceInMapper financeInMapper;
@@ -37,16 +40,30 @@ public class PurchaseReturnServiceImpl implements PurchaseReturnService {
 
     public PurchaseReturnServiceImpl(PurchaseReturnMapper purchaseReturnMapper,
                                      PurchaseReturnDetailMapper purchaseReturnDetailMapper,
+                                     PurchaseReturnStatusHistoryMapper statusHistoryMapper,
                                      OrderNoGenerator orderNoGenerator,
                                      InventoryService inventoryService,
                                      FinanceInMapper financeInMapper,
                                      PayableService payableService) {
         this.purchaseReturnMapper = purchaseReturnMapper;
         this.purchaseReturnDetailMapper = purchaseReturnDetailMapper;
+        this.statusHistoryMapper = statusHistoryMapper;
         this.orderNoGenerator = orderNoGenerator;
         this.inventoryService = inventoryService;
         this.financeInMapper = financeInMapper;
         this.payableService = payableService;
+    }
+
+    private void recordStatusChange(PurchaseReturn ret, Integer fromStatus, Integer toStatus, String userId, String remark) {
+        PurchaseReturnStatusHistory history = new PurchaseReturnStatusHistory();
+        history.setReturnId(ret.getId());
+        history.setReturnNo(ret.getReturnNo());
+        history.setFromStatus(fromStatus);
+        history.setToStatus(toStatus);
+        try { history.setOperatorId(Long.parseLong(userId)); } catch (Exception e) {}
+        history.setOperateTime(LocalDateTime.now());
+        history.setRemark(remark);
+        statusHistoryMapper.insert(history);
     }
 
     @Override
@@ -104,6 +121,7 @@ public class PurchaseReturnServiceImpl implements PurchaseReturnService {
         purchaseReturn.setAuditedAt(LocalDateTime.now());
         purchaseReturn.setStatus(CommonStatus.APPROVED.getCode());
         purchaseReturnMapper.update(purchaseReturn);
+        recordStatusChange(purchaseReturn, CommonStatus.PENDING.getCode(), CommonStatus.APPROVED.getCode(), userId, "审核通过");
         log.info("审核通过采购退货单: {} by {}", id, userId);
     }
 
@@ -120,6 +138,7 @@ public class PurchaseReturnServiceImpl implements PurchaseReturnService {
         purchaseReturn.setStatus(CommonStatus.REJECTED.getCode());
         purchaseReturn.setRemark(reason);
         purchaseReturnMapper.update(purchaseReturn);
+        recordStatusChange(purchaseReturn, CommonStatus.PENDING.getCode(), CommonStatus.REJECTED.getCode(), "0", reason);
         log.info("拒绝采购退货单: {}, 原因: {}", id, reason);
     }
 
@@ -133,9 +152,11 @@ public class PurchaseReturnServiceImpl implements PurchaseReturnService {
         if (purchaseReturn.getStatus() == CommonStatus.COMPLETED.getCode()) {
             throw new RuntimeException("已完成不能取消");
         }
+        Integer prevStatus = purchaseReturn.getStatus();
         purchaseReturn.setStatus(CommonStatus.CANCELLED.getCode());
         purchaseReturn.setRemark(reason);
         purchaseReturnMapper.update(purchaseReturn);
+        recordStatusChange(purchaseReturn, prevStatus, CommonStatus.CANCELLED.getCode(), "0", reason);
         log.info("取消采购退货单: {}, 原因: {}", id, reason);
     }
 
@@ -183,6 +204,7 @@ public class PurchaseReturnServiceImpl implements PurchaseReturnService {
 
         purchaseReturn.setStatus(CommonStatus.COMPLETED.getCode());
         purchaseReturnMapper.update(purchaseReturn);
+        recordStatusChange(purchaseReturn, CommonStatus.APPROVED.getCode(), CommonStatus.COMPLETED.getCode(), userId, "退货出库完成");
         log.info("采购退货单出库完成: {} by {}", id, userId);
     }
 

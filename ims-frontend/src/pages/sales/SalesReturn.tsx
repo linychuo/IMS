@@ -212,6 +212,16 @@ const SalesReturnPage: React.FC = () => {
     }
   };
 
+  const handleCancel = async (id: string) => {
+    try {
+      await salesApi.post(`/return/${id}/cancel`, null, { params: { reason: '主动取消' } });
+      message.success('已取消');
+      fetchData();
+    } catch (error) {
+      message.error('操作失败');
+    }
+  };
+
   // 新增/编辑
   const handleAdd = () => {
     setEditingRecord(null);
@@ -289,7 +299,7 @@ const SalesReturnPage: React.FC = () => {
       0: { text: '待审核', color: 'orange' },
       1: { text: '已审核', color: 'blue' },
       2: { text: '已入库', color: 'green' },
-      9: { text: '已拒绝', color: 'red' },
+      9: { text: '已取消', color: 'default' },
     };
     const s = map[status] || { text: '未知', color: 'default' };
     return <Tag color={s.color}>{s.text}</Tag>;
@@ -316,6 +326,7 @@ const SalesReturnPage: React.FC = () => {
               <Button type="link" size="small" icon={<EditOutlined />} onClick={() => handleEdit(record)}>编辑</Button>
               <Button type="link" size="small" icon={<CheckCircleOutlined />} onClick={() => handleApprove(record.id)}>通过</Button>
               <Button type="link" size="small" danger icon={<CloseCircleOutlined />} onClick={() => handleReject(record.id)}>拒绝</Button>
+              <Button type="link" size="small" danger onClick={() => handleCancel(record.id)}>取消</Button>
             </>
           )}
           {record.status === 1 && (

@@ -32,6 +32,11 @@ public interface InventoryTransferService extends IService<InventoryTransfer> {
     boolean approve(Long id, Long auditorId);
 
     /**
+     * 拒绝调拨单
+     */
+    boolean reject(Long id, String reason);
+
+    /**
      * 开始调拨
      */
     boolean startTransfer(Long id, Long transfererId);

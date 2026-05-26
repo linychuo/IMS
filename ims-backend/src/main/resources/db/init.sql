@@ -489,6 +489,36 @@ CREATE TABLE sales_order_status_history (
     deleted INTEGER DEFAULT 0
 );
 
+CREATE TABLE sales_out_status_history (
+    id BIGINT PRIMARY KEY DEFAULT nextval('sys_user_seq'),
+    out_id BIGINT,
+    out_no VARCHAR(50),
+    from_status INTEGER,
+    to_status INTEGER,
+    operator_id BIGINT,
+    operator_name VARCHAR(100),
+    operate_time TIMESTAMP,
+    remark VARCHAR(500),
+    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted INTEGER DEFAULT 0
+);
+
+CREATE TABLE sales_return_status_history (
+    id BIGINT PRIMARY KEY DEFAULT nextval('sys_user_seq'),
+    return_id BIGINT,
+    return_no VARCHAR(50),
+    from_status INTEGER,
+    to_status INTEGER,
+    operator_id BIGINT,
+    operator_name VARCHAR(100),
+    operate_time TIMESTAMP,
+    remark VARCHAR(500),
+    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted INTEGER DEFAULT 0
+);
+
 CREATE TABLE sales_order_detail (
     id BIGINT PRIMARY KEY DEFAULT nextval('sys_user_seq'),
     order_id BIGINT NOT NULL,
@@ -900,6 +930,47 @@ CREATE TABLE inventory_check_detail (
     deleted INTEGER DEFAULT 0
 );
 
+CREATE TABLE quality_check (
+    id BIGINT PRIMARY KEY DEFAULT nextval('sys_user_seq'),
+    check_no VARCHAR(50) NOT NULL UNIQUE,
+    order_type VARCHAR(50),
+    order_id BIGINT,
+    order_no VARCHAR(50),
+    warehouse_id BIGINT,
+    warehouse_name VARCHAR(100),
+    supplier_id BIGINT,
+    supplier_name VARCHAR(200),
+    customer_id BIGINT,
+    customer_name VARCHAR(200),
+    check_result VARCHAR(20),
+    qualified_qty DECIMAL(12,2),
+    unqualified_qty DECIMAL(12,2),
+    inspector_id BIGINT,
+    inspector_name VARCHAR(100),
+    check_time TIMESTAMP,
+    remark VARCHAR(500),
+    status INTEGER DEFAULT 0,
+    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted INTEGER DEFAULT 0
+);
+
+CREATE TABLE quality_check_detail (
+    id BIGINT PRIMARY KEY DEFAULT nextval('sys_user_seq'),
+    check_id BIGINT NOT NULL,
+    check_no VARCHAR(50),
+    product_id BIGINT,
+    product_name VARCHAR(200),
+    spec VARCHAR(100),
+    unit VARCHAR(20),
+    delivered_qty DECIMAL(12,2),
+    qualified_qty DECIMAL(12,2),
+    unqualified_qty DECIMAL(12,2),
+    reason VARCHAR(500),
+    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted INTEGER DEFAULT 0
+);
+
 CREATE TABLE inventory_transfer (
     id BIGINT PRIMARY KEY DEFAULT nextval('sys_user_seq'),
     transfer_no VARCHAR(50) NOT NULL UNIQUE,
@@ -910,6 +981,9 @@ CREATE TABLE inventory_transfer (
     transfer_date DATE,
     transferer_id BIGINT,
     transferer_name VARCHAR(100),
+    auditor_id BIGINT,
+    auditor_name VARCHAR(100),
+    audited_at TIMESTAMP,
     status INTEGER DEFAULT 0,
     total_amount DECIMAL(14,2),
     remark VARCHAR(500),
@@ -994,6 +1068,9 @@ SELECT '库存盘点', '/inventory/check', id, '/pages/inventory/Check', 4, 1, 0
 INSERT INTO sys_menu (name, path, parent_id, component, sort_order, status, deleted)
 SELECT '盘点记录', '/inventory/record', id, '/pages/inventory/Record', 5, 1, 0 FROM sys_menu WHERE path = '/inventory';
 
+INSERT INTO sys_menu (name, path, parent_id, component, sort_order, status, deleted)
+SELECT '质检管理', '/inventory/quality-check', id, '/pages/inventory/QualityCheck', 6, 1, 0 FROM sys_menu WHERE path = '/inventory';
+
 -- 财务管理子菜单
 INSERT INTO sys_menu (name, path, parent_id, component, sort_order, status, deleted)
 SELECT '收款记录', '/finance/in', id, '/pages/finance/In', 0, 1, 0 FROM sys_menu WHERE path = '/finance';
@@ -1038,6 +1115,49 @@ SELECT u.id, r.id FROM sys_user u, sys_role r WHERE u.username = 'admin' AND r.r
 -- WHERE m.deleted = 0 AND p.deleted = 0;
 
 COMMIT;
+
+-- ========== 12. 状态历史表 ==========
+CREATE TABLE inventory_transfer_status_history (
+    id BIGINT PRIMARY KEY DEFAULT nextval('sys_user_seq'),
+    transfer_id BIGINT,
+    transfer_no VARCHAR(50),
+    from_status INTEGER,
+    to_status INTEGER,
+    operator_id BIGINT,
+    operator_name VARCHAR(100),
+    operate_time TIMESTAMP,
+    remark VARCHAR(500),
+    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted INTEGER DEFAULT 0
+);
+
+CREATE TABLE purchase_in_status_history (
+    id BIGINT PRIMARY KEY DEFAULT nextval('sys_user_seq'),
+    in_id BIGINT,
+    in_no VARCHAR(50),
+    from_status INTEGER,
+    to_status INTEGER,
+    operator_id BIGINT,
+    operator_name VARCHAR(100),
+    operate_time TIMESTAMP,
+    remark VARCHAR(500),
+    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted INTEGER DEFAULT 0
+);
+
+CREATE TABLE purchase_return_status_history (
+    id BIGINT PRIMARY KEY DEFAULT nextval('sys_user_seq'),
+    return_id BIGINT,
+    return_no VARCHAR(50),
+    from_status INTEGER,
+    to_status INTEGER,
+    operator_id BIGINT,
+    operator_name VARCHAR(100),
+    operate_time TIMESTAMP,
+    remark VARCHAR(500),
+    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted INTEGER DEFAULT 0
+);
 
 -- ========== 完成提示 ==========
 -- 执行完成！

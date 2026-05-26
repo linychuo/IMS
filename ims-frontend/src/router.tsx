@@ -27,6 +27,7 @@ import InventoryRecordPage from './pages/inventory/InventoryRecord';
 import BatchPage from './pages/inventory/Batch';
 import BarcodePage from './pages/inventory/Barcode';
 import InventoryAlertPage from './pages/inventory/InventoryAlert';
+import QualityCheckPage from './pages/inventory/QualityCheck';
 import FinanceInPage from './pages/finance/FinanceIn';
 import FinanceOutPage from './pages/finance/FinanceOut';
 import AccountPage from './pages/finance/Account';
@@ -71,6 +72,7 @@ const routePermissionMap: Record<string, string> = {
   '/inventory/batch': 'inventory:record',
   '/inventory/barcode': 'inventory:record',
   '/inventory/alert': 'inventory:record',
+  '/inventory/quality-check': 'inventory:check',
   '/finance/in': 'finance',
   '/finance/out': 'finance',
   '/finance/account': 'finance',
@@ -138,6 +140,7 @@ export const router = createBrowserRouter([
       { path: 'inventory/batch', element: <PermissionRoute path="/inventory/batch" element={<BatchPage />} /> },
       { path: 'inventory/barcode', element: <PermissionRoute path="/inventory/barcode" element={<BarcodePage />} /> },
       { path: 'inventory/alert', element: <PermissionRoute path="/inventory/alert" element={<InventoryAlertPage />} /> },
+      { path: 'inventory/quality-check', element: <PermissionRoute path="/inventory/quality-check" element={<QualityCheckPage />} /> },
       { path: 'finance/in', element: <PermissionRoute path="/finance/in" element={<FinanceInPage />} /> },
       { path: 'finance/out', element: <PermissionRoute path="/finance/out" element={<FinanceOutPage />} /> },
       { path: 'finance/account', element: <PermissionRoute path="/finance/account" element={<AccountPage />} /> },

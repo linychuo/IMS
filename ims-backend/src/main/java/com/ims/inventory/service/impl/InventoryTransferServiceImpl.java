@@ -7,8 +7,10 @@ import com.ims.core.result.PageResult;
 import com.ims.inventory.entity.InventoryCheck;
 import com.ims.inventory.entity.InventoryTransfer;
 import com.ims.inventory.entity.InventoryTransferDetail;
+import com.ims.inventory.entity.InventoryTransferStatusHistory;
 import com.ims.inventory.mapper.InventoryTransferDetailMapper;
 import com.ims.inventory.mapper.InventoryTransferMapper;
+import com.ims.inventory.mapper.InventoryTransferStatusHistoryMapper;
 import com.ims.inventory.service.InventoryCheckService;
 import com.ims.inventory.service.InventoryService;
 import com.ims.inventory.service.InventoryTransferService;
@@ -36,7 +38,21 @@ public class InventoryTransferServiceImpl extends ServiceImpl<InventoryTransferM
     @Autowired
     private InventoryTransferDetailMapper inventoryTransferDetailMapper;
     @Autowired
+    private InventoryTransferStatusHistoryMapper statusHistoryMapper;
+    @Autowired
     private InventoryService inventoryService;
+
+    private void recordStatusChange(InventoryTransfer transfer, Integer fromStatus, Integer toStatus, Long operatorId, String remark) {
+        InventoryTransferStatusHistory history = new InventoryTransferStatusHistory();
+        history.setTransferId(transfer.getId());
+        history.setTransferNo(transfer.getTransferNo());
+        history.setFromStatus(fromStatus);
+        history.setToStatus(toStatus);
+        history.setOperatorId(operatorId);
+        history.setOperateTime(LocalDateTime.now());
+        history.setRemark(remark);
+        statusHistoryMapper.insert(history);
+    }
 
     @Override
     public PageResult<InventoryTransfer> page(Long page, Long pageSize, Long fromWarehouseId, Long toWarehouseId, Integer status) {
@@ -98,21 +114,42 @@ public class InventoryTransferServiceImpl extends ServiceImpl<InventoryTransferM
         if (transfer == null || transfer.getStatus() != 0) {
             throw new RuntimeException("只有待调拨状态可审核");
         }
-        transfer.setStatus(0); // 仍为待调拨，审核只是确认
+        Integer prevStatus = transfer.getStatus();
+        transfer.setStatus(1); // 审核通过，变为调拨中
+        transfer.setAuditorId(auditorId);
+        transfer.setAuditedAt(LocalDateTime.now());
+        this.updateById(transfer);
+        recordStatusChange(transfer, prevStatus, 1, auditorId, "审核通过");
         log.info("审核库存调拨单: {} by {}", transfer.getTransferNo(), auditorId);
-        return this.updateById(transfer);
+        return true;
+    }
+
+    @Override
+    @Transactional
+    public boolean reject(Long id, String reason) {
+        InventoryTransfer transfer = this.getById(id);
+        if (transfer == null || transfer.getStatus() != 0) {
+            throw new RuntimeException("只有待调拨状态可拒绝");
+        }
+        Integer prevStatus = transfer.getStatus();
+        transfer.setStatus(9); // 已取消
+        transfer.setRemark(reason);
+        this.updateById(transfer);
+        recordStatusChange(transfer, prevStatus, 9, null, reason);
+        log.info("拒绝库存调拨单: {} reason: {}", transfer.getTransferNo(), reason);
+        return true;
     }
 
     @Override
     @Transactional
     public boolean startTransfer(Long id, Long transfererId) {
         InventoryTransfer transfer = this.getById(id);
-        if (transfer == null || transfer.getStatus() != 0) {
+        if (transfer == null || transfer.getStatus() != 1) {
             return false;
         }
-        transfer.setStatus(1); // 调拨中
         transfer.setTransfererId(transfererId);
         transfer.setTransferTime(LocalDateTime.now());
+        recordStatusChange(transfer, 1, 1, transfererId, "开始调拨");
         return this.updateById(transfer);
     }
 
@@ -142,6 +179,7 @@ public class InventoryTransferServiceImpl extends ServiceImpl<InventoryTransferM
             );
             log.info("调拨出库: {} 数量 {}", detail.getProductName(), detail.getQuantity());
         }
+        recordStatusChange(transfer, 1, 1, null, "确认出库");
 
         return true;
     }
@@ -174,6 +212,7 @@ public class InventoryTransferServiceImpl extends ServiceImpl<InventoryTransferM
             );
             log.info("调拨入库: {} 数量 {}", detail.getProductName(), detail.getQuantity());
         }
+        recordStatusChange(transfer, 1, 1, null, "确认入库");
 
         return true;
     }
@@ -186,9 +225,13 @@ public class InventoryTransferServiceImpl extends ServiceImpl<InventoryTransferM
             return false;
         }
 
+        Integer prevStatus = transfer.getStatus();
         transfer.setStatus(2); // 已完成
         transfer.setFinishTime(LocalDateTime.now());
-        return this.updateById(transfer);
+        this.updateById(transfer);
+        recordStatusChange(transfer, prevStatus, 2, null, "调拨完成");
+        log.info("完成库存调拨单: {}", id);
+        return true;
     }
 
     @Override
@@ -198,9 +241,13 @@ public class InventoryTransferServiceImpl extends ServiceImpl<InventoryTransferM
         if (transfer == null || transfer.getStatus() == 2) {
             return false; // 已完成不能取消
         }
+        Integer prevStatus = transfer.getStatus();
         transfer.setStatus(9); // 已取消
         transfer.setRemark(reason);
-        return this.updateById(transfer);
+        this.updateById(transfer);
+        recordStatusChange(transfer, prevStatus, 9, null, reason);
+        log.info("取消库存调拨单: {} 原因: {}", id, reason);
+        return true;
     }
 
     @Override

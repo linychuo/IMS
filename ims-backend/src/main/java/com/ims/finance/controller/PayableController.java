@@ -98,4 +98,18 @@ public class PayableController {
             @RequestParam(required = false) LocalDate endDate) {
         return Result.success(payableService.getSupplierStatement(supplierId, startDate, endDate));
     }
+
+    @GetMapping("/overdue")
+    @Permission(code = "read", name = "查看应付账款")
+    public Result<List<Payable>> getOverduePayables(
+            @RequestParam(defaultValue = "1") Integer overdueDays) {
+        return Result.success(payableService.getOverduePayables(overdueDays));
+    }
+
+    @GetMapping("/due-soon")
+    @Permission(code = "read", name = "查看应付账款")
+    public Result<List<Payable>> getDueSoonPayables(
+            @RequestParam(defaultValue = "7") Integer days) {
+        return Result.success(payableService.getDueSoonPayables(days));
+    }
 }

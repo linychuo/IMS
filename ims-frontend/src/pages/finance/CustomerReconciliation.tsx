@@ -49,7 +49,7 @@ const CustomerReconciliationPage: React.FC = () => {
 
   const handleReconcile = async (id: number) => {
     try {
-      const res = await financeApi.post(`/customer-reconciliation/${id}/reconcile`);
+      const res = await financeApi.post(`/customer-reconciliation/${id}/confirm`);
       if (res.data.code === 200) {
         message.success('对账成功');
         fetchData();

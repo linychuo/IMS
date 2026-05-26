@@ -168,6 +168,16 @@ const PurchaseReturnPage: React.FC = () => {
     }
   };
 
+  const handleCancel = async (id: string) => {
+    try {
+      await procurementApi.post(`/return/${id}/cancel`, null, { params: { reason: '用户取消' } });
+      message.success('已取消');
+      fetchData();
+    } catch (error) {
+      message.error('操作失败');
+    }
+  };
+
   const handleModalOk = async () => {
     try {
       const values = await form.validateFields();
@@ -190,7 +200,7 @@ const PurchaseReturnPage: React.FC = () => {
       0: { text: '待审核', color: 'orange' },
       1: { text: '已审核', color: 'blue' },
       2: { text: '已退货', color: 'green' },
-      9: { text: '已拒绝', color: 'red' },
+      9: { text: '已取消', color: 'default' },
     };
     const s = map[status] || { text: '未知', color: 'default' };
     return <Tag color={s.color}>{s.text}</Tag>;
@@ -215,6 +225,7 @@ const PurchaseReturnPage: React.FC = () => {
             <>
               <Button type="link" size="small" icon={<CheckCircleOutlined />} onClick={() => handleApprove(record.id)}>审核</Button>
               <Button type="link" size="small" danger icon={<CloseCircleOutlined />} onClick={() => handleReject(record.id)}>拒绝</Button>
+              <Button type="link" size="small" danger onClick={() => handleCancel(record.id)}>取消</Button>
             </>
           )}
           {record.status === 1 && (

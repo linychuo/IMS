@@ -65,6 +65,15 @@ public class InventoryTransferController {
     }
 
     /**
+     * 拒绝调拨单
+     */
+    @PutMapping("/{id}/reject")
+    @Permission(code = "audit", name = "审核调拨单")
+    public Result<Boolean> reject(@PathVariable Long id, @RequestParam String reason) {
+        return Result.success(inventoryTransferService.reject(id, reason));
+    }
+
+    /**
      * 开始调拨
      */
     @PutMapping("/{id}/start")
