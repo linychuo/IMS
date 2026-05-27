@@ -131,6 +131,10 @@ const AppLayout: React.FC = () => {
     ? buildMenuItems(menus)
     : defaultMenuItems;
 
+  // 确保仪表盘和报表中心始终显示在菜单顶部
+  const alwaysShowKeys = ['/dashboard', '/report'];
+  const alwaysShowItems = defaultMenuItems.filter(item => !menuItems.some((m: any) => m.key === item.key));
+
   const userMenuItems = [
     { key: 'logout', icon: <LogoutOutlined />, label: '退出登录' },
   ];
@@ -192,7 +196,7 @@ const AppLayout: React.FC = () => {
           defaultSelectedKeys={['/dashboard']}
           openKeys={openKeys}
           onOpenChange={handleOpenChange}
-          items={menuItems}
+          items={[...alwaysShowItems, ...menuItems]}
           onClick={handleMenuClick}
         />
       </Sider>
