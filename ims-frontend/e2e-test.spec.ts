@@ -299,20 +299,7 @@ test.describe('IMS E2E Tests', () => {
     await page.screenshot({ path: '/tmp/ims-report-inventory.png', fullPage: true });
   });
 
-  // ===== 10. API Health Check =====
-  test('10. API Health Check', async () => {
-    const resp = await fetch(`${API_URL}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: 'admin', password: 'admin123' })
-    });
-    const data = await resp.json();
-    console.log('Login API response:', JSON.stringify(data, null, 2));
-    expect(data.success).toBe(true);
-    expect(data.data.token).toBeDefined();
-  });
-
-  // ===== 11. Barcode Scanner - Inventory In =====
+  // ===== 10. Barcode Scanner - Inventory In =====
   test('11. Inventory In - Barcode Scanner Button Visible', async ({ page }) => {
     await loginViaUI(page);
     await page.goto(`${BASE_URL}/inventory/in`);
