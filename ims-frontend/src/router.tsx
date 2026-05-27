@@ -10,10 +10,12 @@ import SalesOrderPage from './pages/sales/SalesOrder';
 import SalesOutPage from './pages/sales/SalesOut';
 import SalesReturnPage from './pages/sales/SalesReturn';
 import SalesPriceStrategyPage from './pages/sales/SalesPriceStrategy';
+import SalesOrderTrackPage from './pages/sales/SalesOrderTrack';
 import PromotionPage from './pages/sales/Promotion';
 import CustomerReconciliationPage from './pages/finance/CustomerReconciliation';
 import SupplierReconciliationPage from './pages/finance/SupplierReconciliation';
 import PurchaseOrderPage from './pages/purchase/PurchaseOrder';
+import PurchaseOrderTrackPage from './pages/purchase/PurchaseOrderTrack';
 import PurchaseInPage from './pages/purchase/PurchaseIn';
 import PurchaseAlertPage from './pages/purchase/PurchaseAlert';
 import PurchaseReturnPage from './pages/purchase/PurchaseReturn';
@@ -57,8 +59,10 @@ const routePermissionMap: Record<string, string> = {
   '/sales/return': 'sales:return',
   '/sales/strategy': 'sales:price-strategy',
   '/sales/price-strategy': 'sales:price-strategy',
+  '/sales/track': 'sales:order',
   '/sales/promotion': 'sales:promotion',
   '/purchase/order': 'purchase:order',
+  '/purchase/track': 'purchase:order',
   '/purchase/alert': 'purchase:order',
   '/purchase/in': 'purchase:in',
   '/purchase/return': 'purchase:return',
@@ -125,8 +129,10 @@ export const router = createBrowserRouter([
       { path: 'sales/return', element: <PermissionRoute path="/sales/return" element={<SalesReturnPage />} /> },
       { path: 'sales/strategy', element: <PermissionRoute path="/sales/strategy" element={<SalesPriceStrategyPage />} /> },
       { path: 'sales/price-strategy', element: <PermissionRoute path="/sales/price-strategy" element={<SalesPriceStrategyPage />} /> },
+      { path: 'sales/track', element: <PermissionRoute path="/sales/track" element={<SalesOrderTrackPage />} /> },
       { path: 'sales/promotion', element: <PermissionRoute path="/sales/promotion" element={<PromotionPage />} /> },
       { path: 'purchase/order', element: <PermissionRoute path="/purchase/order" element={<PurchaseOrderPage />} /> },
+      { path: 'purchase/track', element: <PermissionRoute path="/purchase/track" element={<PurchaseOrderTrackPage />} /> },
       { path: 'purchase/alert', element: <PermissionRoute path="/purchase/alert" element={<PurchaseAlertPage />} /> },
       { path: 'purchase/in', element: <PermissionRoute path="/purchase/in" element={<PurchaseInPage />} /> },
       { path: 'purchase/return', element: <PermissionRoute path="/purchase/return" element={<PurchaseReturnPage />} /> },

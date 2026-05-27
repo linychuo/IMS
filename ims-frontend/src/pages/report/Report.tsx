@@ -158,6 +158,7 @@ interface FinanceSummary {
   totalIncome: number;
   totalExpense: number;
   netProfit: number;
+  profitMargin?: number;
 }
 
 // ============ 客户分析数据类型 ============
@@ -417,10 +418,15 @@ const ReportPage: React.FC = () => {
       if (res.data?.code === 200) {
         const data = res.data.data;
         if (data) {
+          const totalIncome = data.totalIncome || 0;
+          const totalExpense = data.totalExpense || 0;
+          const netProfit = data.netProfit || 0;
+          const profitMargin = totalIncome > 0 ? (netProfit / totalIncome) : 0;
           setFinanceSummary({
-            totalIncome: data.totalIncome || 0,
-            totalExpense: data.totalExpense || 0,
-            netProfit: data.netProfit || 0,
+            totalIncome,
+            totalExpense,
+            netProfit,
+            profitMargin,
           });
         }
       }
@@ -693,9 +699,10 @@ const ReportPage: React.FC = () => {
           label: <span><TableOutlined /> 财务分析</span>,
           children: (<>
             <Row gutter={16} style={{ marginBottom: 16 }}>
-              <Col span={8}><Card><Statistic title="总收入" value={financeSummary?.totalIncome || 0} precision={2} prefix="¥" loading={financeLoading} valueStyle={{ color: '#3f8600' }} /></Card></Col>
-              <Col span={8}><Card><Statistic title="总支出" value={financeSummary?.totalExpense || 0} precision={2} prefix="¥" loading={financeLoading} valueStyle={{ color: '#cf1322' }} /></Card></Col>
-              <Col span={8}><Card><Statistic title="净利润" value={financeSummary?.netProfit || 0} precision={2} prefix="¥" loading={financeLoading} valueStyle={{ color: (financeSummary?.netProfit || 0) >= 0 ? '#3f8600' : '#cf1322' }} /></Card></Col>
+              <Col span={6}><Card><Statistic title="总收入" value={financeSummary?.totalIncome || 0} precision={2} prefix="¥" loading={financeLoading} valueStyle={{ color: '#3f8600' }} /></Card></Col>
+              <Col span={6}><Card><Statistic title="总支出" value={financeSummary?.totalExpense || 0} precision={2} prefix="¥" loading={financeLoading} valueStyle={{ color: '#cf1322' }} /></Card></Col>
+              <Col span={6}><Card><Statistic title="净利润" value={financeSummary?.netProfit || 0} precision={2} prefix="¥" loading={financeLoading} valueStyle={{ color: (financeSummary?.netProfit || 0) >= 0 ? '#3f8600' : '#cf1322' }} /></Card></Col>
+              <Col span={6}><Card><Statistic title="毛利率" value={financeSummary?.profitMargin ? (financeSummary.profitMargin * 100).toFixed(1) : '0.0'} suffix="%" loading={financeLoading} valueStyle={{ color: (financeSummary?.profitMargin || 0) >= 0 ? '#3f8600' : '#cf1322' }} /></Card></Col>
             </Row>
           </>),
         };

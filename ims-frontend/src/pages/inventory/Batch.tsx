@@ -11,9 +11,10 @@ import {
   Col,
   Statistic,
   Modal,
+  Select,
 } from 'antd';
 import { SearchOutlined, UnorderedListOutlined } from '@ant-design/icons';
-import { inventoryApi } from '../../api';
+import { inventoryApi, warehouseApi, productApi } from '../../api';
 
 interface BatchRecord {
   batchNo: string;
@@ -37,10 +38,41 @@ const BatchPage: React.FC = () => {
   const [selectedBatch, setSelectedBatch] = useState<string | null>(null);
   const [batchRecordList, setBatchRecordList] = useState<any[]>([]);
   const [recordModalVisible, setRecordModalVisible] = useState(false);
+  const [warehouseList, setWarehouseList] = useState<{ id: number; name: string }[]>([]);
+  const [selectedWarehouseId, setSelectedWarehouseId] = useState<number | null>(null);
+  const [productList, setProductList] = useState<{ id: number; name: string; code: string }[]>([]);
+  const [selectedProductId, setSelectedProductId] = useState<number | null>(null);
+
+  useEffect(() => {
+    fetchWarehouseList();
+    fetchProductList();
+  }, []);
 
   useEffect(() => {
     fetchData();
-  }, [pagination.current, pagination.size, keyword]);
+  }, [pagination.current, pagination.size, keyword, selectedWarehouseId, selectedProductId]);
+
+  const fetchWarehouseList = async () => {
+    try {
+      const res = await warehouseApi.get('/warehouse/list');
+      if (res.data.code === 200) {
+        setWarehouseList(res.data.data || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch warehouses:', error);
+    }
+  };
+
+  const fetchProductList = async () => {
+    try {
+      const res = await productApi.get('/product/list');
+      if (res.data.code === 200) {
+        setProductList(res.data.data || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch products:', error);
+    }
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -51,6 +83,12 @@ const BatchPage: React.FC = () => {
       };
       if (keyword) {
         params.keyword = keyword;
+      }
+      if (selectedWarehouseId) {
+        params.warehouseId = selectedWarehouseId;
+      }
+      if (selectedProductId) {
+        params.productId = selectedProductId;
       }
       const res = await inventoryApi.get('/inventory/page', { params });
       if (res.data.code === 200) {
@@ -168,14 +206,40 @@ const BatchPage: React.FC = () => {
           <Card><Statistic title="无批次商品" value={data.filter(d => d.batchNo === '无批次').length} valueStyle={{ color: '#fa8c16' }} /></Card>
         </Col>
       </Row>
-      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between' }}>
-        <Input.Search
-          placeholder="搜索批次号/商品名称"
-          allowClear
-          onSearch={handleSearch}
-          style={{ width: 250 }}
-          prefix={<SearchOutlined />}
-        />
+      <div style={{ marginBottom: 16, display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'space-between' }}>
+        <Space wrap>
+          <Input.Search
+            placeholder="搜索批次号/商品名称"
+            allowClear
+            onSearch={handleSearch}
+            style={{ width: 250 }}
+            prefix={<SearchOutlined />}
+          />
+          <Select
+            allowClear
+            placeholder="选择仓库"
+            style={{ width: 150 }}
+            onChange={(value) => { setSelectedWarehouseId(value); setPagination(prev => ({ ...prev, current: 1 })); }}
+          >
+            {warehouseList.map(w => (
+              <Select.Option key={w.id} value={w.id}>{w.name}</Select.Option>
+            ))}
+          </Select>
+          <Select
+            allowClear
+            placeholder="选择商品"
+            style={{ width: 180 }}
+            onChange={(value) => { setSelectedProductId(value); setPagination(prev => ({ ...prev, current: 1 })); }}
+            showSearch
+            filterOption={(input, option) =>
+              (option?.children as unknown as string)?.toLowerCase().includes(input.toLowerCase())
+            }
+          >
+            {productList.map(p => (
+              <Select.Option key={p.id} value={p.id}>{p.name} ({p.code})</Select.Option>
+            ))}
+          </Select>
+        </Space>
       </div>
       <Table
         columns={columns}

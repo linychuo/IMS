@@ -15,7 +15,7 @@ import {
   SettingOutlined,
   ContainerOutlined,
 } from '@ant-design/icons';
-import { useNavigate, Outlet } from 'react-router-dom';
+import { useNavigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 
 const iconMap: Record<string, React.ReactNode> = {
@@ -90,6 +90,7 @@ const AppLayout: React.FC = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [openKeys, setOpenKeys] = useState<string[]>([]);
   const navigate = useNavigate();
+  const location = useLocation();
   const { username, realName, menus, logout } = useAuthStore();
 
   // permission_code 转路由路径
@@ -187,6 +188,7 @@ const AppLayout: React.FC = () => {
         <Menu
           theme="dark"
           mode="inline"
+          selectedKeys={[location.pathname]}
           defaultSelectedKeys={['/dashboard']}
           openKeys={openKeys}
           onOpenChange={handleOpenChange}

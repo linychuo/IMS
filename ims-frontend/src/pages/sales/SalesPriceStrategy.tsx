@@ -12,8 +12,12 @@ import {
   message,
   Popconfirm,
   Tag,
+  Card,
+  Row,
+  Col,
+  Statistic,
 } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined } from '@ant-design/icons';
 import { salesApi, customerApi, productApi } from '../../api';
 import type { SelectProps } from 'antd';
 
@@ -39,6 +43,7 @@ interface PriceStrategy {
 const SalesPriceStrategyPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<PriceStrategy[]>([]);
+  const [filteredData, setFilteredData] = useState<PriceStrategy[]>([]);
   const [pagination, setPagination] = useState({ current: 1, size: 10, total: 0 });
   const [modalVisible, setModalVisible] = useState(false);
   const [editingRecord, setEditingRecord] = useState<PriceStrategy | null>(null);
@@ -46,6 +51,9 @@ const SalesPriceStrategyPage: React.FC = () => {
   const [productList, setProductList] = useState<{ id: number; name: string; productCode: string }[]>([]);
   const [categoryList, setCategoryList] = useState<{ id: number; name: string }[]>([]);
   const [form] = Form.useForm();
+  const [keyword, setKeyword] = useState('');
+  const [customerFilter, setCustomerFilter] = useState<string | undefined>(undefined);
+  const [statusFilter, setStatusFilter] = useState<number | undefined>(undefined);
 
   useEffect(() => {
     fetchCustomers();
@@ -91,14 +99,50 @@ const SalesPriceStrategyPage: React.FC = () => {
     setLoading(true);
     try {
       const res = await salesApi.get('/sales/price-strategy/list');
-      setData(res.data.data || []);
-      setPagination((prev) => ({ ...prev, total: res.data.data?.length || 0 }));
+      const allData = res.data.data || [];
+      setData(allData);
+      setPagination((prev) => ({ ...prev, total: allData.length }));
+      applyFilters(allData);
     } catch (error) {
       console.error('Failed to fetch strategies:', error);
       message.error('获取价格策略失败');
     } finally {
       setLoading(false);
     }
+  };
+
+  const applyFilters = (allData: PriceStrategy[]) => {
+    let filtered = allData;
+    if (keyword) {
+      filtered = filtered.filter(item =>
+        item.strategyName?.toLowerCase().includes(keyword.toLowerCase()) ||
+        item.strategyNo?.toLowerCase().includes(keyword.toLowerCase()) ||
+        item.customerName?.toLowerCase().includes(keyword.toLowerCase()) ||
+        item.productName?.toLowerCase().includes(keyword.toLowerCase())
+      );
+    }
+    if (customerFilter) {
+      filtered = filtered.filter(item => item.customerId === customerFilter);
+    }
+    if (statusFilter !== undefined) {
+      filtered = filtered.filter(item => item.status === statusFilter);
+    }
+    setFilteredData(filtered);
+  };
+
+  const handleSearch = (value: string) => {
+    setKeyword(value);
+    applyFilters(data);
+  };
+
+  const handleCustomerFilterChange = (value: string | undefined) => {
+    setCustomerFilter(value);
+    applyFilters(data);
+  };
+
+  const handleStatusFilterChange = (value: number | undefined) => {
+    setStatusFilter(value);
+    applyFilters(data);
   };
 
   const handleAdd = () => {
@@ -186,25 +230,80 @@ const SalesPriceStrategyPage: React.FC = () => {
     },
   ];
 
+  const activeStrategies = data.filter(d => d.status === 1);
+  const customerSpecific = data.filter(d => d.customerId);
+  const productSpecific = data.filter(d => d.productId);
+
   return (
     <div>
       <h2 style={{ marginBottom: 16 }}>价格策略</h2>
-      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-end' }}>
+      <Row gutter={16} style={{ marginBottom: 16 }}>
+        <Col span={6}>
+          <Card size="small">
+            <Statistic title="策略总数" value={data.length} prefix={<SearchOutlined />} />
+          </Card>
+        </Col>
+        <Col span={6}>
+          <Card size="small">
+            <Statistic title="启用中" value={activeStrategies.length} valueStyle={{ color: '#52c41a' }} />
+          </Card>
+        </Col>
+        <Col span={6}>
+          <Card size="small">
+            <Statistic title="客户专价" value={customerSpecific.length} valueStyle={{ color: '#1890ff' }} />
+          </Card>
+        </Col>
+        <Col span={6}>
+          <Card size="small">
+            <Statistic title="商品专价" value={productSpecific.length} valueStyle={{ color: '#722ed1' }} />
+          </Card>
+        </Col>
+      </Row>
+      <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+        <Space wrap>
+          <Input.Search
+            placeholder="搜索策略/客户/商品"
+            allowClear
+            onSearch={handleSearch}
+            style={{ width: 200 }}
+            prefix={<SearchOutlined />}
+          />
+          <Select
+            allowClear
+            placeholder="选择客户"
+            style={{ width: 150 }}
+            onChange={handleCustomerFilterChange}
+            showSearch
+            filterOption={(input, option) =>
+              (option?.label as unknown as string)?.toLowerCase().includes(input.toLowerCase())
+            }
+            options={customerList.map(c => ({ value: c.id, label: c.name }))}
+          />
+          <Select
+            allowClear
+            placeholder="状态筛选"
+            style={{ width: 100 }}
+            onChange={handleStatusFilterChange}
+          >
+            <Select.Option value={1}>启用</Select.Option>
+            <Select.Option value={0}>禁用</Select.Option>
+          </Select>
+        </Space>
         <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>新建策略</Button>
       </div>
       <Table
         columns={columns}
-        dataSource={data}
+        dataSource={filteredData}
         rowKey="id"
         loading={loading}
         pagination={{
           current: pagination.current,
           pageSize: pagination.size,
-          total: pagination.total,
+          total: filteredData.length,
           showSizeChanger: true,
           showQuickJumper: true,
           showTotal: (total) => `共 ${total} 条`,
-          onChange: (current, size) => setPagination({ current, size, total: pagination.total }),
+          onChange: (current, size) => setPagination({ current, size, total: filteredData.length }),
         }}
         scroll={{ x: 1300 }}
       />

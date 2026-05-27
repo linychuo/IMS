@@ -10,14 +10,23 @@ import {
   Select,
   message,
   Popconfirm,
+  Tag,
+  Tabs,
+  Card,
+  Row,
+  Col,
+  Statistic,
+  Descriptions,
 } from 'antd';
 import {
   PlusOutlined,
   EditOutlined,
   DeleteOutlined,
   SearchOutlined,
+  EyeOutlined,
+  HistoryOutlined,
 } from '@ant-design/icons';
-import { customerApi } from '../../api';
+import { customerApi, salesApi } from '../../api';
 
 interface Customer {
   id?: number;
@@ -40,6 +49,15 @@ interface Customer {
   remark?: string;
 }
 
+interface SalesOrder {
+  id: string;
+  orderNo: string;
+  orderDate: string;
+  totalAmount: number;
+  netAmount: number;
+  status: number;
+}
+
 interface PageResult {
   current: number;
   size: number;
@@ -56,6 +74,11 @@ const CustomerPage: React.FC = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [form] = Form.useForm();
+  const [detailModalVisible, setDetailModalVisible] = useState(false);
+  const [viewCustomer, setViewCustomer] = useState<Customer | null>(null);
+  const [salesHistoryLoading, setSalesHistoryLoading] = useState(false);
+  const [salesHistory, setSalesHistory] = useState<SalesOrder[]>([]);
+  const [salesTotal, setSalesTotal] = useState({ orderCount: 0, totalAmount: 0 });
 
   useEffect(() => {
     fetchCustomers();
@@ -100,6 +123,33 @@ const CustomerPage: React.FC = () => {
     setEditingCustomer(record);
     form.setFieldsValue(record);
     setModalVisible(true);
+  };
+
+  const handleView = async (record: Customer) => {
+    setViewCustomer(record);
+    setDetailModalVisible(true);
+    fetchSalesHistory(record.id!);
+  };
+
+  const fetchSalesHistory = async (customerId: number) => {
+    setSalesHistoryLoading(true);
+    try {
+      const res = await salesApi.get('/order/page', {
+        params: { current: 1, size: 100, customerId },
+      });
+      if (res.data?.code === 200) {
+        const records = res.data.data?.records || [];
+        setSalesHistory(records);
+        const totalAmount = records.reduce((sum: number, item: SalesOrder) => sum + (item.netAmount || 0), 0);
+        setSalesTotal({ orderCount: records.length, totalAmount });
+      } else {
+        setSalesHistory(res.data?.data?.records || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch sales history:', error);
+    } finally {
+      setSalesHistoryLoading(false);
+    }
   };
 
   const handleDelete = async (id: number) => {
@@ -220,9 +270,12 @@ const CustomerPage: React.FC = () => {
     {
       title: '操作',
       key: 'action',
-      width: 150,
+      width: 200,
       render: (_: any, record: Customer) => (
         <Space>
+          <Button type="link" icon={<EyeOutlined />} onClick={() => handleView(record)}>
+            详情
+          </Button>
           <Button type="link" icon={<EditOutlined />} onClick={() => handleEdit(record)}>
             编辑
           </Button>
@@ -363,6 +416,125 @@ const CustomerPage: React.FC = () => {
             <Input.TextArea rows={2} placeholder="请输入备注" />
           </Form.Item>
         </Form>
+      </Modal>
+
+      {/* 客户详情弹窗 */}
+      <Modal
+        title={`客户详情 - ${viewCustomer?.name || ''}`}
+        open={detailModalVisible}
+        onCancel={() => setDetailModalVisible(false)}
+        footer={[<Button key="close" onClick={() => setDetailModalVisible(false)}>关闭</Button>]}
+        width={800}
+      >
+        <Tabs
+          items={[
+            {
+              key: 'info',
+              label: '基本信息',
+              children: (
+                <Descriptions column={2} size="small">
+                  <Descriptions.Item label="客户编码">{viewCustomer?.code}</Descriptions.Item>
+                  <Descriptions.Item label="客户名称">{viewCustomer?.name}</Descriptions.Item>
+                  <Descriptions.Item label="客户类型">{viewCustomer?.type === 1 ? '个人' : '企业'}</Descriptions.Item>
+                  <Descriptions.Item label="客户等级">
+                    <Tag color={viewCustomer?.level === 1 ? 'gold' : viewCustomer?.level === 2 ? 'blue' : 'default'}>
+                      {viewCustomer?.level === 1 ? 'VIP' : viewCustomer?.level === 2 ? '普通' : '潜在'}
+                    </Tag>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="联系人">{viewCustomer?.contact || '-'}</Descriptions.Item>
+                  <Descriptions.Item label="联系电话">{viewCustomer?.phone || '-'}</Descriptions.Item>
+                  <Descriptions.Item label="手机号">{viewCustomer?.mobile || '-'}</Descriptions.Item>
+                  <Descriptions.Item label="电子邮箱">{viewCustomer?.email || '-'}</Descriptions.Item>
+                  <Descriptions.Item label="地址" span={2}>{viewCustomer?.address || '-'}</Descriptions.Item>
+                  <Descriptions.Item label="信用额度">¥{viewCustomer?.creditLimit?.toFixed(2) || '0.00'}</Descriptions.Item>
+                  <Descriptions.Item label="应收账款">
+                    <Tag color={viewCustomer?.receivableAmount && viewCustomer?.receivableAmount > 0 ? 'orange' : 'green'}>
+                      ¥{viewCustomer?.receivableAmount?.toFixed(2) || '0.00'}
+                    </Tag>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="可用信用">
+                    <Tag color={(viewCustomer?.creditLimit || 0) - (viewCustomer?.receivableAmount || 0) > 0 ? 'green' : 'red'}>
+                      ¥{((viewCustomer?.creditLimit || 0) - (viewCustomer?.receivableAmount || 0)).toFixed(2)}
+                    </Tag>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="结账周期">{viewCustomer?.settlePeriod ? `${viewCustomer.settlePeriod}天` : '-'}</Descriptions.Item>
+                  <Descriptions.Item label="状态">
+                    <Tag color={viewCustomer?.status === 0 ? 'green' : 'red'}>
+                      {viewCustomer?.status === 0 ? '启用' : '停用'}
+                    </Tag>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="银行">{viewCustomer?.bankName || '-'}</Descriptions.Item>
+                  <Descriptions.Item label="账号">{viewCustomer?.bankAccount || '-'}</Descriptions.Item>
+                  <Descriptions.Item label="税号">{viewCustomer?.taxNo || '-'}</Descriptions.Item>
+                  <Descriptions.Item label="备注" span={2}>{viewCustomer?.remark || '-'}</Descriptions.Item>
+                </Descriptions>
+              ),
+            },
+            {
+              key: 'sales',
+              label: <span><HistoryOutlined /> 销售历史</span>,
+              children: (
+                <>
+                  <Row gutter={16} style={{ marginBottom: 16 }}>
+                    <Col span={8}>
+                      <Card size="small">
+                        <Statistic title="订单数" value={salesTotal.orderCount} prefix={<HistoryOutlined />} />
+                      </Card>
+                    </Col>
+                    <Col span={8}>
+                      <Card size="small">
+                        <Statistic title="销售总额" value={salesTotal.totalAmount} precision={2} prefix="¥" />
+                      </Card>
+                    </Col>
+                    <Col span={8}>
+                      <Card size="small">
+                        <Statistic
+                          title="信用使用率"
+                          value={viewCustomer?.creditLimit && viewCustomer.creditLimit > 0
+                            ? ((viewCustomer.receivableAmount || 0) / viewCustomer.creditLimit * 100).toFixed(1)
+                            : '0.0'}
+                          suffix="%"
+                          valueStyle={{ color: ((viewCustomer?.receivableAmount || 0) / (viewCustomer?.creditLimit || 1)) > 0.8 ? '#f5222d' : '#52c41a' }}
+                        />
+                      </Card>
+                    </Col>
+                  </Row>
+                  <Table
+                    dataSource={salesHistory}
+                    rowKey="id"
+                    loading={salesHistoryLoading}
+                    pagination={{ pageSize: 5 }}
+                    size="small"
+                    scroll={{ x: 700 }}
+                    columns={[
+                      { title: '订单号', dataIndex: 'orderNo', key: 'orderNo', width: 150 },
+                      { title: '订单日期', dataIndex: 'orderDate', key: 'orderDate', width: 120 },
+                      { title: '订单金额', dataIndex: 'totalAmount', key: 'totalAmount', width: 100, render: (v: number) => `¥${v?.toFixed(2)}` },
+                      { title: '实际金额', dataIndex: 'netAmount', key: 'netAmount', width: 100, render: (v: number) => `¥${v?.toFixed(2)}` },
+                      {
+                        title: '状态',
+                        dataIndex: 'status',
+                        key: 'status',
+                        width: 80,
+                        render: (s: number) => {
+                          const map: Record<number, { text: string; color: string }> = {
+                            0: { text: '待审核', color: 'orange' },
+                            1: { text: '已审核', color: 'blue' },
+                            2: { text: '部分出库', color: 'cyan' },
+                            3: { text: '已完成', color: 'green' },
+                            9: { text: '已取消', color: 'red' },
+                          };
+                          const st = map[s] || { text: '未知', color: 'default' };
+                          return <Tag color={st.color}>{st.text}</Tag>;
+                        },
+                      },
+                    ]}
+                  />
+                </>
+              ),
+            },
+          ]}
+        />
       </Modal>
     </div>
   );

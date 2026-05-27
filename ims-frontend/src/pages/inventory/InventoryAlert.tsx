@@ -22,6 +22,7 @@ import {
   SearchOutlined,
   AlertOutlined,
   ClockCircleOutlined,
+  DisconnectOutlined,
 } from '@ant-design/icons';
 import { productApi, warehouseApi, inventoryApi } from '../../api';
 import { useAuthStore } from '../../stores/authStore';
@@ -52,6 +53,17 @@ interface ExpiringProduct {
   daysUntilExpiry: number;
 }
 
+interface IdleStock {
+  productId: number;
+  productName: string;
+  productCode: string;
+  warehouseId: number;
+  warehouseName: string;
+  quantity: number;
+  lastOutDate: string;
+  idleDays: number;
+}
+
 interface AlertConfig {
   minStock: number;
   maxStock: number;
@@ -69,9 +81,12 @@ const InventoryAlertPage: React.FC = () => {
   const [editingRecord, setEditingRecord] = useState<Product | null>(null);
   const [form] = Form.useForm();
   const [warehouseList, setWarehouseList] = useState<Warehouse[]>([]);
-  const [activeTab, setActiveTab] = useState<'stock' | 'expiring'>('stock');
+  const [activeTab, setActiveTab] = useState<'stock' | 'expiring' | 'idle'>('stock');
   const [expiryDays, setExpiryDays] = useState<number>(30);
   const [selectedWarehouseId, setSelectedWarehouseId] = useState<number | null>(null);
+  const [idleData, setIdleData] = useState<IdleStock[]>([]);
+  const [idleLoading, setIdleLoading] = useState(false);
+  const [idleDays, setIdleDays] = useState<number>(90);
 
   useEffect(() => {
     fetchWarehouseList();
@@ -80,10 +95,12 @@ const InventoryAlertPage: React.FC = () => {
   useEffect(() => {
     if (activeTab === 'stock') {
       fetchData();
-    } else {
+    } else if (activeTab === 'expiring') {
       fetchExpiringProducts();
+    } else {
+      fetchIdleStock();
     }
-  }, [pagination.current, pagination.size, keyword, activeTab, expiryDays, selectedWarehouseId]);
+  }, [pagination.current, pagination.size, keyword, activeTab, expiryDays, selectedWarehouseId, idleDays]);
 
   const fetchExpiringProducts = async () => {
     setExpiringLoading(true);
@@ -113,6 +130,26 @@ const InventoryAlertPage: React.FC = () => {
       }
     } catch (error) {
       console.error('Failed to fetch warehouses:', error);
+    }
+  };
+
+  const fetchIdleStock = async () => {
+    setIdleLoading(true);
+    try {
+      const params: Record<string, any> = { days: idleDays };
+      if (selectedWarehouseId) {
+        params.warehouseId = selectedWarehouseId;
+      }
+      const res = await inventoryApi.get('/inventory/idle', { params });
+      if (res.data?.code === 200) {
+        setIdleData(res.data.data || []);
+      } else {
+        setIdleData(res.data.data || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch idle stock:', error);
+    } finally {
+      setIdleLoading(false);
     }
   };
 
@@ -301,6 +338,58 @@ const InventoryAlertPage: React.FC = () => {
                 loading={expiringLoading}
                 pagination={{ pageSize: 10, showSizeChanger: true, showTotal: (total) => `共 ${total} 条` }}
                 scroll={{ x: 900 }}
+              />
+            </>),
+          },
+          {
+            key: 'idle',
+            label: <span><DisconnectOutlined /> 呆滞库存</span>,
+            children: (<>
+              <Row gutter={16} style={{ marginBottom: 16 }}>
+                <Col span={6}>
+                  <Card><Statistic title="呆滞商品" value={idleData.length} prefix={<DisconnectOutlined />} valueStyle={{ color: idleData.length > 0 ? '#cf1322' : '#3f8600' }} /></Card>
+                </Col>
+                <Col span={6}>
+                  <Card><Statistic title="呆滞天数" value={idleDays} suffix="天" /></Card>
+                </Col>
+              </Row>
+              <div style={{ marginBottom: 16, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <InputNumber min={1} max={365} value={idleDays} onChange={(v) => setIdleDays(v || 90)} addonBefore="呆滞天数" style={{ width: 150 }} />
+                <Select allowClear placeholder="选择仓库" style={{ width: 150 }} onChange={(v) => setSelectedWarehouseId(v)}>
+                  {warehouseList.map(w => <Select.Option key={w.id} value={w.id}>{w.name}</Select.Option>)}
+                </Select>
+                <Button type="primary" onClick={fetchIdleStock}>刷新</Button>
+              </div>
+              <Table
+                dataSource={idleData}
+                rowKey="productId"
+                loading={idleLoading}
+                pagination={{ pageSize: 10, showSizeChanger: true, showTotal: (total) => `共 ${total} 条` }}
+                scroll={{ x: 900 }}
+                columns={[
+                  { title: '商品编码', dataIndex: 'productCode', key: 'productCode', width: 120 },
+                  { title: '商品名称', dataIndex: 'productName', key: 'productName', width: 180 },
+                  { title: '仓库', dataIndex: 'warehouseName', key: 'warehouseName', width: 100 },
+                  { title: '数量', dataIndex: 'quantity', key: 'quantity', width: 80 },
+                  {
+                    title: '最后出库',
+                    dataIndex: 'lastOutDate',
+                    key: 'lastOutDate',
+                    width: 120,
+                    render: (v: string) => v || '-',
+                  },
+                  {
+                    title: '呆滞天数',
+                    key: 'idleDays',
+                    width: 100,
+                    render: (_: any, record: IdleStock) => {
+                      if (record.idleDays >= 90) return <Tag color="red">{record.idleDays}天</Tag>;
+                      if (record.idleDays >= 60) return <Tag color="orange">{record.idleDays}天</Tag>;
+                      if (record.idleDays >= 30) return <Tag color="yellow">{record.idleDays}天</Tag>;
+                      return <Tag color="green">{record.idleDays}天</Tag>;
+                    },
+                  },
+                ]}
               />
             </>),
           },
