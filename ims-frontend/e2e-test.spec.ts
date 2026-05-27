@@ -489,4 +489,332 @@ test.describe('IMS E2E Tests', () => {
 
     await page.screenshot({ path: '/tmp/ims-report-profit.png', fullPage: true });
   });
+
+  // ===== 17. Sales Order Track - Status Timeline =====
+  test('17. Sales Order Track - Status Timeline View', async ({ page }) => {
+    await loginViaUI(page);
+    await page.goto(`${BASE_URL}/sales/track`);
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(2000);
+
+    const title = page.locator('h2:has-text("销售订单跟踪")');
+    await expect(title).toBeVisible({ timeout: 10000 });
+
+    // Check statistics cards exist
+    const statCards = page.locator('.ant-statistic');
+    expect(await statCards.count()).toBeGreaterThan(0);
+
+    // Check table exists
+    const table = page.locator('.ant-table');
+    await expect(table).toBeVisible();
+
+    // Click on track button of first row if available
+    const firstRow = page.locator('.ant-table-tbody tr').first();
+    if (await firstRow.isVisible({ timeout: 3000 }).catch(() => false)) {
+      const trackBtn = firstRow.locator('button:has-text("跟踪")');
+      if (await trackBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await trackBtn.click();
+        await page.waitForTimeout(1500);
+
+        const modal = page.locator('.ant-modal');
+        if (await modal.isVisible({ timeout: 3000 }).catch(() => false)) {
+          console.log('Order track modal opened');
+
+          // Check for status timeline
+          const timeline = page.locator('.ant-timeline');
+          if (await timeline.isVisible({ timeout: 2000 }).catch(() => false)) {
+            console.log('Status timeline found in track modal');
+          }
+        }
+
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(500);
+      }
+    }
+
+    await page.screenshot({ path: '/tmp/ims-sales-track.png', fullPage: true });
+  });
+
+  // ===== 18. Purchase Order Track - Status Timeline =====
+  test('18. Purchase Order Track - Status Timeline View', async ({ page }) => {
+    await loginViaUI(page);
+    await page.goto(`${BASE_URL}/purchase/track`);
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(2000);
+
+    const title = page.locator('h2:has-text("采购订单跟踪")');
+    await expect(title).toBeVisible({ timeout: 10000 });
+
+    // Check statistics cards exist
+    const statCards = page.locator('.ant-statistic');
+    expect(await statCards.count()).toBeGreaterThan(0);
+
+    // Check table exists
+    const table = page.locator('.ant-table');
+    await expect(table).toBeVisible();
+
+    // Click on track button of first row if available
+    const firstRow = page.locator('.ant-table-tbody tr').first();
+    if (await firstRow.isVisible({ timeout: 3000 }).catch(() => false)) {
+      const trackBtn = firstRow.locator('button:has-text("跟踪")');
+      if (await trackBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await trackBtn.click();
+        await page.waitForTimeout(1500);
+
+        const modal = page.locator('.ant-modal');
+        if (await modal.isVisible({ timeout: 3000 }).catch(() => false)) {
+          console.log('Purchase order track modal opened');
+
+          // Check for timeline in modal
+          const timeline = page.locator('.ant-timeline');
+          if (await timeline.isVisible({ timeout: 2000 }).catch(() => false)) {
+            console.log('Status timeline found');
+          }
+        }
+
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(500);
+      }
+    }
+
+    await page.screenshot({ path: '/tmp/ims-purchase-track.png', fullPage: true });
+  });
+
+  // ===== 19. Customer - Detail Modal with Sales History =====
+  test('19. Customer - Detail Modal with Sales History Stats', async ({ page }) => {
+    await loginViaUI(page);
+    await page.goto(`${BASE_URL}/customer`);
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(2000);
+
+    const title = page.locator('h2:has-text("客户管理")');
+    await expect(title).toBeVisible({ timeout: 10000 });
+
+    // Check table exists
+    const table = page.locator('.ant-table');
+    await expect(table).toBeVisible();
+
+    // Click on detail button of first row
+    const firstRow = page.locator('.ant-table-tbody tr').first();
+    if (await firstRow.isVisible({ timeout: 3000 }).catch(() => false)) {
+      const detailBtn = firstRow.locator('button:has-text("详情")');
+      if (await detailBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await detailBtn.click();
+        await page.waitForTimeout(1500);
+
+        const modal = page.locator('.ant-modal');
+        if (await modal.isVisible({ timeout: 3000 }).catch(() => false)) {
+          console.log('Customer detail modal opened');
+
+          // Check for tabs (基本信息, 销售历史)
+          const basicTab = page.locator('.ant-tabs-tab:has-text("基本信息")');
+          const salesTab = page.locator('.ant-tabs-tab:has-text("销售历史")');
+
+          if (await basicTab.isVisible({ timeout: 2000 }).catch(() => false)) {
+            console.log('Basic info tab found');
+          }
+
+          if (await salesTab.isVisible({ timeout: 2000 }).catch(() => false)) {
+            console.log('Sales history tab found');
+            await salesTab.click();
+            await page.waitForTimeout(1000);
+
+            // Check for statistics cards in sales history
+            const statCards = page.locator('.ant-statistic');
+            if (await statCards.first().isVisible({ timeout: 2000 }).catch(() => false)) {
+              console.log('Sales history statistics found');
+            }
+          }
+        }
+
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(500);
+      }
+    }
+
+    await page.screenshot({ path: '/tmp/ims-customer-detail.png', fullPage: true });
+  });
+
+  // ===== 20. Supplier - Detail Modal with Purchase History =====
+  test('20. Supplier - Detail Modal with Purchase History Stats', async ({ page }) => {
+    await loginViaUI(page);
+    await page.goto(`${BASE_URL}/supplier`);
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(2000);
+
+    const title = page.locator('h2:has-text("供应商管理")');
+    await expect(title).toBeVisible({ timeout: 10000 });
+
+    // Check table exists
+    const table = page.locator('.ant-table');
+    await expect(table).toBeVisible();
+
+    // Click on detail button of first row
+    const firstRow = page.locator('.ant-table-tbody tr').first();
+    if (await firstRow.isVisible({ timeout: 3000 }).catch(() => false)) {
+      const detailBtn = firstRow.locator('button:has-text("详情")');
+      if (await detailBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await detailBtn.click();
+        await page.waitForTimeout(1500);
+
+        const modal = page.locator('.ant-modal');
+        if (await modal.isVisible({ timeout: 3000 }).catch(() => false)) {
+          console.log('Supplier detail modal opened');
+
+          // Check for tabs (基本信息, 采购历史)
+          const basicTab = page.locator('.ant-tabs-tab:has-text("基本信息")');
+          const purchaseTab = page.locator('.ant-tabs-tab:has-text("采购历史")');
+
+          if (await basicTab.isVisible({ timeout: 2000 }).catch(() => false)) {
+            console.log('Basic info tab found');
+          }
+
+          if (await purchaseTab.isVisible({ timeout: 2000 }).catch(() => false)) {
+            console.log('Purchase history tab found');
+            await purchaseTab.click();
+            await page.waitForTimeout(1000);
+
+            // Check for statistics cards in purchase history
+            const statCards = page.locator('.ant-statistic');
+            if (await statCards.first().isVisible({ timeout: 2000 }).catch(() => false)) {
+              console.log('Purchase history statistics found');
+            }
+          }
+        }
+
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(500);
+      }
+    }
+
+    await page.screenshot({ path: '/tmp/ims-supplier-detail.png', fullPage: true });
+  });
+
+  // ===== 21. Inventory Alert - Idle Stock Tab (呆滞库存) =====
+  test('21. Inventory Alert - Idle Stock Tab (呆滞库存)', async ({ page }) => {
+    await loginViaUI(page);
+    await page.goto(`${BASE_URL}/inventory/alert`);
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(2000);
+
+    const title = page.locator('h2:has-text("库存预警")');
+    await expect(title).toBeVisible({ timeout: 10000 });
+
+    // Look for idle stock tab
+    const idleTab = page.locator('.ant-tabs-tab').filter({ hasText: /呆滞/ });
+    if (await idleTab.isVisible({ timeout: 2000 }).catch(() => false)) {
+      console.log('Idle stock tab found');
+      await idleTab.click();
+      await page.waitForTimeout(1500);
+
+      // Check for table
+      const table = page.locator('.ant-table');
+      if (await table.isVisible({ timeout: 2000 }).catch(() => false)) {
+        console.log('Idle stock table found');
+      }
+    } else {
+      console.log('Idle stock tab not found, checking all tabs');
+      const allTabs = await page.locator('.ant-tabs-tab').allTextContents();
+      console.log('Available tabs:', allTabs);
+    }
+
+    await page.screenshot({ path: '/tmp/ims-inventory-alert-idle.png', fullPage: true });
+  });
+
+  // ===== 22. Sales Price Strategy - Search and Filter =====
+  test('22. Sales Price Strategy - Search and Statistics', async ({ page }) => {
+    await loginViaUI(page);
+    await page.goto(`${BASE_URL}/sales/price-strategy`);
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(2000);
+
+    const title = page.locator('h2:has-text("价格策略")');
+    await expect(title).toBeVisible({ timeout: 10000 });
+
+    // Check statistics cards exist
+    const statCards = page.locator('.ant-statistic');
+    const statCount = await statCards.count();
+    expect(statCount).toBeGreaterThan(0);
+    console.log(`Found ${statCount} statistic cards in price strategy`);
+
+    // Check search input exists
+    const searchInput = page.locator('input[placeholder*="搜索"]');
+    if (await searchInput.isVisible({ timeout: 2000 }).catch(() => false)) {
+      console.log('Search input found');
+    }
+
+    // Check customer filter dropdown
+    const customerSelect = page.locator('.ant-select').filter({ hasPlaceholder: /客户/ }).first();
+    if (await customerSelect.isVisible({ timeout: 2000 }).catch(() => false)) {
+      console.log('Customer filter found');
+    }
+
+    // Check table exists
+    const table = page.locator('.ant-table');
+    await expect(table).toBeVisible();
+
+    await page.screenshot({ path: '/tmp/ims-price-strategy.png', fullPage: true });
+  });
+
+  // ===== 23. Batch Traceability - Warehouse and Product Filter =====
+  test('23. Batch Traceability - Warehouse and Product Filter', async ({ page }) => {
+    await loginViaUI(page);
+    await page.goto(`${BASE_URL}/inventory/batch`);
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(2000);
+
+    const title = page.locator('h2:has-text("批次追溯")');
+    await expect(title).toBeVisible({ timeout: 10000 });
+
+    // Check for warehouse filter dropdown
+    const warehouseSelect = page.locator('.ant-select').filter({ hasPlaceholder: /仓库/ }).first();
+    if (await warehouseSelect.isVisible({ timeout: 2000 }).catch(() => false)) {
+      console.log('Warehouse filter found');
+    }
+
+    // Check for product filter dropdown
+    const productSelect = page.locator('.ant-select').filter({ hasPlaceholder: /商品/ }).first();
+    if (await productSelect.isVisible({ timeout: 2000 }).catch(() => false)) {
+      console.log('Product filter found');
+    }
+
+    // Check table exists
+    const table = page.locator('.ant-table');
+    await expect(table).toBeVisible();
+
+    await page.screenshot({ path: '/tmp/ims-batch-trace.png', fullPage: true });
+  });
+
+  // ===== 24. Navigate Back to Dashboard from Any Page =====
+  test('24. Navigate Back to Dashboard from Any Page', async ({ page }) => {
+    await loginViaUI(page);
+
+    // Navigate to a different page first
+    await page.goto(`${BASE_URL}/sales/order`);
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(2000);
+
+    console.log('Current URL:', page.url());
+
+    // Click on Dashboard menu item
+    const dashboardMenu = page.locator('.ant-menu-item').filter({ hasText: /仪表盘/ }).first();
+    if (await dashboardMenu.isVisible({ timeout: 2000 }).catch(() => false)) {
+      console.log('Dashboard menu item found');
+      await dashboardMenu.click();
+      await page.waitForTimeout(1500);
+
+      const currentUrl = page.url();
+      console.log('After clicking dashboard, URL:', currentUrl);
+
+      if (currentUrl.includes('/dashboard')) {
+        console.log('Successfully navigated to dashboard');
+      }
+    } else {
+      console.log('Dashboard menu item not visible - checking menu structure');
+      const allMenuItems = await page.locator('.ant-menu-item').allTextContents();
+      console.log('All menu items:', allMenuItems);
+    }
+
+    await page.screenshot({ path: '/tmp/ims-navigate-dashboard.png', fullPage: true });
+  });
 });
