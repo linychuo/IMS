@@ -258,6 +258,7 @@ const ReportPage: React.FC = () => {
     { key: 'purchase', label: '采购报表', icon: <LineChartOutlined /> },
     { key: 'inventory', label: '库存报表', icon: <PieChartOutlined /> },
     { key: 'finance', label: '财务分析', icon: <TableOutlined /> },
+    { key: 'profit', label: '利润表', icon: <TableOutlined /> },
     { key: 'aging', label: '账龄分析', icon: <BarChartOutlined /> },
     { key: 'customerAnalysis', label: '客户分析', icon: <BarChartOutlined /> },
     { key: 'productAnalysis', label: '商品分析', icon: <LineChartOutlined /> },
@@ -525,8 +526,9 @@ const ReportPage: React.FC = () => {
       fetchSalesReport();
     } else if (activeTab === 'purchase') {
       fetchPurchaseReport();
-    } else if (activeTab === 'finance') {
+    } else if (activeTab === 'finance' || activeTab === 'profit') {
       fetchFinanceSummary();
+      fetchSalesReport();
     } else if (activeTab === 'aging') {
       fetchReceivableAging();
       fetchPayableAging();
@@ -706,6 +708,59 @@ const ReportPage: React.FC = () => {
               <Col span={6}><Card><Statistic title="净利润" value={financeSummary?.netProfit || 0} precision={2} prefix="¥" loading={financeLoading} valueStyle={{ color: (financeSummary?.netProfit || 0) >= 0 ? '#3f8600' : '#cf1322' }} /></Card></Col>
               <Col span={6}><Card><Statistic title="毛利率" value={financeSummary?.profitMargin ? (financeSummary.profitMargin * 100).toFixed(1) : '0.0'} suffix="%" loading={financeLoading} valueStyle={{ color: (financeSummary?.profitMargin || 0) >= 0 ? '#3f8600' : '#cf1322' }} /></Card></Col>
             </Row>
+          </>),
+        };
+        if (tab.key === 'profit') return {
+          key: 'profit',
+          label: <span><TableOutlined /> 利润表</span>,
+          children: (<>
+            <Row gutter={16} style={{ marginBottom: 16 }}>
+              <Col span={6}><Card><Statistic title="营业收入" value={salesSummary?.netAmount || 0} precision={2} prefix="¥" loading={salesLoading} valueStyle={{ color: '#3f8600' }} /></Card></Col>
+              <Col span={6}><Card><Statistic title="营业成本" value={(salesSummary?.netAmount || 0) - (financeSummary?.netProfit || 0)} precision={2} prefix="¥" loading={financeLoading} valueStyle={{ color: '#cf1322' }} /></Card></Col>
+              <Col span={6}><Card><Statistic title="毛利" value={financeSummary?.netProfit || 0} precision={2} prefix="¥" loading={financeLoading} valueStyle={{ color: (financeSummary?.netProfit || 0) >= 0 ? '#3f8600' : '#cf1322' }} /></Card></Col>
+              <Col span={6}><Card><Statistic title="毛利率" value={financeSummary?.profitMargin ? (financeSummary.profitMargin * 100).toFixed(1) : '0.0'} suffix="%" loading={financeLoading} /></Card></Col>
+            </Row>
+            <Card title="利润表" style={{ marginBottom: 16 }}>
+              <Table
+                dataSource={[
+                  { item: '一、营业收入', amount: salesSummary?.netAmount || 0, color: '#1890ff' },
+                  { item: '  其中：销售收入', amount: salesSummary?.netAmount || 0 },
+                  { item: '  减：销售折扣与折让', amount: salesSummary?.discountAmount || 0 },
+                  { item: '二、营业成本', amount: (salesSummary?.netAmount || 0) - (financeSummary?.netProfit || 0), color: '#f5222d' },
+                  { item: '三、毛利（亏损）', amount: financeSummary?.netProfit || 0, color: (financeSummary?.netProfit || 0) >= 0 ? '#52c41a' : '#f5222d' },
+                  { item: '  加：其他收益', amount: 0 },
+                  { item: '  减：销售费用', amount: 0 },
+                  { item: '  减：管理费用', amount: 0 },
+                  { item: '四、净利润（净亏损）', amount: financeSummary?.netProfit || 0, color: (financeSummary?.netProfit || 0) >= 0 ? '#52c41a' : '#f5222d' },
+                ]}
+                rowKey="item"
+                pagination={false}
+                size="small"
+                columns={[
+                  { title: '项目', dataIndex: 'item', key: 'item' },
+                  { title: '金额', dataIndex: 'amount', key: 'amount', width: 150, render: (v: number, record: any) => <span style={{ color: record.color || 'inherit', fontWeight: record.item.startsWith('一、') || record.item.startsWith('二、') || record.item.startsWith('三、') || record.item.startsWith('四、') ? 'bold' : 'normal' }}>¥{v?.toFixed(2)}</span> },
+                ]}
+              />
+            </Card>
+            <Card title="利润分析">
+              <Row gutter={16}>
+                <Col span={8}>
+                  <Card size="small">
+                    <Statistic title="净利率" value={financeSummary?.profitMargin ? (financeSummary.profitMargin * 100).toFixed(1) : '0.0'} suffix="%" />
+                  </Card>
+                </Col>
+                <Col span={8}>
+                  <Card size="small">
+                    <Statistic title="平均订单金额" value={salesSummary?.avgOrderAmount || 0} precision={2} prefix="¥" />
+                  </Card>
+                </Col>
+                <Col span={8}>
+                  <Card size="small">
+                    <Statistic title="订单总数" value={salesSummary?.totalOrderCount || 0} />
+                  </Card>
+                </Col>
+              </Row>
+            </Card>
           </>),
         };
         if (tab.key === 'customerAnalysis') return {
