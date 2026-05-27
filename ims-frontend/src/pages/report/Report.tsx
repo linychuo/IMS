@@ -318,6 +318,8 @@ const ReportPage: React.FC = () => {
     fetchCustomerAnalysis();
     fetchProductAnalysis();
     fetchSupplierAnalysis();
+    fetchReceivableAging();
+    fetchPayableAging();
   }, []);
 
   const getDateParams = () => {
