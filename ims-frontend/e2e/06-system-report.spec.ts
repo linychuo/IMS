@@ -289,22 +289,22 @@ test.describe('Report Center (报表中心)', () => {
     }
   });
 
-  test('43.7 Report - 验证利润表Tab和导出按钮', async ({ page }) => {
+  test('43.7 Report - 验证利润表Tab', async ({ page }) => {
     await loginViaUI(page);
     await page.goto(`${BASE_URL}/report`);
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
 
-    const profitTab = page.locator('.ant-tabs-tab').filter({ hasText: /毛利/ });
+    const profitTab = page.locator('.ant-tabs-tab:has-text("利润表")');
     if (await profitTab.isVisible({ timeout: 2000 }).catch(() => false)) {
       await profitTab.click();
-      await page.waitForTimeout(1000);
-      console.log('Profit margin tab clicked');
+      await page.waitForTimeout(1500);
+      console.log('Profit table tab clicked');
     }
 
-    const exportBtn = page.locator('button:has-text("导出CSV"), button:has-text("导出")');
-    if (await exportBtn.first().isVisible({ timeout: 2000 }).catch(() => false)) {
-      console.log('Export button found');
+    const statCards = page.locator('.ant-statistic');
+    if (await statCards.first().isVisible({ timeout: 2000 }).catch(() => false)) {
+      console.log('Statistic cards found');
     }
   });
 });
