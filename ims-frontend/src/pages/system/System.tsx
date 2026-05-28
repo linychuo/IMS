@@ -700,7 +700,7 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
         params.startDate = operationLogFilters.dateRange[0].format('YYYY-MM-DD');
         params.endDate = operationLogFilters.dateRange[1].format('YYYY-MM-DD');
       }
-      const res = await systemApi.get('/log/page', { params });
+      const res = await systemApi.get('/api/system/log/page', { params });
       if (res.data.code === 200) {
         setOperationLogData(res.data.data?.records || []);
         setOperationLogPagination(prev => ({ ...prev, total: res.data.data?.total || 0 }));
@@ -722,7 +722,7 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
         params.startDate = loginLogFilters.dateRange[0].format('YYYY-MM-DD');
         params.endDate = loginLogFilters.dateRange[1].format('YYYY-MM-DD');
       }
-      const res = await systemApi.get('/login-log/page', { params });
+      const res = await systemApi.get('/api/system/login-log/page', { params });
       if (res.data.code === 200) {
         setLoginLogData(res.data.data?.records || []);
         setLoginLogPagination(prev => ({ ...prev, total: res.data.data?.total || 0 }));
