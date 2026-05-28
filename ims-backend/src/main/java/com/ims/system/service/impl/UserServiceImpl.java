@@ -7,6 +7,7 @@ import com.ims.system.entity.SysUser;
 import com.ims.system.mapper.SysUserMapper;
 import com.ims.system.mapper.SysUserRoleMapper;
 import com.ims.system.service.PermissionService;
+import com.ims.system.service.SysLoginLogService;
 import com.ims.system.service.UserService;
 import com.ims.system.util.JWTUtil;
 import com.ims.system.util.SecurityUtil;
@@ -28,12 +29,14 @@ public class UserServiceImpl implements UserService {
     private final SysUserRoleMapper userRoleMapper;
     private final JWTUtil jwtUtil;
     private final PermissionService permissionService;
+    private final SysLoginLogService loginLogService;
 
-    public UserServiceImpl(SysUserMapper userMapper, SysUserRoleMapper userRoleMapper, JWTUtil jwtUtil, PermissionService permissionService) {
+    public UserServiceImpl(SysUserMapper userMapper, SysUserRoleMapper userRoleMapper, JWTUtil jwtUtil, PermissionService permissionService, SysLoginLogService loginLogService) {
         this.userMapper = userMapper;
         this.userRoleMapper = userRoleMapper;
         this.jwtUtil = jwtUtil;
         this.permissionService = permissionService;
+        this.loginLogService = loginLogService;
     }
 
     @Override
@@ -41,16 +44,19 @@ public class UserServiceImpl implements UserService {
         // 查询用户
         SysUser user = userMapper.selectByUsername(username);
         if (user == null) {
+            loginLogService.loginFail(username, null, null, "用户名不存在");
             throw new RuntimeException("用户名或密码错误");
         }
 
         // 验证密码
         if (!SecurityUtil.matches(password, user.getPassword())) {
+            loginLogService.loginFail(username, null, null, "密码错误");
             throw new RuntimeException("用户名或密码错误");
         }
 
         // 检查用户状态
         if (user.getStatus() != null && user.getStatus() == 0) {
+            loginLogService.loginFail(username, null, null, "账号已被禁用");
             throw new RuntimeException("账号已被禁用");
         }
 
@@ -70,6 +76,8 @@ public class UserServiceImpl implements UserService {
         result.setAvatar(user.getAvatar() != null ? user.getAvatar().toString() : null);
         result.setMenus(menus);
         result.setPermissions(permissionCodes);
+
+        loginLogService.loginSuccess(user.getUsername(), user.getRealName(), null, null, null, null);
 
         return result;
     }
