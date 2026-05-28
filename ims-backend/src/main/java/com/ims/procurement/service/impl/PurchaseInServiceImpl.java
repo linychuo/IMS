@@ -54,7 +54,7 @@ public class PurchaseInServiceImpl implements PurchaseInService {
         history.setInNo(in.getInNo());
         history.setFromStatus(fromStatus);
         history.setToStatus(toStatus);
-        try { history.setOperatorId(Long.parseLong(userId)); } catch (Exception e) {}
+        try { history.setOperatorId(Long.parseLong(userId)); } catch (Exception e) { log.warn("解析操作人ID失败: {}", userId); }
         history.setOperateTime(LocalDateTime.now());
         history.setRemark(remark);
         statusHistoryMapper.insert(history);

@@ -1,5 +1,6 @@
 package com.ims.system.controller;
 
+import cn.hutool.core.util.RandomUtil;
 import com.ims.core.result.Result;
 import com.ims.system.annotation.Permission;
 import com.ims.system.dto.UserDTO;
@@ -73,7 +74,9 @@ public class UserController {
     @PostMapping("/password/reset/{id}")
     @Permission(code = "resetPassword", name = "重置密码")
     public Result<Void> resetPassword(@PathVariable Long id) {
-        userService.resetPassword(id, "123456");
+        // 生成随机8位密码
+        String newPassword = RandomUtil.randomString(8);
+        userService.resetPassword(id, newPassword);
         return Result.success(null);
     }
 

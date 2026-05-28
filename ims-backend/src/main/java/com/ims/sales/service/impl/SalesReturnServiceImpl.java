@@ -54,7 +54,7 @@ public class SalesReturnServiceImpl implements SalesReturnService {
         history.setReturnNo(ret.getReturnNo());
         history.setFromStatus(fromStatus);
         history.setToStatus(toStatus);
-        try { history.setOperatorId(Long.parseLong(userId)); } catch (Exception e) {}
+        try { history.setOperatorId(Long.parseLong(userId)); } catch (Exception e) { log.warn("解析操作人ID失败: {}", userId); }
         history.setOperateTime(LocalDateTime.now());
         history.setRemark(remark);
         statusHistoryMapper.insert(history);
@@ -167,6 +167,9 @@ public class SalesReturnServiceImpl implements SalesReturnService {
 
         List<SalesReturnDetail> details = salesReturnDetailMapper.selectByReturnId(id);
         for (SalesReturnDetail detail : details) {
+            if (detail.getProductId() == null || detail.getProductId().isEmpty()) {
+                throw new RuntimeException("退货明细中商品ID不能为空");
+            }
             Long productId = Long.parseLong(detail.getProductId());
             Long warehouseId = salesReturn.getWarehouseId();
             Long locationId = detail.getLocationId();

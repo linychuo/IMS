@@ -114,7 +114,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         if (request.getSupplierId() != null) {
             var supplier = supplierMapper.selectById(request.getSupplierId());
             order.setSupplierId(request.getSupplierId());
-            order.setSupplierName(supplier.getSupplierName());
+            order.setSupplierName(supplier != null ? supplier.getSupplierName() : null);
         }
         if (request.getExpectedDate() != null) {
             order.setExpectedDate(request.getExpectedDate());

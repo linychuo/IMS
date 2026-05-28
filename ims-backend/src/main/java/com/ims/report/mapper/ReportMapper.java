@@ -5,6 +5,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 报表数据Mapper
@@ -112,4 +113,15 @@ public interface ReportMapper {
      */
     List<ProfitMarginDTO> getProfitMarginList(@Param("startDate") LocalDate startDate,
                                                @Param("endDate") LocalDate endDate);
+
+    /**
+     * 查询历史销售数据（用于AI预测）
+     */
+    List<Map<String, Object>> getHistoricalSales(@Param("startDate") LocalDate startDate,
+                                                  @Param("endDate") LocalDate endDate);
+
+    /**
+     * 查询当前库存（用于AI预测）
+     */
+    List<Map<String, Object>> getCurrentInventory();
 }

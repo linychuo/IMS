@@ -50,7 +50,7 @@ public class ReceivableServiceImpl extends ServiceImpl<ReceivableMapper, Receiva
 
     @Override
     public Receivable getById(Long id) {
-        return this.getById(id);
+        return super.getById(id);
     }
 
     @Override

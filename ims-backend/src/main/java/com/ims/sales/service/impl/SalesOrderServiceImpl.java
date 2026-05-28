@@ -151,7 +151,7 @@ public class SalesOrderServiceImpl implements SalesOrderService {
                 Long productId = detail.getProductId();
                 inventoryService.freezeStock(productId, 1L, detail.getQuantity());
             } catch (Exception e) {
-                log.warn("预占库存失败: orderId={}, productId={}, error={}", id, detail.getProductId(), e.getMessage());
+                throw new RuntimeException("预占库存失败，订单审核回滚: orderId=" + id + ", productId=" + detail.getProductId() + ", error=" + e.getMessage());
             }
         }
 
@@ -187,7 +187,7 @@ public class SalesOrderServiceImpl implements SalesOrderService {
                     Long productId = detail.getProductId();
                     inventoryService.unfreezeStock(productId, 1L, detail.getQuantity());
                 } catch (Exception e) {
-                    log.warn("释放预占库存失败: orderId={}, productId={}, error={}", id, detail.getProductId(), e.getMessage());
+                    throw new RuntimeException("释放预占库存失败，取消操作回滚: orderId=" + id + ", productId=" + detail.getProductId() + ", error=" + e.getMessage());
                 }
             }
         }

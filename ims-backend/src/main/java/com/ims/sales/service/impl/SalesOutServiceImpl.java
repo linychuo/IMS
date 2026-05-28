@@ -57,7 +57,7 @@ public class SalesOutServiceImpl implements SalesOutService {
         history.setOutNo(out.getOutNo());
         history.setFromStatus(fromStatus);
         history.setToStatus(toStatus);
-        try { history.setOperatorId(Long.parseLong(userId)); } catch (Exception e) {}
+        try { history.setOperatorId(Long.parseLong(userId)); } catch (Exception e) { log.warn("解析操作人ID失败: {}", userId); }
         history.setOperateTime(LocalDateTime.now());
         history.setRemark(remark);
         statusHistoryMapper.insert(history);
@@ -108,7 +108,7 @@ public class SalesOutServiceImpl implements SalesOutService {
                 inventoryService.unfreezeStock(productId, warehouseId, quantity);
                 log.info("解冻预占库存: 商品{} 仓库{} 数量{}", productId, warehouseId, quantity);
             } catch (Exception e) {
-                log.warn("解冻库存失败，继续扣减实际库存: {}", e.getMessage());
+                throw new RuntimeException("解冻预占库存失败，出库单审核回滚: " + e.getMessage());
             }
 
             // 扣减实际库存

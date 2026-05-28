@@ -182,6 +182,50 @@ CREATE TABLE sys_operation_log (
     operate_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE document_no_rule (
+    id BIGINT PRIMARY KEY DEFAULT nextval('sys_config_seq'),
+    biz_type VARCHAR(20) NOT NULL UNIQUE COMMENT '业务类型编码',
+    biz_name VARCHAR(50) NOT NULL COMMENT '业务类型名称',
+    prefix VARCHAR(20) COMMENT '前缀',
+    date_format VARCHAR(20) DEFAULT 'yyyyMMdd' COMMENT '日期格式',
+    seq_length INTEGER DEFAULT 5 COMMENT '序列号位数',
+    step INTEGER DEFAULT 1 COMMENT '步长',
+    current_seq BIGINT DEFAULT 1 COMMENT '当前序列号',
+    reset_frequency VARCHAR(20) DEFAULT 'DAILY' COMMENT '重置频率: DAILY/MONTHLY/YEARLY/NEVER',
+    status INTEGER DEFAULT 1,
+    remark VARCHAR(500),
+    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted INTEGER DEFAULT 0
+);
+
+CREATE TABLE backup_record (
+    id BIGINT PRIMARY KEY DEFAULT nextval('sys_config_seq'),
+    backup_name VARCHAR(200) NOT NULL COMMENT '备份名称',
+    backup_type VARCHAR(20) NOT NULL COMMENT '备份类型: FULL/INCREMENTAL',
+    file_path VARCHAR(500) COMMENT '备份文件路径',
+    file_size BIGINT COMMENT '备份文件大小(字节)',
+    status VARCHAR(20) DEFAULT 'PENDING' COMMENT '状态: PENDING/RUNNING/SUCCESS/FAILED',
+    progress INTEGER DEFAULT 0 COMMENT '进度百分比',
+    error_message TEXT COMMENT '错误信息',
+    start_time TIMESTAMP COMMENT '备份开始时间',
+    end_time TIMESTAMP COMMENT '备份结束时间',
+    remark VARCHAR(500),
+    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE prediction_config (
+    id BIGINT PRIMARY KEY DEFAULT nextval('sys_config_seq'),
+    config_type VARCHAR(50) NOT NULL UNIQUE COMMENT '配置类型: SALES_FORECAST/PURCHASE_SUGGEST/INVENTORY_ALERT',
+    algorithm VARCHAR(20) DEFAULT 'EXPONENTIAL' COMMENT '算法: MOVING_AVG/EXPONENTIAL',
+    forecast_days INTEGER DEFAULT 30 COMMENT '预测天数',
+    history_days INTEGER DEFAULT 90 COMMENT '历史数据天数',
+    safety_stock_days INTEGER DEFAULT 7 COMMENT '安全库存天数',
+    status INTEGER DEFAULT 1,
+    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE sys_login_log (
     id BIGINT PRIMARY KEY DEFAULT nextval('sys_login_log_seq'),
     username VARCHAR(50),
@@ -204,6 +248,19 @@ CREATE TABLE product_category (
     level INTEGER,
     sort_order INTEGER DEFAULT 0,
     status INTEGER DEFAULT 1,
+    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted INTEGER DEFAULT 0
+);
+
+CREATE TABLE unit_of_measure (
+    id BIGINT PRIMARY KEY DEFAULT nextval('sys_user_seq'),
+    unit_code VARCHAR(20) NOT NULL UNIQUE,
+    unit_name VARCHAR(50) NOT NULL,
+    type INTEGER NOT NULL DEFAULT 1 COMMENT '1-基本单位, 2-辅助单位',
+    status INTEGER DEFAULT 1,
+    ratio DOUBLE PRECISION DEFAULT 1 COMMENT '换算率（相对于基本单位）',
+    remark VARCHAR(500),
     create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     deleted INTEGER DEFAULT 0
@@ -1158,6 +1215,43 @@ CREATE TABLE purchase_return_status_history (
     create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     deleted INTEGER DEFAULT 0
 );
+
+-- ========== 13. 性能优化索引 ==========
+-- 应收账款索引
+CREATE INDEX idx_receivable_customer ON receivable(customer_id);
+CREATE INDEX idx_receivable_status ON receivable(status);
+CREATE INDEX idx_receivable_order_no ON receivable(order_no);
+
+-- 应付账款索引
+CREATE INDEX idx_payable_supplier ON payable(supplier_id);
+CREATE INDEX idx_payable_status ON payable(status);
+CREATE INDEX idx_payable_order_no ON payable(order_no);
+
+-- 核销记录索引
+CREATE INDEX idx_writeoff_source_id ON writeoff_record(source_id);
+CREATE INDEX idx_writeoff_time ON writeoff_record(writeoff_time);
+CREATE INDEX idx_writeoff_type ON writeoff_record(writeoff_type);
+CREATE INDEX idx_writeoff_target_id ON writeoff_record(target_id);
+
+-- 库存索引
+CREATE INDEX idx_inventory_product ON inventory(product_id);
+CREATE INDEX idx_inventory_warehouse ON inventory(warehouse_id);
+
+-- 销售出库索引
+CREATE INDEX idx_sales_out_status ON sales_out(status);
+CREATE INDEX idx_sales_out_out_time ON sales_out(out_time);
+
+-- 采购入库索引
+CREATE INDEX idx_purchase_in_status ON purchase_in(status);
+CREATE INDEX idx_purchase_in_in_time ON purchase_in(in_time);
+
+-- 销售订单索引
+CREATE INDEX idx_sales_order_status ON sales_order(status);
+CREATE INDEX idx_sales_order_customer ON sales_order(customer_id);
+
+-- 采购订单索引
+CREATE INDEX idx_purchase_order_status ON purchase_order(status);
+CREATE INDEX idx_purchase_order_supplier ON purchase_order(supplier_id);
 
 -- ========== 完成提示 ==========
 -- 执行完成！

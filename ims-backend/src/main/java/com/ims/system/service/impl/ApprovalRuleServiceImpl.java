@@ -27,11 +27,7 @@ public class ApprovalRuleServiceImpl implements ApprovalRuleService {
         wrapper.eq(ApprovalRule::getBusinessType, businessType)
                 .eq(ApprovalRule::getStatus, 1)
                 .le(ApprovalRule::getMinAmount, amount)
-                .or()
-                .eq(ApprovalRule::getBusinessType, businessType)
-                .eq(ApprovalRule::getStatus, 1)
-                .isNull(ApprovalRule::getMaxAmount)
-                .le(ApprovalRule::getMinAmount, amount)
+                .and(w -> w.isNull(ApprovalRule::getMaxAmount).or().ge(ApprovalRule::getMaxAmount, amount))
                 .orderByDesc(ApprovalRule::getMinAmount)
                 .last("LIMIT 1");
         return approvalRuleMapper.selectOne(wrapper);

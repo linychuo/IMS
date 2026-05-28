@@ -68,9 +68,16 @@ public class SupplierReconciliationServiceImpl
         List<WriteoffRecord> writeoffs = writeoffRecordMapper.selectList(writeoffWrapper);
         BigDecimal periodPayment = BigDecimal.ZERO;
         for (WriteoffRecord writeoff : writeoffs) {
-            Payable payable = payableMapper.selectById(Long.parseLong(writeoff.getSourceId()));
-            if (payable != null && payable.getSupplierId().equals(supplierId)) {
-                periodPayment = periodPayment.add(writeoff.getAmount());
+            if (writeoff.getSourceId() == null || writeoff.getSourceId().isEmpty()) {
+                continue;
+            }
+            try {
+                Payable payable = payableMapper.selectById(Long.parseLong(writeoff.getSourceId()));
+                if (payable != null && payable.getSupplierId().equals(supplierId)) {
+                    periodPayment = periodPayment.add(writeoff.getAmount());
+                }
+            } catch (NumberFormatException e) {
+                log.warn("核销记录sourceId格式错误: " + writeoff.getSourceId());
             }
         }
 
@@ -150,17 +157,24 @@ public class SupplierReconciliationServiceImpl
                 .le(WriteoffRecord::getWriteoffTime, endDate.plusDays(1).atStartOfDay());
         List<WriteoffRecord> writeoffs = writeoffRecordMapper.selectList(writeoffWrapper);
         for (WriteoffRecord writeoff : writeoffs) {
-            Payable payable = payableMapper.selectById(Long.parseLong(writeoff.getSourceId()));
-            if (payable != null && payable.getSupplierId().equals(supplierId)) {
-                CustomerReconciliationDetailDTO detail = new CustomerReconciliationDetailDTO();
-                detail.setDate(writeoff.getWriteoffTime().toLocalDate());
-                detail.setOrderNo(writeoff.getTargetNo());
-                detail.setType("PAYMENT");
-                detail.setSummary("付款核销");
-                detail.setAmount(writeoff.getAmount());
-                balance = balance.subtract(writeoff.getAmount());
-                detail.setBalance(balance);
-                details.add(detail);
+            if (writeoff.getSourceId() == null || writeoff.getSourceId().isEmpty()) {
+                continue;
+            }
+            try {
+                Payable payable = payableMapper.selectById(Long.parseLong(writeoff.getSourceId()));
+                if (payable != null && payable.getSupplierId().equals(supplierId)) {
+                    CustomerReconciliationDetailDTO detail = new CustomerReconciliationDetailDTO();
+                    detail.setDate(writeoff.getWriteoffTime().toLocalDate());
+                    detail.setOrderNo(writeoff.getTargetNo());
+                    detail.setType("PAYMENT");
+                    detail.setSummary("付款核销");
+                    detail.setAmount(writeoff.getAmount());
+                    balance = balance.subtract(writeoff.getAmount());
+                    detail.setBalance(balance);
+                    details.add(detail);
+                }
+            } catch (NumberFormatException e) {
+                log.warn("核销记录sourceId格式错误: " + writeoff.getSourceId());
             }
         }
 

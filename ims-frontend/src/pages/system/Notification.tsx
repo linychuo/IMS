@@ -34,6 +34,7 @@ interface Notification {
 const NotificationPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<Notification[]>([]);
+  const [stats, setStats] = useState({ total: 0, published: 0, todo: 0 });
   const [pagination, setPagination] = useState({ current: 1, size: 10, total: 0 });
   const [modalVisible, setModalVisible] = useState(false);
   const [viewModalVisible, setViewModalVisible] = useState(false);
@@ -53,6 +54,12 @@ const NotificationPage: React.FC = () => {
       if (res.data.code === 200) {
         setData(res.data.data?.records || []);
         setPagination((prev) => ({ ...prev, total: res.data.data?.total || 0 }));
+        // 重新获取统计数据（实际项目中应该单独接口）
+        setStats({
+          total: res.data.data?.total || 0,
+          published: res.data.data?.records?.filter((d: Notification) => d.status === 1).length || 0,
+          todo: res.data.data?.records?.filter((d: Notification) => d.notifyType === 5).length || 0,
+        });
       }
     } catch (error) {
       message.error('获取通知列表失败');
@@ -67,9 +74,17 @@ const NotificationPage: React.FC = () => {
     setModalVisible(true);
   };
 
-  const handleView = (record: Notification) => {
+  const handleView = async (record: Notification) => {
     setEditingRecord(record);
     setViewModalVisible(true);
+    // 标记已读
+    if (record.id) {
+      try {
+        await systemApi.put(`/notification/${record.id}/read`);
+      } catch (e) {
+        // ignore
+      }
+    }
   };
 
   const handleRead = async (id: number) => {
@@ -175,13 +190,13 @@ const NotificationPage: React.FC = () => {
       <h2 style={{ marginBottom: 16 }}>消息通知</h2>
       <Row gutter={16} style={{ marginBottom: 16 }}>
         <Col span={6}>
-          <Card title="通知总数" extra={<BellOutlined />}>{data.length}</Card>
+          <Card title="通知总数" extra={<BellOutlined />}>{pagination.total}</Card>
         </Col>
         <Col span={6}>
-          <Card title="已发布">{data.filter(d => d.status === 1).length}</Card>
+          <Card title="已发布">{stats.published}</Card>
         </Col>
         <Col span={6}>
-          <Card title="待办提醒">{data.filter(d => d.notifyType === 5).length}</Card>
+          <Card title="待办提醒">{stats.todo}</Card>
         </Col>
       </Row>
       <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-end' }}>

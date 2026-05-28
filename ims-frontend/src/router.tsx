@@ -1,57 +1,72 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
+import { Suspense, lazy } from 'react';
 import AppLayout from './layouts/AppLayout';
 import Login from './pages/login/Login';
 import Dashboard from './pages/dashboard/Dashboard';
 import ProductPage from './pages/product/Product';
-import WarehousePage from './pages/warehouse/Warehouse';
-import CustomerPage from './pages/customer/Customer';
-import SupplierPage from './pages/purchase/Supplier';
-import SalesOrderPage from './pages/sales/SalesOrder';
-import SalesOutPage from './pages/sales/SalesOut';
-import SalesReturnPage from './pages/sales/SalesReturn';
-import SalesPriceStrategyPage from './pages/sales/SalesPriceStrategy';
-import SalesOrderTrackPage from './pages/sales/SalesOrderTrack';
-import PromotionPage from './pages/sales/Promotion';
-import CustomerReconciliationPage from './pages/finance/CustomerReconciliation';
-import SupplierReconciliationPage from './pages/finance/SupplierReconciliation';
-import PurchaseOrderPage from './pages/purchase/PurchaseOrder';
-import PurchaseOrderTrackPage from './pages/purchase/PurchaseOrderTrack';
-import PurchaseInPage from './pages/purchase/PurchaseIn';
-import PurchaseAlertPage from './pages/purchase/PurchaseAlert';
-import PurchaseReturnPage from './pages/purchase/PurchaseReturn';
-import PriceAgreementPage from './pages/purchase/PriceAgreement';
-import InventoryAccountPage from './pages/inventory/InventoryAccount';
-import InventoryInPage from './pages/inventory/InventoryIn';
-import InventoryOutPage from './pages/inventory/InventoryOut';
-import InventoryTransferPage from './pages/inventory/InventoryTransfer';
-import InventoryCheckPage from './pages/inventory/InventoryCheck';
-import InventoryRecordPage from './pages/inventory/InventoryRecord';
-import BatchPage from './pages/inventory/Batch';
-import BarcodePage from './pages/inventory/Barcode';
-import InventoryAlertPage from './pages/inventory/InventoryAlert';
-import QualityCheckPage from './pages/inventory/QualityCheck';
-import FinanceInPage from './pages/finance/FinanceIn';
-import FinanceOutPage from './pages/finance/FinanceOut';
-import AccountPage from './pages/finance/Account';
-import ReceivablePage from './pages/finance/Receivable';
-import PayablePage from './pages/finance/Payable';
-import TransactionPage from './pages/finance/Transaction';
-import InvoicePage from './pages/finance/Invoice';
-import ExpensePage from './pages/finance/Expense';
-import SystemPage from './pages/system/System';
-import ConfigPage from './pages/system/Config';
-import NotificationPage from './pages/system/Notification';
-import PrintTemplatePage from './pages/system/PrintTemplate';
-import ReportPage from './pages/report/Report';
 import { RequirePermission } from './components/RequirePermission';
+
+// 懒加载页面（非首屏必需）
+const UnitOfMeasurePage = lazy(() => import('./pages/product/UnitOfMeasure'));
+const WarehousePage = lazy(() => import('./pages/warehouse/Warehouse'));
+const CustomerPage = lazy(() => import('./pages/customer/Customer'));
+const SupplierPage = lazy(() => import('./pages/purchase/Supplier'));
+const SalesOrderPage = lazy(() => import('./pages/sales/SalesOrder'));
+const SalesOutPage = lazy(() => import('./pages/sales/SalesOut'));
+const SalesReturnPage = lazy(() => import('./pages/sales/SalesReturn'));
+const SalesPriceStrategyPage = lazy(() => import('./pages/sales/SalesPriceStrategy'));
+const SalesOrderTrackPage = lazy(() => import('./pages/sales/SalesOrderTrack'));
+const PromotionPage = lazy(() => import('./pages/sales/Promotion'));
+const CustomerReconciliationPage = lazy(() => import('./pages/finance/CustomerReconciliation'));
+const SupplierReconciliationPage = lazy(() => import('./pages/finance/SupplierReconciliation'));
+const PurchaseOrderPage = lazy(() => import('./pages/purchase/PurchaseOrder'));
+const PurchaseOrderTrackPage = lazy(() => import('./pages/purchase/PurchaseOrderTrack'));
+const PurchaseInPage = lazy(() => import('./pages/purchase/PurchaseIn'));
+const PurchaseAlertPage = lazy(() => import('./pages/purchase/PurchaseAlert'));
+const PurchaseReturnPage = lazy(() => import('./pages/purchase/PurchaseReturn'));
+const PriceAgreementPage = lazy(() => import('./pages/purchase/PriceAgreement'));
+const InventoryAccountPage = lazy(() => import('./pages/inventory/InventoryAccount'));
+const InventoryInPage = lazy(() => import('./pages/inventory/InventoryIn'));
+const InventoryOutPage = lazy(() => import('./pages/inventory/InventoryOut'));
+const InventoryTransferPage = lazy(() => import('./pages/inventory/InventoryTransfer'));
+const InventoryCheckPage = lazy(() => import('./pages/inventory/InventoryCheck'));
+const InventoryRecordPage = lazy(() => import('./pages/inventory/InventoryRecord'));
+const BatchPage = lazy(() => import('./pages/inventory/Batch'));
+const BarcodePage = lazy(() => import('./pages/inventory/Barcode'));
+const InventoryAlertPage = lazy(() => import('./pages/inventory/InventoryAlert'));
+const QualityCheckPage = lazy(() => import('./pages/inventory/QualityCheck'));
+const FinanceInPage = lazy(() => import('./pages/finance/FinanceIn'));
+const FinanceOutPage = lazy(() => import('./pages/finance/FinanceOut'));
+const AccountPage = lazy(() => import('./pages/finance/Account'));
+const ReceivablePage = lazy(() => import('./pages/finance/Receivable'));
+const PayablePage = lazy(() => import('./pages/finance/Payable'));
+const TransactionPage = lazy(() => import('./pages/finance/Transaction'));
+const InvoicePage = lazy(() => import('./pages/finance/Invoice'));
+const ExpensePage = lazy(() => import('./pages/finance/Expense'));
+const SystemPage = lazy(() => import('./pages/system/System'));
+const ConfigPage = lazy(() => import('./pages/system/Config'));
+const NotificationPage = lazy(() => import('./pages/system/Notification'));
+const PrintTemplatePage = lazy(() => import('./pages/system/PrintTemplate'));
+const DocumentNoRulePage = lazy(() => import('./pages/system/DocumentNoRule'));
+const BackupPage = lazy(() => import('./pages/system/Backup'));
+const ApprovalRulePage = lazy(() => import('./pages/system/ApprovalRule'));
+const ReportPage = lazy(() => import('./pages/report/Report'));
+const PredictionPage = lazy(() => import('./pages/report/Prediction'));
+
+// 懒加载包装组件
+function LazyWrapper({ children }: { children: React.ReactNode }) {
+  return <Suspense fallback={<div style={{ padding: 24, textAlign: 'center' }}>加载中...</div>}>{children}</Suspense>;
+}
 
 // 路由权限映射
 const routePermissionMap: Record<string, string> = {
   '/dashboard': 'report:dashboard',
   '/report': 'report:dashboard',
+  '/report/prediction': 'report:prediction',
   '/warehouse': 'warehouse',
   '/warehouse/location': 'warehouse:warehouse:location',
   '/product': 'product:category',
+  '/product/unit-of-measure': 'product:unitOfMeasure',
   '/customer': 'customer:customer',
   '/supplier': 'supplier',
   '/sales/order': 'sales:order',
@@ -90,6 +105,9 @@ const routePermissionMap: Record<string, string> = {
   '/system': 'system:menu',
   '/system/user': 'system:user',
   '/system/config': 'system:config',
+  '/system/document-no-rule': 'system:documentNoRule',
+  '/system/backup': 'system:backup',
+  '/system/approval-rule': 'system:approvalRule',
   '/system/notification': 'system:notification',
   '/system/print-template': 'system:printTemplate',
   '/role': 'system:role',
@@ -120,51 +138,56 @@ export const router = createBrowserRouter([
       { index: true, element: <Navigate to="/dashboard" replace /> },
       { path: 'dashboard', element: <PermissionRoute path="/dashboard" element={<Dashboard />} /> },
       { path: 'product', element: <PermissionRoute path="/product" element={<ProductPage />} /> },
-      { path: 'warehouse', element: <PermissionRoute path="/warehouse" element={<WarehousePage />} /> },
-      { path: 'warehouse/location', element: <PermissionRoute path="/warehouse" element={<WarehousePage defaultTab="location" />} /> },
-      { path: 'customer', element: <PermissionRoute path="/customer" element={<CustomerPage />} /> },
-      { path: 'supplier', element: <PermissionRoute path="/supplier" element={<SupplierPage />} /> },
-      { path: 'sales/order', element: <PermissionRoute path="/sales/order" element={<SalesOrderPage />} /> },
-      { path: 'sales/out', element: <PermissionRoute path="/sales/out" element={<SalesOutPage />} /> },
-      { path: 'sales/return', element: <PermissionRoute path="/sales/return" element={<SalesReturnPage />} /> },
-      { path: 'sales/strategy', element: <PermissionRoute path="/sales/strategy" element={<SalesPriceStrategyPage />} /> },
-      { path: 'sales/price-strategy', element: <PermissionRoute path="/sales/price-strategy" element={<SalesPriceStrategyPage />} /> },
-      { path: 'sales/track', element: <PermissionRoute path="/sales/track" element={<SalesOrderTrackPage />} /> },
-      { path: 'sales/promotion', element: <PermissionRoute path="/sales/promotion" element={<PromotionPage />} /> },
-      { path: 'purchase/order', element: <PermissionRoute path="/purchase/order" element={<PurchaseOrderPage />} /> },
-      { path: 'purchase/track', element: <PermissionRoute path="/purchase/track" element={<PurchaseOrderTrackPage />} /> },
-      { path: 'purchase/alert', element: <PermissionRoute path="/purchase/alert" element={<PurchaseAlertPage />} /> },
-      { path: 'purchase/in', element: <PermissionRoute path="/purchase/in" element={<PurchaseInPage />} /> },
-      { path: 'purchase/return', element: <PermissionRoute path="/purchase/return" element={<PurchaseReturnPage />} /> },
-      { path: 'purchase/price-agreement', element: <PermissionRoute path="/purchase/price-agreement" element={<PriceAgreementPage />} /> },
-      { path: 'inventory/account', element: <PermissionRoute path="/inventory/account" element={<InventoryAccountPage />} /> },
-      { path: 'inventory/in', element: <PermissionRoute path="/inventory/in" element={<InventoryInPage />} /> },
-      { path: 'inventory/out', element: <PermissionRoute path="/inventory/out" element={<InventoryOutPage />} /> },
-      { path: 'inventory/transfer', element: <PermissionRoute path="/inventory/transfer" element={<InventoryTransferPage />} /> },
-      { path: 'inventory/check', element: <PermissionRoute path="/inventory/check" element={<InventoryCheckPage />} /> },
-      { path: 'inventory/record', element: <PermissionRoute path="/inventory/record" element={<InventoryRecordPage />} /> },
-      { path: 'inventory/batch', element: <PermissionRoute path="/inventory/batch" element={<BatchPage />} /> },
-      { path: 'inventory/barcode', element: <PermissionRoute path="/inventory/barcode" element={<BarcodePage />} /> },
-      { path: 'inventory/alert', element: <PermissionRoute path="/inventory/alert" element={<InventoryAlertPage />} /> },
-      { path: 'inventory/quality-check', element: <PermissionRoute path="/inventory/quality-check" element={<QualityCheckPage />} /> },
-      { path: 'finance/in', element: <PermissionRoute path="/finance/in" element={<FinanceInPage />} /> },
-      { path: 'finance/out', element: <PermissionRoute path="/finance/out" element={<FinanceOutPage />} /> },
-      { path: 'finance/account', element: <PermissionRoute path="/finance/account" element={<AccountPage />} /> },
-      { path: 'finance/receivable', element: <PermissionRoute path="/finance/receivable" element={<ReceivablePage />} /> },
-      { path: 'finance/payable', element: <PermissionRoute path="/finance/payable" element={<PayablePage />} /> },
-      { path: 'finance/transaction', element: <PermissionRoute path="/finance/transaction" element={<TransactionPage />} /> },
-      { path: 'finance/invoice', element: <PermissionRoute path="/finance/invoice" element={<InvoicePage />} /> },
-      { path: 'finance/expense', element: <PermissionRoute path="/finance/expense" element={<ExpensePage />} /> },
-      { path: 'finance/customer-reconciliation', element: <PermissionRoute path="/finance/customer-reconciliation" element={<CustomerReconciliationPage />} /> },
-      { path: 'finance/supplier-reconciliation', element: <PermissionRoute path="/finance/supplier-reconciliation" element={<SupplierReconciliationPage />} /> },
-      { path: 'system', element: <PermissionRoute path="/system" element={<SystemPage defaultTab="user" />} /> },
-      { path: 'system/user', element: <PermissionRoute path="/system" element={<SystemPage defaultTab="user" />} /> },
-      { path: 'system/config', element: <PermissionRoute path="/system/config" element={<ConfigPage />} /> },
-      { path: 'system/notification', element: <PermissionRoute path="/system/notification" element={<NotificationPage />} /> },
-      { path: 'system/print-template', element: <PermissionRoute path="/system/print-template" element={<PrintTemplatePage />} /> },
-      { path: 'role', element: <PermissionRoute path="/system" element={<SystemPage defaultTab="role" />} /> },
-      { path: 'report', element: <PermissionRoute path="/report" element={<ReportPage />} /> },
-      { path: 'report/dashboard', element: <PermissionRoute path="/report" element={<ReportPage />} /> },
+      { path: 'product/unit-of-measure', element: <LazyWrapper><PermissionRoute path="/product/unit-of-measure" element={<UnitOfMeasurePage />} /></LazyWrapper> },
+      { path: 'warehouse', element: <LazyWrapper><PermissionRoute path="/warehouse" element={<WarehousePage />} /></LazyWrapper> },
+      { path: 'warehouse/location', element: <LazyWrapper><PermissionRoute path="/warehouse" element={<WarehousePage defaultTab="location" />} /></LazyWrapper> },
+      { path: 'customer', element: <LazyWrapper><PermissionRoute path="/customer" element={<CustomerPage />} /></LazyWrapper> },
+      { path: 'supplier', element: <LazyWrapper><PermissionRoute path="/supplier" element={<SupplierPage />} /></LazyWrapper> },
+      { path: 'sales/order', element: <LazyWrapper><PermissionRoute path="/sales/order" element={<SalesOrderPage />} /></LazyWrapper> },
+      { path: 'sales/out', element: <LazyWrapper><PermissionRoute path="/sales/out" element={<SalesOutPage />} /></LazyWrapper> },
+      { path: 'sales/return', element: <LazyWrapper><PermissionRoute path="/sales/return" element={<SalesReturnPage />} /></LazyWrapper> },
+      { path: 'sales/strategy', element: <LazyWrapper><PermissionRoute path="/sales/strategy" element={<SalesPriceStrategyPage />} /></LazyWrapper> },
+      { path: 'sales/price-strategy', element: <LazyWrapper><PermissionRoute path="/sales/price-strategy" element={<SalesPriceStrategyPage />} /></LazyWrapper> },
+      { path: 'sales/track', element: <LazyWrapper><PermissionRoute path="/sales/track" element={<SalesOrderTrackPage />} /></LazyWrapper> },
+      { path: 'sales/promotion', element: <LazyWrapper><PermissionRoute path="/sales/promotion" element={<PromotionPage />} /></LazyWrapper> },
+      { path: 'purchase/order', element: <LazyWrapper><PermissionRoute path="/purchase/order" element={<PurchaseOrderPage />} /></LazyWrapper> },
+      { path: 'purchase/track', element: <LazyWrapper><PermissionRoute path="/purchase/track" element={<PurchaseOrderTrackPage />} /></LazyWrapper> },
+      { path: 'purchase/alert', element: <LazyWrapper><PermissionRoute path="/purchase/alert" element={<PurchaseAlertPage />} /></LazyWrapper> },
+      { path: 'purchase/in', element: <LazyWrapper><PermissionRoute path="/purchase/in" element={<PurchaseInPage />} /></LazyWrapper> },
+      { path: 'purchase/return', element: <LazyWrapper><PermissionRoute path="/purchase/return" element={<PurchaseReturnPage />} /></LazyWrapper> },
+      { path: 'purchase/price-agreement', element: <LazyWrapper><PermissionRoute path="/purchase/price-agreement" element={<PriceAgreementPage />} /></LazyWrapper> },
+      { path: 'inventory/account', element: <LazyWrapper><PermissionRoute path="/inventory/account" element={<InventoryAccountPage />} /></LazyWrapper> },
+      { path: 'inventory/in', element: <LazyWrapper><PermissionRoute path="/inventory/in" element={<InventoryInPage />} /></LazyWrapper> },
+      { path: 'inventory/out', element: <LazyWrapper><PermissionRoute path="/inventory/out" element={<InventoryOutPage />} /></LazyWrapper> },
+      { path: 'inventory/transfer', element: <LazyWrapper><PermissionRoute path="/inventory/transfer" element={<InventoryTransferPage />} /></LazyWrapper> },
+      { path: 'inventory/check', element: <LazyWrapper><PermissionRoute path="/inventory/check" element={<InventoryCheckPage />} /></LazyWrapper> },
+      { path: 'inventory/record', element: <LazyWrapper><PermissionRoute path="/inventory/record" element={<InventoryRecordPage />} /></LazyWrapper> },
+      { path: 'inventory/batch', element: <LazyWrapper><PermissionRoute path="/inventory/batch" element={<BatchPage />} /></LazyWrapper> },
+      { path: 'inventory/barcode', element: <LazyWrapper><PermissionRoute path="/inventory/barcode" element={<BarcodePage />} /></LazyWrapper> },
+      { path: 'inventory/alert', element: <LazyWrapper><PermissionRoute path="/inventory/alert" element={<InventoryAlertPage />} /></LazyWrapper> },
+      { path: 'inventory/quality-check', element: <LazyWrapper><PermissionRoute path="/inventory/quality-check" element={<QualityCheckPage />} /></LazyWrapper> },
+      { path: 'finance/in', element: <LazyWrapper><PermissionRoute path="/finance/in" element={<FinanceInPage />} /></LazyWrapper> },
+      { path: 'finance/out', element: <LazyWrapper><PermissionRoute path="/finance/out" element={<FinanceOutPage />} /></LazyWrapper> },
+      { path: 'finance/account', element: <LazyWrapper><PermissionRoute path="/finance/account" element={<AccountPage />} /></LazyWrapper> },
+      { path: 'finance/receivable', element: <LazyWrapper><PermissionRoute path="/finance/receivable" element={<ReceivablePage />} /></LazyWrapper> },
+      { path: 'finance/payable', element: <LazyWrapper><PermissionRoute path="/finance/payable" element={<PayablePage />} /></LazyWrapper> },
+      { path: 'finance/transaction', element: <LazyWrapper><PermissionRoute path="/finance/transaction" element={<TransactionPage />} /></LazyWrapper> },
+      { path: 'finance/invoice', element: <LazyWrapper><PermissionRoute path="/finance/invoice" element={<InvoicePage />} /></LazyWrapper> },
+      { path: 'finance/expense', element: <LazyWrapper><PermissionRoute path="/finance/expense" element={<ExpensePage />} /></LazyWrapper> },
+      { path: 'finance/customer-reconciliation', element: <LazyWrapper><PermissionRoute path="/finance/customer-reconciliation" element={<CustomerReconciliationPage />} /></LazyWrapper> },
+      { path: 'finance/supplier-reconciliation', element: <LazyWrapper><PermissionRoute path="/finance/supplier-reconciliation" element={<SupplierReconciliationPage />} /></LazyWrapper> },
+      { path: 'system', element: <LazyWrapper><PermissionRoute path="/system" element={<SystemPage defaultTab="user" />} /></LazyWrapper> },
+      { path: 'system/user', element: <LazyWrapper><PermissionRoute path="/system" element={<SystemPage defaultTab="user" />} /></LazyWrapper> },
+      { path: 'system/config', element: <LazyWrapper><PermissionRoute path="/system/config" element={<ConfigPage />} /></LazyWrapper> },
+      { path: 'system/notification', element: <LazyWrapper><PermissionRoute path="/system/notification" element={<NotificationPage />} /></LazyWrapper> },
+      { path: 'system/print-template', element: <LazyWrapper><PermissionRoute path="/system/print-template" element={<PrintTemplatePage />} /></LazyWrapper> },
+      { path: 'system/document-no-rule', element: <LazyWrapper><PermissionRoute path="/system/document-no-rule" element={<DocumentNoRulePage />} /></LazyWrapper> },
+      { path: 'system/backup', element: <LazyWrapper><PermissionRoute path="/system/backup" element={<BackupPage />} /></LazyWrapper> },
+      { path: 'system/approval-rule', element: <LazyWrapper><PermissionRoute path="/system/approval-rule" element={<ApprovalRulePage />} /></LazyWrapper> },
+      { path: 'role', element: <LazyWrapper><PermissionRoute path="/system" element={<SystemPage defaultTab="role" />} /></LazyWrapper> },
+      { path: 'report', element: <LazyWrapper><PermissionRoute path="/report" element={<ReportPage />} /></LazyWrapper> },
+      { path: 'report/dashboard', element: <LazyWrapper><PermissionRoute path="/report" element={<ReportPage />} /></LazyWrapper> },
+      { path: 'report/prediction', element: <LazyWrapper><PermissionRoute path="/report/prediction" element={<PredictionPage />} /></LazyWrapper> },
     ],
   },
 ]);
