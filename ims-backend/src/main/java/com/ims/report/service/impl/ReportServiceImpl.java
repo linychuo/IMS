@@ -144,4 +144,10 @@ public class ReportServiceImpl implements IReportService {
     public List<ProfitMarginDTO> getProfitMargin(java.time.LocalDate startDate, java.time.LocalDate endDate) {
         return reportMapper.getProfitMarginList(startDate, endDate);
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<CollectionStatisticsDTO> getCollectionStatistics(java.time.LocalDate startDate, java.time.LocalDate endDate) {
+        return reportMapper.getCollectionStatisticsList(startDate, endDate);
+    }
 }

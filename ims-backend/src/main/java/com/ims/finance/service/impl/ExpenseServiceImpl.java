@@ -142,4 +142,86 @@ public class ExpenseServiceImpl extends ServiceImpl<ExpenseMapper, Expense> impl
         public long getPaidCount() { return paidCount; }
         public void setPaidCount(long paidCount) { this.paidCount = paidCount; }
     }
+
+    public static class ExpenseSummary {
+        private BigDecimal totalAmount;
+        private long count;
+        private List<ExpenseTypeSummary> details;
+
+        public BigDecimal getTotalAmount() { return totalAmount; }
+        public void setTotalAmount(BigDecimal totalAmount) { this.totalAmount = totalAmount; }
+        public long getCount() { return count; }
+        public void setCount(long count) { this.count = count; }
+        public List<ExpenseTypeSummary> getDetails() { return details; }
+        public void setDetails(List<ExpenseTypeSummary> details) { this.details = details; }
+    }
+
+    public static class ExpenseTypeSummary {
+        private Integer expenseType;
+        private String expenseTypeName;
+        private BigDecimal totalAmount;
+        private long count;
+
+        public Integer getExpenseType() { return expenseType; }
+        public void setExpenseType(Integer expenseType) { this.expenseType = expenseType; }
+        public String getExpenseTypeName() { return expenseTypeName; }
+        public void setExpenseTypeName(String expenseTypeName) { this.expenseTypeName = expenseTypeName; }
+        public BigDecimal getTotalAmount() { return totalAmount; }
+        public void setTotalAmount(BigDecimal totalAmount) { this.totalAmount = totalAmount; }
+        public long getCount() { return count; }
+        public void setCount(long count) { this.count = count; }
+    }
+
+    @Override
+    public ExpenseSummary getSummary(String startDate, String endDate) {
+        LambdaQueryWrapper<Expense> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Expense::getDeleted, 0);
+
+        if (startDate != null && !startDate.isEmpty()) {
+            wrapper.ge(Expense::getExpenseDate, LocalDate.parse(startDate));
+        }
+        if (endDate != null && !endDate.isEmpty()) {
+            wrapper.le(Expense::getExpenseDate, LocalDate.parse(endDate));
+        }
+
+        List<Expense> expenses = this.list(wrapper);
+
+        ExpenseSummary summary = new ExpenseSummary();
+        BigDecimal totalAmount = expenses.stream()
+                .map(Expense::getTotalAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        summary.setTotalAmount(totalAmount);
+        summary.setCount(expenses.size());
+
+        // 按类型分组汇总
+        java.util.Map<Integer, List<Expense>> byType = expenses.stream()
+                .collect(java.util.stream.Collectors.groupingBy(Expense::getExpenseType));
+
+        List<ExpenseTypeSummary> details = byType.entrySet().stream()
+                .map(entry -> {
+                    ExpenseTypeSummary typeSummary = new ExpenseTypeSummary();
+                    typeSummary.setExpenseType(entry.getKey());
+                    typeSummary.setExpenseTypeName(getExpenseTypeName(entry.getKey()));
+                    typeSummary.setTotalAmount(entry.getValue().stream()
+                            .map(Expense::getTotalAmount)
+                            .reduce(BigDecimal.ZERO, BigDecimal::add));
+                    typeSummary.setCount(entry.getValue().size());
+                    return typeSummary;
+                })
+                .collect(java.util.stream.Collectors.toList());
+
+        summary.setDetails(details);
+        return summary;
+    }
+
+    private String getExpenseTypeName(Integer expenseType) {
+        if (expenseType == null) return "未知";
+        switch (expenseType) {
+            case 1: return "管理费用";
+            case 2: return "销售费用";
+            case 3: return "财务费用";
+            case 4: return "其他";
+            default: return "未知";
+        }
+    }
 }

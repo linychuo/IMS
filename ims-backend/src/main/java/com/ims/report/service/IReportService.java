@@ -97,4 +97,9 @@ public interface IReportService {
      * 获取毛利分析
      */
     List<ProfitMarginDTO> getProfitMargin(java.time.LocalDate startDate, java.time.LocalDate endDate);
+
+    /**
+     * 获取回款统计
+     */
+    java.util.List<CollectionStatisticsDTO> getCollectionStatistics(java.time.LocalDate startDate, java.time.LocalDate endDate);
 }

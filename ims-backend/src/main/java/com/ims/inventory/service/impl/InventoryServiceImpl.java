@@ -9,6 +9,7 @@ import com.ims.inventory.mapper.InventoryRecordMapper;
 import com.ims.inventory.service.InventoryService;
 import com.ims.product.entity.Product;
 import com.ims.product.mapper.ProductMapper;
+import com.ims.system.service.SysConfigService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,6 +33,9 @@ public class InventoryServiceImpl extends ServiceImpl<InventoryMapper, Inventory
 
     @Autowired
     private ProductMapper productMapper;
+
+    @Autowired
+    private SysConfigService sysConfigService;
 
     @Override
     public List<Inventory> selectPage(Long productId, Long warehouseId, Long pageSize, Long offset) {
@@ -104,8 +108,26 @@ public class InventoryServiceImpl extends ServiceImpl<InventoryMapper, Inventory
 
         Inventory inventory = this.getOne(wrapper);
 
-        if (inventory == null || inventory.getQuantity().compareTo(quantity) < 0) {
-            throw new RuntimeException("库存不足");
+        // 检查是否允许负库存
+        String allowNegative = sysConfigService.getValue("inventory.allowNegativeStock", "false");
+        boolean allowNegativeStock = "true".equalsIgnoreCase(allowNegative);
+
+        if (inventory == null) {
+            if (!allowNegativeStock) {
+                throw new RuntimeException("库存不足");
+            }
+            // 允许负库存时，创建新记录（数量为负）
+            inventory = new Inventory();
+            inventory.setProductId(productId);
+            inventory.setWarehouseId(warehouseId);
+            inventory.setLocationId(locationId);
+            inventory.setQuantity(quantity.negate()); // 负数
+            inventory.setFrozenQuantity(BigDecimal.ZERO);
+            inventory.setBatchNo(batchNo);
+            this.save(inventory);
+            recordChange(productId, warehouseId, locationId, "OUT", quantity,
+                    BigDecimal.ZERO, quantity.negate(), orderType, orderId, batchNo, "出库(负库存)");
+            return BigDecimal.ZERO; // 负库存无法确定成本
         }
 
         BigDecimal beforeQuantity = inventory.getQuantity();
@@ -113,7 +135,12 @@ public class InventoryServiceImpl extends ServiceImpl<InventoryMapper, Inventory
         // 检查可用库存是否充足 (库存 - 冻结)
         BigDecimal availableQuantity = inventory.getQuantity().subtract(inventory.getFrozenQuantity());
         if (availableQuantity.compareTo(quantity) < 0) {
-            throw new RuntimeException("可用库存不足，已有冻结库存");
+            if (!allowNegativeStock && availableQuantity.compareTo(BigDecimal.ZERO) < 0) {
+                throw new RuntimeException("可用库存不足，已有冻结库存");
+            }
+            if (!allowNegativeStock && availableQuantity.compareTo(quantity) < 0) {
+                throw new RuntimeException("可用库存不足，已有冻结库存");
+            }
         }
 
         // 扣减库存
@@ -133,6 +160,10 @@ public class InventoryServiceImpl extends ServiceImpl<InventoryMapper, Inventory
     public BigDecimal reduceStockByFifo(Long productId, Long warehouseId, Long locationId,
                                       BigDecimal quantity, String batchNo,
                                       String orderType, Long orderId) {
+        // 检查是否允许负库存
+        String allowNegative = sysConfigService.getValue("inventory.allowNegativeStock", "false");
+        boolean allowNegativeStock = "true".equalsIgnoreCase(allowNegative);
+
         // 如果指定了批次，按指定批次扣减
         if (batchNo != null && !batchNo.isEmpty()) {
             return reduceStock(productId, warehouseId, locationId, quantity, batchNo, orderType, orderId);
@@ -141,8 +172,12 @@ public class InventoryServiceImpl extends ServiceImpl<InventoryMapper, Inventory
         // FIFO模式：按生产日期升序选择批次
         LambdaQueryWrapper<Inventory> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Inventory::getProductId, productId)
-               .eq(Inventory::getWarehouseId, warehouseId)
-               .gt(Inventory::getQuantity, BigDecimal.ZERO); // 只选有库存的
+               .eq(Inventory::getWarehouseId, warehouseId);
+
+        // 如果不允许负库存，只选有可用库存的批次
+        if (!allowNegativeStock) {
+            wrapper.gt(Inventory::getQuantity, BigDecimal.ZERO);
+        }
 
         // 按生产日期升序，最早的生产日期排前面
         wrapper.orderByAsc(Inventory::getProductionDate)
@@ -150,8 +185,14 @@ public class InventoryServiceImpl extends ServiceImpl<InventoryMapper, Inventory
 
         List<Inventory> inventoryList = this.list(wrapper);
 
-        if (inventoryList.isEmpty()) {
+        if (inventoryList.isEmpty() && !allowNegativeStock) {
             throw new RuntimeException("库存不足，没有可用批次");
+        }
+
+        if (inventoryList.isEmpty() && allowNegativeStock) {
+            // 允许负库存时，创建负库存记录
+            addStock(productId, warehouseId, locationId, quantity.negate(), BigDecimal.ZERO, batchNo, orderType, orderId);
+            return BigDecimal.ZERO;
         }
 
         // 按FIFO顺序扣减，计算加权平均成本

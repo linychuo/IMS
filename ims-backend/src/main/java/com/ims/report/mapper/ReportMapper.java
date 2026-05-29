@@ -124,4 +124,10 @@ public interface ReportMapper {
      * 查询当前库存（用于AI预测）
      */
     List<Map<String, Object>> getCurrentInventory();
+
+    /**
+     * 获取回款统计数据
+     */
+    List<CollectionStatisticsDTO> getCollectionStatisticsList(@Param("startDate") LocalDate startDate,
+                                                               @Param("endDate") LocalDate endDate);
 }

@@ -45,4 +45,9 @@ public interface ExpenseService extends IService<Expense> {
      * 获取费用统计
      */
     ExpenseStatistics getStatistics();
+
+    /**
+     * 获取费用汇总（按类型分组，带日期筛选）
+     */
+    com.ims.finance.service.impl.ExpenseServiceImpl.ExpenseSummary getSummary(String startDate, String endDate);
 }

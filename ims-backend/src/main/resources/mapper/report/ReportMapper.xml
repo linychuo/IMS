@@ -382,4 +382,31 @@
         ORDER BY grossProfit DESC
     </select>
 
+    <!-- 获取回款统计数据 -->
+    <select id="getCollectionStatisticsList" resultType="com.ims.report.dto.CollectionStatisticsDTO">
+        WITH receivable_data AS (
+            SELECT
+                TO_CHAR(r.create_time, 'YYYY-MM-DD') as reportDate,
+                COALESCE(SUM(r.total_amount), 0) as plannedAmount,
+                COALESCE(SUM(r.received_amount), 0) as actualAmount
+            FROM receivable r
+            WHERE r.deleted = 0
+            <if test="startDate != null and endDate != null">
+                AND r.create_time::date BETWEEN #{startDate} AND #{endDate}
+            </if>
+            GROUP BY TO_CHAR(r.create_time, 'YYYY-MM-DD')
+        )
+        SELECT
+            rd.reportDate,
+            rd.plannedAmount,
+            rd.actualAmount,
+            CASE
+                WHEN rd.plannedAmount > 0
+                THEN ROUND(rd.actualAmount / rd.plannedAmount, 4)
+                ELSE 0
+            END as collectionRate
+        FROM receivable_data rd
+        ORDER BY rd.reportDate DESC
+    </select>
+
 </mapper>

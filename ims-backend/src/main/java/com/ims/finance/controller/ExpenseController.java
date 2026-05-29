@@ -5,6 +5,7 @@ import com.ims.core.result.Result;
 import com.ims.finance.entity.Expense;
 import com.ims.finance.service.ExpenseService;
 import com.ims.finance.service.impl.ExpenseServiceImpl.ExpenseStatistics;
+import com.ims.finance.service.impl.ExpenseServiceImpl.ExpenseSummary;
 import com.ims.system.annotation.Permission;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -139,5 +140,16 @@ public class ExpenseController {
     @Permission(code = "read", name = "查看费用")
     public Result<ExpenseStatistics> getStatistics() {
         return Result.success(expenseService.getStatistics());
+    }
+
+    /**
+     * 获取费用汇总（按类型分组，带日期筛选）
+     */
+    @GetMapping("/summary")
+    @Permission(code = "read", name = "查看费用")
+    public Result<ExpenseSummary> getSummary(
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate) {
+        return Result.success(expenseService.getSummary(startDate, endDate));
     }
 }

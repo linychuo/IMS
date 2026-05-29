@@ -218,6 +218,22 @@ interface PayableAging {
   overdueAmount: number;
 }
 
+// ============ 回款统计数据类型 ============
+interface CollectionStatistics {
+  reportDate: string;
+  plannedAmount: number;
+  actualAmount: number;
+  collectionRate: number;
+}
+
+// ============ 费用统计数据类型 ============
+interface ExpenseStatistics {
+  expenseType: number;
+  expenseTypeName: string;
+  totalAmount: number;
+  count: number;
+}
+
 const ReportPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('sales');
   const { permissions } = useAuthStore();
@@ -260,6 +276,8 @@ const ReportPage: React.FC = () => {
     { key: 'finance', label: '财务分析', icon: <TableOutlined /> },
     { key: 'profit', label: '利润表', icon: <TableOutlined /> },
     { key: 'aging', label: '账龄分析', icon: <BarChartOutlined /> },
+    { key: 'collection', label: '回款统计', icon: <BarChartOutlined /> },
+    { key: 'expense', label: '费用表', icon: <LineChartOutlined /> },
     { key: 'customerAnalysis', label: '客户分析', icon: <BarChartOutlined /> },
     { key: 'productAnalysis', label: '商品分析', icon: <LineChartOutlined /> },
     { key: 'supplierAnalysis', label: '供应商分析', icon: <PieChartOutlined /> },
@@ -309,6 +327,15 @@ const ReportPage: React.FC = () => {
   const [agingLoading, setAgingLoading] = useState(false);
   const [receivableAgingData, setReceivableAgingData] = useState<ReceivableAging[]>([]);
   const [payableAgingData, setPayableAgingData] = useState<PayableAging[]>([]);
+
+  // 回款统计状态
+  const [collectionLoading, setCollectionLoading] = useState(false);
+  const [collectionData, setCollectionData] = useState<CollectionStatistics[]>([]);
+
+  // 费用统计状态
+  const [expenseLoading, setExpenseLoading] = useState(false);
+  const [expenseData, setExpenseData] = useState<ExpenseStatistics[]>([]);
+  const [expenseSummary, setExpenseSummary] = useState<{ totalAmount: number; count: number }>({ totalAmount: 0, count: 0 });
 
   useEffect(() => {
     fetchSalesReport();
@@ -521,6 +548,44 @@ const ReportPage: React.FC = () => {
     }
   };
 
+  // ============ 回款统计 ============
+  const fetchCollectionStatistics = async () => {
+    setCollectionLoading(true);
+    try {
+      const res = await reportApi.get('/report/collection/statistics', { params: getDateParams() });
+      if (res.data?.code === 200) {
+        setCollectionData(res.data.data || []);
+      } else {
+        setCollectionData(res.data || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch collection statistics:', error);
+    } finally {
+      setCollectionLoading(false);
+    }
+  };
+
+  // ============ 费用统计 ============
+  const fetchExpenseStatistics = async () => {
+    setExpenseLoading(true);
+    try {
+      const res = await financeApi.get('/expense/summary', { params: getDateParams() });
+      if (res.data?.code === 200) {
+        setExpenseData(res.data.data?.details || []);
+        setExpenseSummary({
+          totalAmount: res.data.data?.totalAmount || 0,
+          count: res.data.data?.count || 0,
+        });
+      } else {
+        setExpenseData(res.data || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch expense statistics:', error);
+    } finally {
+      setExpenseLoading(false);
+    }
+  };
+
   const handleSearch = () => {
     if (activeTab === 'sales') {
       fetchSalesReport();
@@ -532,6 +597,10 @@ const ReportPage: React.FC = () => {
     } else if (activeTab === 'aging') {
       fetchReceivableAging();
       fetchPayableAging();
+    } else if (activeTab === 'collection') {
+      fetchCollectionStatistics();
+    } else if (activeTab === 'expense') {
+      fetchExpenseStatistics();
     } else if (activeTab === 'customerAnalysis') {
       fetchCustomerAnalysis();
     } else if (activeTab === 'productAnalysis') {
@@ -843,6 +912,116 @@ const ReportPage: React.FC = () => {
                   scroll={{ x: 800 }}
                 />
               </Card>
+            </>
+          ),
+        };
+        if (tab.key === 'collection') return {
+          key: 'collection',
+          label: <span><BarChartOutlined /> 回款统计</span>,
+          children: (
+            <>
+              <Row gutter={16} style={{ marginBottom: 16 }}>
+                <Col span={8}>
+                  <Card>
+                    <Statistic
+                      title="计划回款"
+                      value={collectionData.reduce((sum, item) => sum + (item.plannedAmount || 0), 0)}
+                      precision={2}
+                      prefix="¥"
+                      loading={collectionLoading}
+                    />
+                  </Card>
+                </Col>
+                <Col span={8}>
+                  <Card>
+                    <Statistic
+                      title="实际回款"
+                      value={collectionData.reduce((sum, item) => sum + (item.actualAmount || 0), 0)}
+                      precision={2}
+                      prefix="¥"
+                      loading={collectionLoading}
+                      valueStyle={{ color: '#3f8600' }}
+                    />
+                  </Card>
+                </Col>
+                <Col span={8}>
+                  <Card>
+                    <Statistic
+                      title="平均回款率"
+                      value={collectionData.length > 0 ? (collectionData.reduce((sum, item) => sum + (item.collectionRate || 0), 0) / collectionData.length * 100).toFixed(1) : '0.0'}
+                      suffix="%"
+                      loading={collectionLoading}
+                    />
+                  </Card>
+                </Col>
+              </Row>
+              <Table
+                title={() => '回款统计明细'}
+                columns={[
+                  { title: '日期', dataIndex: 'reportDate', key: 'reportDate', width: 120 },
+                  { title: '计划回款金额', dataIndex: 'plannedAmount', key: 'plannedAmount', width: 150, render: (v: number) => `¥${v?.toFixed(2) || '0.00'}` },
+                  { title: '实际回款金额', dataIndex: 'actualAmount', key: 'actualAmount', width: 150, render: (v: number) => `¥${v?.toFixed(2) || '0.00'}` },
+                  { title: '回款率', dataIndex: 'collectionRate', key: 'collectionRate', width: 100, render: (v: number) => v ? `${(v * 100).toFixed(1)}%` : '-' },
+                ]}
+                dataSource={collectionData}
+                rowKey="reportDate"
+                loading={collectionLoading}
+                pagination={{ pageSize: 10 }}
+                scroll={{ x: 700 }}
+              />
+            </>
+          ),
+        };
+        if (tab.key === 'expense') return {
+          key: 'expense',
+          label: <span><LineChartOutlined /> 费用表</span>,
+          children: (
+            <>
+              <Row gutter={16} style={{ marginBottom: 16 }}>
+                <Col span={8}>
+                  <Card>
+                    <Statistic title="费用总额" value={expenseSummary.totalAmount} precision={2} prefix="¥" loading={expenseLoading} />
+                  </Card>
+                </Col>
+                <Col span={8}>
+                  <Card>
+                    <Statistic title="费用笔数" value={expenseSummary.count} loading={expenseLoading} />
+                  </Card>
+                </Col>
+                <Col span={8}>
+                  <Card>
+                    <Statistic
+                      title="平均单笔金额"
+                      value={expenseSummary.count > 0 ? (expenseSummary.totalAmount / expenseSummary.count).toFixed(2) : '0.00'}
+                      precision={2}
+                      prefix="¥"
+                      loading={expenseLoading}
+                    />
+                  </Card>
+                </Col>
+              </Row>
+              <Table
+                title={() => '费用分类汇总'}
+                columns={[
+                  { title: '费用类型', dataIndex: 'expenseTypeName', key: 'expenseTypeName', width: 150 },
+                  { title: '费用金额', dataIndex: 'totalAmount', key: 'totalAmount', width: 150, render: (v: number) => `¥${v?.toFixed(2) || '0.00'}` },
+                  { title: '笔数', dataIndex: 'count', key: 'count', width: 100 },
+                  {
+                    title: '占比',
+                    key: 'percentage',
+                    width: 100,
+                    render: (_: any, record: ExpenseStatistics) => {
+                      const pct = expenseSummary.totalAmount > 0 ? (record.totalAmount / expenseSummary.totalAmount * 100).toFixed(1) : '0.0';
+                      return `${pct}%`;
+                    },
+                  },
+                ]}
+                dataSource={expenseData}
+                rowKey="expenseType"
+                loading={expenseLoading}
+                pagination={{ pageSize: 10 }}
+                scroll={{ x: 600 }}
+              />
             </>
           ),
         };

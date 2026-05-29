@@ -111,16 +111,32 @@ public class SalesOutServiceImpl implements SalesOutService {
                 throw new RuntimeException("解冻预占库存失败，出库单审核回滚: " + e.getMessage());
             }
 
-            // 扣减实际库存
-            BigDecimal unitCost = inventoryService.reduceStock(
-                productId,
-                warehouseId,
-                locationId,
-                quantity,
-                salesOut.getOutNo(),
-                "SALES_OUT",
-                id
-            );
+            // 使用FIFO扣减库存（自动选择最早批次）
+            // 如果明细中没有指定库位和批次，则走FIFO逻辑
+            BigDecimal unitCost;
+            if (detail.getLocationId() != null && !detail.getLocationId().toString().isEmpty()) {
+                // 指定了库位，按库位扣减
+                unitCost = inventoryService.reduceStock(
+                    productId,
+                    warehouseId,
+                    detail.getLocationId(),
+                    quantity,
+                    salesOut.getOutNo(),
+                    "SALES_OUT",
+                    id
+                );
+            } else {
+                // 未指定库位，使用FIFO自动选择
+                unitCost = inventoryService.reduceStockByFifo(
+                    productId,
+                    warehouseId,
+                    null,
+                    quantity,
+                    null,  // 不指定批次，让系统自动按FIFO选择
+                    "SALES_OUT",
+                    id
+                );
+            }
             detail.setCost(unitCost);
             log.info("审核扣减库存: 商品{} 数量{} 单位成本{}", detail.getProductName(), quantity, unitCost);
 
@@ -228,17 +244,31 @@ public class SalesOutServiceImpl implements SalesOutService {
                 log.warn("解冻库存失败: {}", e.getMessage());
             }
 
-            BigDecimal unitCost = inventoryService.reduceStock(
-                productId,
-                warehouseId,
-                locationId,
-                quantity,
-                salesOut.getOutNo(),
-                "SALES_OUT",
-                id
-            );
+            // 使用FIFO扣减库存（自动选择最早批次）
+            BigDecimal unitCost;
+            if (detail.getLocationId() != null && !detail.getLocationId().toString().isEmpty()) {
+                unitCost = inventoryService.reduceStock(
+                    productId,
+                    warehouseId,
+                    detail.getLocationId(),
+                    quantity,
+                    salesOut.getOutNo(),
+                    "SALES_OUT",
+                    id
+                );
+            } else {
+                unitCost = inventoryService.reduceStockByFifo(
+                    productId,
+                    warehouseId,
+                    null,
+                    quantity,
+                    null,
+                    "SALES_OUT",
+                    id
+                );
+            }
             detail.setCost(unitCost);
-            log.info("扣减库存: 商品{} 数量{} 单位成本{}", detail.getProductName(), quantity, unitCost);
+            log.info("FIFO扣减库存: 商品{} 数量{} 单位成本{}", detail.getProductName(), quantity, unitCost);
 
             totalAmount = totalAmount.add(detail.getPrice().multiply(quantity));
         }

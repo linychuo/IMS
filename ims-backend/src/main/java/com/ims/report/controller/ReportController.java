@@ -265,4 +265,15 @@ public class ReportController {
             @RequestParam(required = false) LocalDate endDate) {
         return Result.success(reportService.getProfitMargin(startDate, endDate));
     }
+
+    /**
+     * 回款统计
+     */
+    @GetMapping("/collection/statistics")
+    @Permission(code = "read", name = "查看回款统计")
+    public Result<java.util.List<com.ims.report.dto.CollectionStatisticsDTO>> getCollectionStatistics(
+            @RequestParam(required = false) LocalDate startDate,
+            @RequestParam(required = false) LocalDate endDate) {
+        return Result.success(reportService.getCollectionStatistics(startDate, endDate));
+    }
 }
