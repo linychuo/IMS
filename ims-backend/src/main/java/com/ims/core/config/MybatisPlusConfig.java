@@ -4,7 +4,10 @@ import com.baomidou.mybatisplus.annotation.DbType;
 import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
 import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.PaginationInnerInterceptor;
+import com.ims.system.config.DataPermissionInterceptor;
+import com.ims.system.service.DataPermissionService;
 import org.apache.ibatis.reflection.MetaObject;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -24,6 +27,14 @@ public class MybatisPlusConfig {
         MybatisPlusInterceptor interceptor = new MybatisPlusInterceptor();
         interceptor.addInnerInterceptor(new PaginationInnerInterceptor(DbType.POSTGRE_SQL));
         return interceptor;
+    }
+
+    /**
+     * 数据权限拦截器
+     */
+    @Bean
+    public DataPermissionInterceptor dataPermissionInterceptor(@Autowired DataPermissionService dataPermissionService) {
+        return new DataPermissionInterceptor(dataPermissionService);
     }
 
     /**
