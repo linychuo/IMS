@@ -1,5 +1,6 @@
 package com.ims.system.service.impl;
 
+import com.ims.common.util.ExcelImporter;
 import com.ims.customer.entity.Customer;
 import com.ims.customer.mapper.CustomerMapper;
 import com.ims.product.entity.Product;
@@ -11,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -32,208 +34,179 @@ public class DataImportServiceImpl implements DataImportService {
     private ProductMapper productMapper;
 
     @Override
-    public Map<String, Object> importCustomers(String csvContent) {
+    public Map<String, Object> importCustomers(String fileContent) {
         Map<String, Object> result = new HashMap<>();
         List<String> errors = new ArrayList<>();
         int successCount = 0;
 
         try {
-            List<Customer> customers = parseCustomers(csvContent, errors);
-            for (Customer customer : customers) {
+            byte[] bytes = fileContent.getBytes("UTF-8");
+            ExcelImporter importer = new ExcelImporter(bytes);
+            List<String[]> rows = importer.readAllRows();
+            if (rows.size() <= 1) {
+                errors.add("文件无数据或格式错误");
+                result.put("successCount", 0);
+                result.put("errorCount", errors.size());
+                result.put("errors", errors);
+                return result;
+            }
+
+            for (int i = 1; i < rows.size(); i++) {
+                String[] row = rows.get(i);
                 try {
-                    customerMapper.insert(customer);
+                    if (row.length < 10) {
+                        errors.add("第" + (i + 1) + "行: 列数不足");
+                        continue;
+                    }
+                    String code = row[0].trim();
+                    String name = row[1].trim();
+                    if (code.isEmpty() || name.isEmpty()) {
+                        errors.add("第" + (i + 1) + "行: 客户编号或名称不能为空");
+                        continue;
+                    }
+                    Customer c = new Customer();
+                    c.setCode(code);
+                    c.setName(name);
+                    if (row.length > 2) c.setContact(row[2].trim());
+                    if (row.length > 3) c.setPhone(row[3].trim());
+                    if (row.length > 4) c.setMobile(row[4].trim());
+                    if (row.length > 5) c.setEmail(row[5].trim());
+                    if (row.length > 6) c.setAddress(row[6].trim());
+                    if (row.length > 7 && !row[7].trim().isEmpty()) c.setLevel(Integer.parseInt(row[7].trim()));
+                    if (row.length > 8 && !row[8].trim().isEmpty()) c.setCreditLimit(new BigDecimal(row[8].trim()));
+                    if (row.length > 9) c.setStatus("启用".equals(row[9].trim()) ? 1 : 0);
+                    c.setCreateTime(LocalDateTime.now());
+                    customerMapper.insert(c);
                     successCount++;
                 } catch (Exception e) {
-                    errors.add("插入失败: " + customer.getCode() + " - " + e.getMessage());
+                    errors.add("第" + (i + 1) + "行: " + e.getMessage());
                 }
             }
         } catch (Exception e) {
-            errors.add("解析失败: " + e.getMessage());
+            errors.add("文件解析失败: " + e.getMessage());
         }
 
-        result.put("successCount", successCount);
-        result.put("errorCount", errors.size());
+        result.put("success", successCount);
+        result.put("failed", errors.size());
         result.put("errors", errors);
         return result;
     }
 
     @Override
-    public Map<String, Object> importSuppliers(String csvContent) {
+    public Map<String, Object> importSuppliers(String fileContent) {
         Map<String, Object> result = new HashMap<>();
         List<String> errors = new ArrayList<>();
         int successCount = 0;
+        int totalRows = 0;
 
         try {
-            List<Supplier> suppliers = parseSuppliers(csvContent, errors);
-            for (Supplier supplier : suppliers) {
+            byte[] bytes = fileContent.getBytes("UTF-8");
+            ExcelImporter importer = new ExcelImporter(bytes);
+            List<String[]> rows = importer.readAllRows();
+            totalRows = rows.size();
+            if (rows.size() <= 1) {
+                errors.add("文件无数据或格式错误");
+                result.put("success", 0);
+                result.put("failed", 0);
+                result.put("errors", errors);
+                return result;
+            }
+
+            for (int i = 1; i < rows.size(); i++) {
+                String[] row = rows.get(i);
                 try {
-                    supplierMapper.insert(supplier);
+                    if (row.length < 6) {
+                        errors.add("第" + (i + 1) + "行: 列数不足");
+                        continue;
+                    }
+                    String code = row[0].trim();
+                    String name = row[1].trim();
+                    if (code.isEmpty() || name.isEmpty()) {
+                        errors.add("第" + (i + 1) + "行: 供应商编号或名称不能为空");
+                        continue;
+                    }
+                    Supplier s = new Supplier();
+                    s.setSupplierCode(code);
+                    s.setSupplierName(name);
+                    if (row.length > 2) s.setContact(row[2].trim());
+                    if (row.length > 3) s.setPhone(row[3].trim());
+                    if (row.length > 4) s.setAddress(row[4].trim());
+                    if (row.length > 5) s.setStatus("启用".equals(row[5].trim()) ? 1 : 0);
+                    supplierMapper.insert(s);
                     successCount++;
                 } catch (Exception e) {
-                    errors.add("插入失败: " + supplier.getCode() + " - " + e.getMessage());
+                    errors.add("第" + (i + 1) + "行: " + e.getMessage());
                 }
             }
         } catch (Exception e) {
-            errors.add("解析失败: " + e.getMessage());
+            errors.add("文件解析失败: " + e.getMessage());
         }
 
-        result.put("successCount", successCount);
-        result.put("errorCount", errors.size());
+        result.put("success", successCount);
+        result.put("failed", totalRows > 0 ? totalRows - 1 - successCount : 0);
         result.put("errors", errors);
         return result;
     }
 
     @Override
-    public Map<String, Object> importProducts(String csvContent) {
+    public Map<String, Object> importProducts(String fileContent) {
         Map<String, Object> result = new HashMap<>();
         List<String> errors = new ArrayList<>();
         int successCount = 0;
+        int totalRows = 0;
 
         try {
-            List<Product> products = parseProducts(csvContent, errors);
-            for (Product product : products) {
+            byte[] bytes = fileContent.getBytes("UTF-8");
+            ExcelImporter importer = new ExcelImporter(bytes);
+            List<String[]> rows = importer.readAllRows();
+            totalRows = rows.size();
+            if (rows.size() <= 1) {
+                errors.add("文件无数据或格式错误");
+                result.put("success", 0);
+                result.put("failed", 0);
+                result.put("errors", errors);
+                return result;
+            }
+
+            for (int i = 1; i < rows.size(); i++) {
+                String[] row = rows.get(i);
                 try {
-                    productMapper.insert(product);
+                    if (row.length < 11) {
+                        errors.add("第" + (i + 1) + "行: 列数不足");
+                        continue;
+                    }
+                    String code = row[0].trim();
+                    String name = row[1].trim();
+                    if (code.isEmpty() || name.isEmpty()) {
+                        errors.add("第" + (i + 1) + "行: 商品编号或名称不能为空");
+                        continue;
+                    }
+                    Product p = new Product();
+                    p.setCode(code);
+                    p.setName(name);
+                    if (row.length > 2 && !row[2].trim().isEmpty()) p.setCategoryId(row[2].trim());
+                    if (row.length > 3) p.setSpec(row[3].trim());
+                    if (row.length > 4) p.setUnit(row[4].trim());
+                    if (row.length > 5) p.setBarcode(row[5].trim());
+                    if (row.length > 6 && !row[6].trim().isEmpty()) p.setPurchasePrice(new BigDecimal(row[6].trim()));
+                    if (row.length > 7 && !row[7].trim().isEmpty()) p.setSalePrice(new BigDecimal(row[7].trim()));
+                    if (row.length > 8 && !row[8].trim().isEmpty()) p.setMinSalePrice(new BigDecimal(row[8].trim()));
+                    if (row.length > 9 && !row[9].trim().isEmpty()) p.setStockWarning(Integer.parseInt(row[9].trim()));
+                    if (row.length > 10) p.setStatus("启用".equals(row[10].trim()) ? 1 : 0);
+                    p.setCreateTime(LocalDateTime.now());
+                    productMapper.insert(p);
                     successCount++;
                 } catch (Exception e) {
-                    errors.add("插入失败: " + product.getCode() + " - " + e.getMessage());
+                    errors.add("第" + (i + 1) + "行: " + e.getMessage());
                 }
             }
         } catch (Exception e) {
-            errors.add("解析失败: " + e.getMessage());
+            errors.add("文件解析失败: " + e.getMessage());
         }
 
-        result.put("successCount", successCount);
-        result.put("errorCount", errors.size());
+        result.put("success", successCount);
+        result.put("failed", totalRows > 0 ? totalRows - 1 - successCount : 0);
         result.put("errors", errors);
         return result;
-    }
-
-    private List<String[]> parseCsvLines(String content) {
-        List<String[]> lines = new ArrayList<>();
-        String[] rows = content.split("\n");
-        for (String row : rows) {
-            if (row.trim().isEmpty()) continue;
-            List<String> cols = new ArrayList<>();
-            boolean inQuote = false;
-            StringBuilder current = new StringBuilder();
-            for (char c : row.toCharArray()) {
-                if (c == '"') {
-                    inQuote = !inQuote;
-                } else if (c == ',' && !inQuote) {
-                    cols.add(current.toString().trim());
-                    current = new StringBuilder();
-                } else {
-                    current.append(c);
-                }
-            }
-            cols.add(current.toString().trim());
-            lines.add(cols.toArray(new String[0]));
-        }
-        return lines;
-    }
-
-    private List<Customer> parseCustomers(String csvContent, List<String> errors) {
-        List<Customer> customers = new ArrayList<>();
-        try {
-            List<String[]> rows = parseCsvLines(csvContent);
-            if (rows.isEmpty()) return customers;
-
-            for (int i = 1; i < rows.size(); i++) {
-                String[] row = rows.get(i);
-                if (row.length < 8) {
-                    errors.add("行" + (i + 1) + ": 列数不足");
-                    continue;
-                }
-                Customer c = new Customer();
-                c.setCode(getOrNull(row, 0));
-                c.setName(getOrNull(row, 1));
-                c.setContact(getOrNull(row, 2));
-                c.setPhone(getOrNull(row, 3));
-                c.setMobile(getOrNull(row, 4));
-                c.setEmail(getOrNull(row, 5));
-                c.setAddress(getOrNull(row, 6));
-                c.setLevel(row.length > 7 && isNumeric(row[7]) ? Integer.parseInt(row[7]) : 1);
-                c.setCreditLimit(row.length > 8 && isNumeric(row[8]) ? new BigDecimal(row[8]) : BigDecimal.ZERO);
-                c.setStatus(1);
-                customers.add(c);
-            }
-        } catch (Exception e) {
-            errors.add("CSV解析失败: " + e.getMessage());
-        }
-        return customers;
-    }
-
-    private List<Supplier> parseSuppliers(String csvContent, List<String> errors) {
-        List<Supplier> suppliers = new ArrayList<>();
-        try {
-            List<String[]> rows = parseCsvLines(csvContent);
-            if (rows.isEmpty()) return suppliers;
-
-            for (int i = 1; i < rows.size(); i++) {
-                String[] row = rows.get(i);
-                if (row.length < 5) {
-                    errors.add("行" + (i + 1) + ": 列数不足");
-                    continue;
-                }
-                Supplier s = new Supplier();
-                s.setCode(getOrNull(row, 0));
-                s.setName(getOrNull(row, 1));
-                s.setContact(getOrNull(row, 2));
-                s.setPhone(getOrNull(row, 3));
-                s.setAddress(getOrNull(row, 4));
-                s.setStatus(1);
-                suppliers.add(s);
-            }
-        } catch (Exception e) {
-            errors.add("CSV解析失败: " + e.getMessage());
-        }
-        return suppliers;
-    }
-
-    private List<Product> parseProducts(String csvContent, List<String> errors) {
-        List<Product> products = new ArrayList<>();
-        try {
-            List<String[]> rows = parseCsvLines(csvContent);
-            if (rows.isEmpty()) return products;
-
-            for (int i = 1; i < rows.size(); i++) {
-                String[] row = rows.get(i);
-                if (row.length < 10) {
-                    errors.add("行" + (i + 1) + ": 列数不足");
-                    continue;
-                }
-                Product p = new Product();
-                p.setCode(getOrNull(row, 0));
-                p.setName(getOrNull(row, 1));
-                p.setCategoryId(getOrNull(row, 2));
-                p.setSpec(getOrNull(row, 3));
-                p.setUnit(getOrNull(row, 4));
-                p.setBarcode(getOrNull(row, 5));
-                p.setPurchasePrice(row.length > 6 && isNumeric(row[6]) ? new BigDecimal(row[6]) : BigDecimal.ZERO);
-                p.setSalePrice(row.length > 7 && isNumeric(row[7]) ? new BigDecimal(row[7]) : BigDecimal.ZERO);
-                p.setMinSalePrice(row.length > 8 && isNumeric(row[8]) ? new BigDecimal(row[8]) : BigDecimal.ZERO);
-                p.setStockWarning(row.length > 9 && isNumeric(row[9]) ? Integer.parseInt(row[9]) : 0);
-                p.setStatus(1);
-                products.add(p);
-            }
-        } catch (Exception e) {
-            errors.add("CSV解析失败: " + e.getMessage());
-        }
-        return products;
-    }
-
-    private String getOrNull(String[] arr, int idx) {
-        return idx < arr.length && arr[idx] != null && !arr[idx].trim().isEmpty() ? arr[idx].trim() : null;
-    }
-
-    private boolean isNumeric(String str) {
-        if (str == null || str.trim().isEmpty()) return false;
-        try {
-            Double.parseDouble(str.trim());
-            return true;
-        } catch (NumberFormatException e) {
-            return false;
-        }
     }
 }

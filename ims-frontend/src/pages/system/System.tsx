@@ -273,6 +273,7 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
   const [importLoading, setImportLoading] = useState(false);
   const [importType, setImportType] = useState<string>('customer');
   const [importResult, setImportResult] = useState<{ success: number; failed: number; errors?: string[] } | null>(null);
+  const [importFile, setImportFile] = useState<File | null>(null);
 
   // 数据导出状态
   const [exportLoading, setExportLoading] = useState(false);
@@ -797,15 +798,32 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
       message.success(`${info.file.name} 上传成功`);
     } else if (info.file.status === 'error') {
       message.error(`${info.file.name} 上传失败`);
+    } else if (info.file.originFileObj) {
+      setImportFile(info.file.originFileObj);
     }
   };
 
   const handleImportSubmit = async () => {
+    if (!importFile) {
+      message.warning('请先上传文件');
+      return;
+    }
     setImportLoading(true);
     try {
-      // 模拟导入结果
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      setImportResult({ success: 10, failed: 2, errors: ['第3行: 缺少必填字段', '第7行: 数据格式错误'] });
+      const formData = new FormData();
+      formData.append('file', importFile);
+      const res = await systemApi.post(`/import/${importType}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      if (res.data.code === 200) {
+        const data = res.data.data;
+        setImportResult({ success: data.success || 0, failed: data.failed || 0, errors: data.errors || [] });
+        message.success('导入完成');
+      } else {
+        message.error(res.data.message || '导入失败');
+      }
+    } catch (error) {
+      message.error('导入失败');
     } finally {
       setImportLoading(false);
     }
@@ -815,12 +833,12 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
   const handleExportSubmit = async () => {
     setExportLoading(true);
     try {
-      const res = await systemApi.get(`/export/${exportType}`, { responseType: 'blob' });
-      const blob = new Blob([res.data], { type: 'text/csv' });
+      const res = await systemApi.get(`/export/${exportType}/excel`, { responseType: 'blob' });
+      const blob = new Blob([res.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${exportType}_export_${dayjs().format('YYYYMMDD')}.csv`;
+      a.download = `${exportType}_export_${dayjs().format('YYYYMMDD')}.xlsx`;
       a.click();
       window.URL.revokeObjectURL(url);
       message.success('导出成功');
@@ -828,6 +846,22 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
       message.error('导出失败');
     } finally {
       setExportLoading(false);
+    }
+  };
+
+  const handleDownloadTemplate = async (type: string) => {
+    try {
+      const res = await systemApi.get(`/export/template/${type}`, { responseType: 'blob' });
+      const blob = new Blob([res.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${type}_template.xlsx`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+      message.success('模板下载成功');
+    } catch (error) {
+      message.error('模板下载失败');
     }
   };
 
@@ -1576,6 +1610,12 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
             label: '数据导入',
             children: (<>
               <div style={{ maxWidth: 600 }}>
+                <div style={{ marginBottom: 16, display: 'flex', gap: 8 }}>
+                  <Button size="small" onClick={() => handleDownloadTemplate('customer')}>客户模板</Button>
+                  <Button size="small" onClick={() => handleDownloadTemplate('supplier')}>供应商模板</Button>
+                  <Button size="small" onClick={() => handleDownloadTemplate('product')}>商品模板</Button>
+                  <Button size="small" onClick={() => handleDownloadTemplate('inventory')}>库存模板</Button>
+                </div>
                 <Form layout="vertical">
                   <Form.Item label="数据类型">
                     <Select value={importType} onChange={(v) => setImportType(v)}>
@@ -1585,7 +1625,7 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
                     </Select>
                   </Form.Item>
                   <Form.Item label="上传文件">
-                    <Upload accept=".csv,.xlsx" maxCount={1} beforeUpload={() => false}
+                    <Upload accept=".csv,.xlsx,.xls" maxCount={1} beforeUpload={() => false}
                       onChange={(info) => handleImportFile(info)}>
                       <Button icon={<UploadOutlined />}>点击上传</Button>
                     </Upload>
@@ -1627,7 +1667,7 @@ const SystemPage: React.FC<SystemProps> = ({ defaultTab = 'user' }) => {
                     <Button type="primary" loading={exportLoading} icon={<DownloadOutlined />} onClick={handleExportSubmit}>
                       导出数据
                     </Button>
-                    <span style={{ marginLeft: 16, color: '#999' }}>导出为 CSV 格式</span>
+                    <span style={{ marginLeft: 16, color: '#999' }}>导出为 Excel 格式</span>
                   </Form.Item>
                 </Form>
               </div>

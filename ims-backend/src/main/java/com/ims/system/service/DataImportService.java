@@ -11,15 +11,15 @@ public interface DataImportService {
     /**
      * 导入客户数据
      */
-    Map<String, Object> importCustomers(String csvContent);
+    Map<String, Object> importCustomers(String fileContent);
 
     /**
      * 导入供应商数据
      */
-    Map<String, Object> importSuppliers(String csvContent);
+    Map<String, Object> importSuppliers(String fileContent);
 
     /**
      * 导入商品数据
      */
-    Map<String, Object> importProducts(String csvContent);
+    Map<String, Object> importProducts(String fileContent);
 }
