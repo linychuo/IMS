@@ -95,4 +95,11 @@
         UPDATE sys_user SET deleted = 1, update_time = NOW() WHERE id = #{id}
     </delete>
 
+    <select id="selectAllEnabled" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM sys_user
+        WHERE status = 1 AND deleted = 0
+        ORDER BY id ASC
+    </select>
+
 </mapper>

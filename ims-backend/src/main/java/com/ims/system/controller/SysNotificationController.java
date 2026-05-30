@@ -2,6 +2,7 @@ package com.ims.system.controller;
 
 import com.ims.core.result.Result;
 import com.ims.system.entity.SysNotification;
+import com.ims.system.service.OverdueReminderService;
 import com.ims.system.service.SysNotificationService;
 import com.ims.system.annotation.Permission;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -20,6 +21,9 @@ public class SysNotificationController {
 
     @Autowired
     private SysNotificationService notificationService;
+
+    @Autowired
+    private OverdueReminderService overdueReminderService;
 
     @GetMapping("/page")
     @Permission(code = "read", name = "查看通知")
@@ -58,5 +62,16 @@ public class SysNotificationController {
     @Permission(code = "update", name = "标记已读")
     public Result<Boolean> markRead(@PathVariable Long id) {
         return Result.success(notificationService.markRead(id));
+    }
+
+    /**
+     * 手动触发逾期预警检查（发送逾期提醒通知）
+     * @return 发送的通知数量
+     */
+    @PostMapping("/trigger-overdue-check")
+    @Permission(code = "trigger", name = "触发预警")
+    public Result<Integer> triggerOverdueCheck() {
+        int count = overdueReminderService.executeOverdueCheck();
+        return Result.success(count);
     }
 }

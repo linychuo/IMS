@@ -52,4 +52,9 @@ public interface SysUserMapper {
      * 删除用户
      */
     int deleteById(Long id);
+
+    /**
+     * 查询所有启用的用户
+     */
+    List<SysUser> selectAllEnabled();
 }
