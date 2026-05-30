@@ -362,7 +362,33 @@ test.describe('3. 销售数据', () => {
     }
   });
 
-  test('3.2 销售价格策略', async ({ page }) => {
+  test('3.2 销售出库', async ({ page }) => {
+    await loginViaUI(page);
+    await page.goto(`${BASE_URL}/sales/out`);
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(2000);
+
+    if (await openModal(page, 'button:has-text("新增出库"), button:has-text("新增")')) {
+      await fillFormField(page, '客户', '北京科技有限公司');
+      await addProductToForm(page);
+      await saveAndClose(page);
+    }
+  });
+
+  test('3.3 销售退货', async ({ page }) => {
+    await loginViaUI(page);
+    await page.goto(`${BASE_URL}/sales/return`);
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(2000);
+
+    if (await openModal(page, 'button:has-text("新增退货"), button:has-text("新增")')) {
+      await fillFormField(page, '客户', '北京科技有限公司');
+      await fillFormField(page, '退货数量', '1');
+      await saveAndClose(page);
+    }
+  });
+
+  test('3.4 销售价格策略', async ({ page }) => {
     await loginViaUI(page);
     await page.goto(`${BASE_URL}/sales/price-strategy`);
     await page.waitForLoadState('networkidle');
@@ -377,24 +403,17 @@ test.describe('3. 销售数据', () => {
     }
   });
 
-  test('3.3 促销', async ({ page }) => {
+  test('3.5 促销', async ({ page }) => {
     await loginViaUI(page);
-    await page.goto(`${BASE_URL}/sales/order`);
+    await page.goto(`${BASE_URL}/sales/promotion`);
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
 
-    // 找到促销入口并添加促销
-    const promoTab = page.locator('.ant-tabs-tab:has-text("促销")').first();
-    if (await promoTab.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await promoTab.click();
-      await page.waitForTimeout(1000);
-
-      if (await openModal(page, 'button:has-text("新增促销"), button:has-text("新增")')) {
-        await fillFormField(page, '促销名称', 'iPhone优惠');
-        await fillFormField(page, '促销类型', '商品促销');
-        await fillFormField(page, '折扣类型', '百分比');
-        await saveAndClose(page);
-      }
+    if (await openModal(page, 'button:has-text("新增促销"), button:has-text("新增")')) {
+      await fillFormField(page, '促销名称', 'iPhone优惠');
+      await fillFormField(page, '促销类型', '商品促销');
+      await fillFormField(page, '折扣类型', '百分比');
+      await saveAndClose(page);
     }
   });
 });
@@ -410,6 +429,34 @@ test.describe('4. 采购数据', () => {
     if (await openModal(page, 'button:has-text("新增订单"), button:has-text("新增")')) {
       await fillFormField(page, '供应商', '深圳科技有限公司');
       await addProductToForm(page);
+      await saveAndClose(page);
+    }
+  });
+
+  test('4.2 采购入库', async ({ page }) => {
+    await loginViaUI(page);
+    await page.goto(`${BASE_URL}/purchase/in`);
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(2000);
+
+    if (await openModal(page, 'button:has-text("新增入库"), button:has-text("新增")')) {
+      await fillFormField(page, '供应商', '深圳科技有限公司');
+      await fillFormField(page, '仓库', '北京中心仓');
+      await addProductToForm(page);
+      await saveAndClose(page);
+    }
+  });
+
+  test('4.3 采购退货', async ({ page }) => {
+    await loginViaUI(page);
+    await page.goto(`${BASE_URL}/purchase/return`);
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(2000);
+
+    if (await openModal(page, 'button:has-text("新增退货"), button:has-text("新增")')) {
+      await fillFormField(page, '供应商', '深圳科技有限公司');
+      await fillFormField(page, '仓库', '北京中心仓');
+      await fillFormField(page, '退货数量', '1');
       await saveAndClose(page);
     }
   });
