@@ -47,7 +47,7 @@ public class CustomerReconciliationController {
 
         long total = customerReconciliationService.count(wrapper);
         long offset = (page - 1) * pageSize;
-        wrapper.last("LIMIT " + offset + ", " + pageSize);
+        wrapper.last("LIMIT " + pageSize + " OFFSET " + offset);
 
         List<CustomerReconciliation> records = customerReconciliationService.list(wrapper);
         return Result.success(PageResult.build(records, total, page, pageSize));

@@ -45,7 +45,7 @@ public class InvoiceController {
 
         long total = invoiceService.count(wrapper);
         long offset = (page - 1) * pageSize;
-        wrapper.last("LIMIT " + offset + ", " + pageSize);
+        wrapper.last("LIMIT " + pageSize + " OFFSET " + offset);
 
         List<Invoice> records = invoiceService.list(wrapper);
         return Result.success(PageResult.build(records, total, page, pageSize));

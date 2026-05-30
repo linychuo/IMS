@@ -49,7 +49,7 @@ public class SysOperationLogServiceImpl implements SysOperationLogService {
                 .ge(startTime != null, SysOperationLog::getOperateTime, startTime)
                 .le(endTime != null, SysOperationLog::getOperateTime, endTime)
                 .orderByDesc(SysOperationLog::getOperateTime);
-        wrapper.last("LIMIT " + (page - 1) * pageSize + "," + pageSize);
+        wrapper.last("LIMIT " + pageSize + " OFFSET " + (page - 1) * pageSize);
         return operationLogMapper.selectList(wrapper);
     }
 

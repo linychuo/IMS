@@ -55,7 +55,7 @@ public class SysLoginLogServiceImpl implements SysLoginLogService {
                 .ge(startTime != null, SysLoginLog::getLoginTime, startTime)
                 .le(endTime != null, SysLoginLog::getLoginTime, endTime)
                 .orderByDesc(SysLoginLog::getLoginTime);
-        wrapper.last("LIMIT " + (page - 1) * pageSize + "," + pageSize);
+        wrapper.last("LIMIT " + pageSize + " OFFSET " + (page - 1) * pageSize);
         return loginLogMapper.selectList(wrapper);
     }
 

@@ -44,7 +44,7 @@ public class BankReceiptController {
 
         long total = bankReceiptService.count(wrapper);
         long offset = (page - 1) * pageSize;
-        wrapper.last("LIMIT " + offset + ", " + pageSize);
+        wrapper.last("LIMIT " + pageSize + " OFFSET " + offset);
 
         List<BankReceipt> records = bankReceiptService.list(wrapper);
         return Result.success(PageResult.build(records, total, page, pageSize));

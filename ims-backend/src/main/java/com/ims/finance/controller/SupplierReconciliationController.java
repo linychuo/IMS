@@ -47,7 +47,7 @@ public class SupplierReconciliationController {
 
         long total = supplierReconciliationService.count(wrapper);
         long offset = (page - 1) * pageSize;
-        wrapper.last("LIMIT " + offset + ", " + pageSize);
+        wrapper.last("LIMIT " + pageSize + " OFFSET " + offset);
 
         List<SupplierReconciliation> records = supplierReconciliationService.list(wrapper);
         return Result.success(PageResult.build(records, total, page, pageSize));

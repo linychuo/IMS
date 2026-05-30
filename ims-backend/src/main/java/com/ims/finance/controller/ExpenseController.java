@@ -45,7 +45,7 @@ public class ExpenseController {
 
         long total = expenseService.count(wrapper);
         long offset = (page - 1) * pageSize;
-        wrapper.last("LIMIT " + offset + ", " + pageSize);
+        wrapper.last("LIMIT " + pageSize + " OFFSET " + offset);
 
         List<Expense> records = expenseService.list(wrapper);
         return Result.success(PageResult.build(records, total, page, pageSize));
