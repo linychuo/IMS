@@ -17,14 +17,18 @@ import java.util.Properties;
 /**
  * 数据权限 MyBatis 拦截器
  * 自动为所有 SELECT 查询添加数据权限过滤条件
+ * 注意：暂未启用，存在MyBatis版本兼容性问题
  */
-@Component
+//@Component
 @Intercepts({
     @Signature(type = StatementHandler.class, method = "prepare", args = {Connection.class, Integer.class})
 })
 public class DataPermissionInterceptor implements Interceptor {
 
     private com.ims.system.service.DataPermissionService dataPermissionService;
+
+    public DataPermissionInterceptor() {
+    }
 
     public DataPermissionInterceptor(com.ims.system.service.DataPermissionService dataPermissionService) {
         this.dataPermissionService = dataPermissionService;
