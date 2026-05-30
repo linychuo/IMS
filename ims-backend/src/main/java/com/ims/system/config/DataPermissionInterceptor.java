@@ -1,5 +1,6 @@
 package com.ims.system.config;
 
+import org.apache.ibatis.executor.statement.RoutingStatementHandler;
 import org.apache.ibatis.executor.statement.StatementHandler;
 import org.apache.ibatis.mapping.BoundSql;
 import org.apache.ibatis.mapping.MappedStatement;
@@ -17,9 +18,8 @@ import java.util.Properties;
 /**
  * 数据权限 MyBatis 拦截器
  * 自动为所有 SELECT 查询添加数据权限过滤条件
- * 注意：暂未启用，存在MyBatis版本兼容性问题
  */
-//@Component
+@Component
 @Intercepts({
     @Signature(type = StatementHandler.class, method = "prepare", args = {Connection.class, Integer.class})
 })
@@ -38,12 +38,14 @@ public class DataPermissionInterceptor implements Interceptor {
 
     @Override
     public Object intercept(Invocation invocation) throws Throwable {
-        StatementHandler statementHandler = (StatementHandler) SystemMetaObject.forObject(invocation.getTarget())
-                .getValue("delegate.h.target");
-        MetaObject metaObject = SystemMetaObject.forObject(statementHandler);
+        StatementHandler statementHandler = getStatementHandler(invocation);
+        if (statementHandler == null) {
+            return invocation.proceed();
+        }
 
-        MappedStatement ms = (MappedStatement) metaObject.getValue("mappedStatement");
-        if (ms.getSqlCommandType() != SqlCommandType.SELECT) {
+        MetaObject metaObject = SystemMetaObject.forObject(statementHandler);
+        MappedStatement ms = getMappedStatement(metaObject);
+        if (ms == null || ms.getSqlCommandType() != SqlCommandType.SELECT) {
             return invocation.proceed();
         }
 
@@ -70,6 +72,27 @@ public class DataPermissionInterceptor implements Interceptor {
         metaObject.setValue("delegate.boundSql.sql", filteredSql);
 
         return invocation.proceed();
+    }
+
+    private StatementHandler getStatementHandler(Invocation invocation) {
+        Object target = invocation.getTarget();
+        if (target instanceof StatementHandler) {
+            return (StatementHandler) target;
+        }
+        return null;
+    }
+
+    private MappedStatement getMappedStatement(MetaObject metaObject) {
+        // RoutingStatementHandler has a delegate field of type PreparedStatementHandler
+        Object delegate = metaObject.getValue("delegate");
+        if (delegate != null) {
+            MetaObject delegateMeta = SystemMetaObject.forObject(delegate);
+            Object ms = delegateMeta.getValue("mappedStatement");
+            if (ms instanceof MappedStatement) {
+                return (MappedStatement) ms;
+            }
+        }
+        return null;
     }
 
     private Long getCurrentUserId() {
