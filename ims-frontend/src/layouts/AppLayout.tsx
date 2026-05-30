@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Layout, Menu, Avatar, Dropdown, Button, Space } from 'antd';
+import { Layout, Menu, Avatar, Dropdown, Button, Space, Badge, List, Tag } from 'antd';
 const { Sider, Header, Content } = Layout;
 import {
   ShoppingCartOutlined,
@@ -14,9 +14,23 @@ import {
   PieChartOutlined,
   SettingOutlined,
   ContainerOutlined,
+  BellOutlined,
 } from '@ant-design/icons';
 import { useNavigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
+import { systemApi } from '../api';
+import dayjs from 'dayjs';
+
+interface Notification {
+  id: number;
+  title: string;
+  content: string;
+  notifyType: number;
+  priority: number;
+  status: number;
+  readCount: number;
+  createTime: string;
+}
 
 const iconMap: Record<string, React.ReactNode> = {
   ShoppingCartOutlined: <ShoppingCartOutlined />,
@@ -89,9 +103,54 @@ const defaultMenuItems = [
 const AppLayout: React.FC = () => {
   const [collapsed, setCollapsed] = useState(false);
   const [openKeys, setOpenKeys] = useState<string[]>([]);
+  const [notifVisible, setNotifVisible] = useState(false);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notifLoading, setNotifLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { username, realName, menus, logout } = useAuthStore();
+
+  const fetchNotifications = async () => {
+    setNotifLoading(true);
+    try {
+      const res = await systemApi.get('/notification/page', { params: { page: 1, pageSize: 10 } });
+      if (res.data.code === 200) {
+        setNotifications(res.data.data?.records || []);
+      }
+    } catch (e) {
+      console.error('Failed to fetch notifications', e);
+    } finally {
+      setNotifLoading(false);
+    }
+  };
+
+  const handleNotifOpen = (open: boolean) => {
+    setNotifVisible(open);
+    if (open && notifications.length === 0) {
+      fetchNotifications();
+    }
+  };
+
+  const getNotifTypeName = (type: number) => {
+    const map: Record<number, string> = { 1: '系统', 2: '库存预警', 3: '订单提醒', 4: '财务提醒', 5: '待办' };
+    return map[type] || '其他';
+  };
+
+  const getNotifTypeColor = (type: number) => {
+    const map: Record<number, string> = { 1: 'blue', 2: 'orange', 3: 'green', 4: 'purple', 5: 'cyan' };
+    return map[type] || 'default';
+  };
+
+  const notifItems = notifications.map(n => ({
+    key: String(n.id),
+    label: (
+      <div style={{ maxWidth: 300, padding: '4px 0' }}>
+        <div style={{ fontWeight: 500, marginBottom: 2 }}>{n.title}</div>
+        <div style={{ color: '#888', fontSize: 12 }}>{n.content?.substring(0, 50)}{n.content?.length > 50 ? '...' : ''}</div>
+        <div style={{ color: '#aaa', fontSize: 11, marginTop: 4 }}>{dayjs(n.createTime).format('MM-DD HH:mm')}</div>
+      </div>
+    ),
+  }));
 
   // permission_code 转路由路径
   // customer:customer -> /customer, sales:order -> /sales/order
@@ -217,6 +276,40 @@ const AppLayout: React.FC = () => {
             icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
             onClick={() => setCollapsed(!collapsed)}
           />
+          <Dropdown
+            open={notifVisible}
+            onOpenChange={handleNotifOpen}
+            dropdownRender={() => (
+              <div style={{ background: '#fff', borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,0.15)', width: 320 }}>
+                <div style={{ padding: '12px 16px', borderBottom: '1px solid #f0f0f0', fontWeight: 600 }}>通知中心</div>
+                <List
+                  loading={notifLoading}
+                  dataSource={notifications}
+                  renderItem={(item) => (
+                    <List.Item style={{ cursor: 'pointer', padding: '10px 12px' }} onClick={() => setNotifVisible(false)}>
+                      <List.Item.Meta
+                        avatar={<Tag color={getNotifTypeColor(item.notifyType)}>{getNotifTypeName(item.notifyType)}</Tag>}
+                        title={<span style={{ fontSize: 13 }}>{item.title}</span>}
+                        description={<span style={{ fontSize: 11, color: '#999' }}>{dayjs(item.createTime).format('YYYY-MM-DD HH:mm')}</span>}
+                      />
+                    </List.Item>
+                  )}
+                  locale={{ emptyText: '暂无通知' }}
+                />
+                {notifications.length > 0 && (
+                  <div style={{ textAlign: 'center', padding: 8, borderTop: '1px solid #f0f0f0' }}>
+                    <Button type="link" size="small" onClick={() => { setNotifVisible(false); navigate('/system/notification'); }}>查看全部</Button>
+                  </div>
+                )}
+              </div>
+            )}
+            trigger={['click']}
+            placement="bottomRight"
+          >
+            <Badge count={notifications.length > 0 ? Math.min(notifications.length, 99) : 0} size="small">
+              <Button type="text" icon={<BellOutlined />} style={{ fontSize: 18 }} />
+            </Badge>
+          </Dropdown>
           <Dropdown menu={{ items: userMenuItems, onClick: handleUserMenuClick }}>
             <Space>
               <Avatar icon={<UserOutlined />} />
