@@ -130,4 +130,14 @@ public interface ReportMapper {
      */
     List<CollectionStatisticsDTO> getCollectionStatisticsList(@Param("startDate") LocalDate startDate,
                                                                @Param("endDate") LocalDate endDate);
+
+    /**
+     * 获取应收账龄明细
+     */
+    List<AgingAnalysisDTO.AgingItem> getReceivableAgingList();
+
+    /**
+     * 获取应付账龄明细
+     */
+    List<AgingAnalysisDTO.AgingItem> getPayableAgingList();
 }

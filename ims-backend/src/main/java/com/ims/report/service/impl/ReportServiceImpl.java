@@ -150,4 +150,93 @@ public class ReportServiceImpl implements IReportService {
     public List<CollectionStatisticsDTO> getCollectionStatistics(java.time.LocalDate startDate, java.time.LocalDate endDate) {
         return reportMapper.getCollectionStatisticsList(startDate, endDate);
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public AgingAnalysisDTO getReceivableAging() {
+        AgingAnalysisDTO dto = new AgingAnalysisDTO();
+        dto.setSummaryType("RECEIVABLE");
+        List<AgingAnalysisDTO.AgingItem> items = reportMapper.getReceivableAgingList();
+        dto.setItems(items);
+        buildAgingBuckets(dto, items);
+        return dto;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public AgingAnalysisDTO getPayableAging() {
+        AgingAnalysisDTO dto = new AgingAnalysisDTO();
+        dto.setSummaryType("PAYABLE");
+        List<AgingAnalysisDTO.AgingItem> items = reportMapper.getPayableAgingList();
+        dto.setItems(items);
+        buildAgingBuckets(dto, items);
+        return dto;
+    }
+
+    private void buildAgingBuckets(AgingAnalysisDTO dto, List<AgingAnalysisDTO.AgingItem> items) {
+        if (items == null || items.isEmpty()) {
+            dto.setTotalAmount(java.math.BigDecimal.ZERO);
+            dto.setTotalPending(java.math.BigDecimal.ZERO);
+            dto.setOrderCount(0);
+            dto.setOverdueCount(0);
+            dto.setBuckets(java.util.Collections.emptyList());
+            return;
+        }
+
+        java.math.BigDecimal totalAmount = java.math.BigDecimal.ZERO;
+        java.math.BigDecimal totalPending = java.math.BigDecimal.ZERO;
+        long overdueCount = 0;
+        long[] bucketCounts = new long[4];
+        java.math.BigDecimal[] bucketAmounts = new java.math.BigDecimal[4];
+        for (int i = 0; i < 4; i++) bucketAmounts[i] = java.math.BigDecimal.ZERO;
+
+        for (AgingAnalysisDTO.AgingItem item : items) {
+            if (item.getTotalAmount() != null) totalAmount = totalAmount.add(item.getTotalAmount());
+            if (item.getPendingAmount() != null) totalPending = totalPending.add(item.getPendingAmount());
+            if (item.getOverdueDays() > 0) overdueCount++;
+
+            int bucketIdx;
+            if (item.getOverdueDays() <= 0) {
+                bucketIdx = 0; // 正常未逾期
+            } else if (item.getOverdueDays() <= 30) {
+                bucketIdx = 0;
+            } else if (item.getOverdueDays() <= 60) {
+                bucketIdx = 1;
+            } else if (item.getOverdueDays() <= 90) {
+                bucketIdx = 2;
+            } else {
+                bucketIdx = 3;
+            }
+            bucketCounts[bucketIdx]++;
+            if (item.getPendingAmount() != null) {
+                bucketAmounts[bucketIdx] = bucketAmounts[bucketIdx].add(item.getPendingAmount());
+            }
+        }
+
+        dto.setTotalAmount(totalAmount);
+        dto.setTotalPending(totalPending);
+        dto.setOrderCount(items.size());
+        dto.setOverdueCount(overdueCount);
+
+        java.util.List<AgingAnalysisDTO.AgingBucket> buckets = new java.util.ArrayList<>();
+        String[] bucketNames = {"0-30天", "31-60天", "61-90天", "90天以上"};
+        int[] minDays = {0, 31, 61, 91};
+        int[] maxDays = {30, 60, 90, Integer.MAX_VALUE};
+
+        for (int i = 0; i < 4; i++) {
+            AgingAnalysisDTO.AgingBucket bucket = new AgingAnalysisDTO.AgingBucket();
+            bucket.setBucketName(bucketNames[i]);
+            bucket.setMinDays(minDays[i]);
+            bucket.setMaxDays(maxDays[i]);
+            bucket.setCount(bucketCounts[i]);
+            bucket.setAmount(bucketAmounts[i]);
+            if (totalPending.compareTo(java.math.BigDecimal.ZERO) > 0) {
+                bucket.setPercentage(bucketAmounts[i].divide(totalPending, 4, java.math.RoundingMode.HALF_UP));
+            } else {
+                bucket.setPercentage(java.math.BigDecimal.ZERO);
+            }
+            buckets.add(bucket);
+        }
+        dto.setBuckets(buckets);
+    }
 }

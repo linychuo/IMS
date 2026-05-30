@@ -276,4 +276,22 @@ public class ReportController {
             @RequestParam(required = false) LocalDate endDate) {
         return Result.success(reportService.getCollectionStatistics(startDate, endDate));
     }
+
+    /**
+     * 应收账龄分析
+     */
+    @GetMapping("/aging/receivable")
+    @Permission(code = "read", name = "查看账龄分析")
+    public Result<AgingAnalysisDTO> getReceivableAging() {
+        return Result.success(reportService.getReceivableAging());
+    }
+
+    /**
+     * 应付账龄分析
+     */
+    @GetMapping("/aging/payable")
+    @Permission(code = "read", name = "查看账龄分析")
+    public Result<AgingAnalysisDTO> getPayableAging() {
+        return Result.success(reportService.getPayableAging());
+    }
 }

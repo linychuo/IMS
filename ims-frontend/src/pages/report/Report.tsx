@@ -522,14 +522,30 @@ const ReportPage: React.FC = () => {
   const fetchReceivableAging = async () => {
     setAgingLoading(true);
     try {
-      const res = await financeApi.get('/receivable/aging');
-      if (res.data?.code === 200) {
-        setReceivableAgingData(res.data.data || []);
+      const res = await reportApi.get('/report/aging/receivable');
+      if (res.data?.code === 200 && res.data.data?.items) {
+        // Transform items to aggregate by partner
+        const items = res.data.data.items;
+        const grouped = items.reduce((acc: any, item: any) => {
+          const key = item.orderNo;
+          if (!acc[key]) {
+            acc[key] = { customerId: item.id, customerName: item.partnerName, totalAmount: 0, amount0to30: 0, amount31to60: 0, amount61to90: 0, amountOver90: 0, overdueAmount: 0 };
+          }
+          acc[key].totalAmount += item.totalAmount || 0;
+          acc[key].overdueAmount += item.overdueDays > 0 ? (item.pendingAmount || 0) : 0;
+          if (item.overdueDays <= 30) acc[key].amount0to30 += item.pendingAmount || 0;
+          else if (item.overdueDays <= 60) acc[key].amount31to60 += item.pendingAmount || 0;
+          else if (item.overdueDays <= 90) acc[key].amount61to90 += item.pendingAmount || 0;
+          else acc[key].amountOver90 += item.pendingAmount || 0;
+          return acc;
+        }, {});
+        setReceivableAgingData(Object.values(grouped));
       } else {
-        setReceivableAgingData(res.data || []);
+        setReceivableAgingData([]);
       }
     } catch (error) {
       console.error('Failed to fetch receivable aging:', error);
+      setReceivableAgingData([]);
     } finally {
       setAgingLoading(false);
     }
@@ -537,14 +553,29 @@ const ReportPage: React.FC = () => {
 
   const fetchPayableAging = async () => {
     try {
-      const res = await financeApi.get('/payable/aging');
-      if (res.data?.code === 200) {
-        setPayableAgingData(res.data.data || []);
+      const res = await reportApi.get('/report/aging/payable');
+      if (res.data?.code === 200 && res.data.data?.items) {
+        const items = res.data.data.items;
+        const grouped = items.reduce((acc: any, item: any) => {
+          const key = item.orderNo;
+          if (!acc[key]) {
+            acc[key] = { supplierId: item.id, supplierName: item.partnerName, totalAmount: 0, amount0to30: 0, amount31to60: 0, amount61to90: 0, amountOver90: 0, overdueAmount: 0 };
+          }
+          acc[key].totalAmount += item.totalAmount || 0;
+          acc[key].overdueAmount += item.overdueDays > 0 ? (item.pendingAmount || 0) : 0;
+          if (item.overdueDays <= 30) acc[key].amount0to30 += item.pendingAmount || 0;
+          else if (item.overdueDays <= 60) acc[key].amount31to60 += item.pendingAmount || 0;
+          else if (item.overdueDays <= 90) acc[key].amount61to90 += item.pendingAmount || 0;
+          else acc[key].amountOver90 += item.pendingAmount || 0;
+          return acc;
+        }, {});
+        setPayableAgingData(Object.values(grouped));
       } else {
-        setPayableAgingData(res.data || []);
+        setPayableAgingData([]);
       }
     } catch (error) {
       console.error('Failed to fetch payable aging:', error);
+      setPayableAgingData([]);
     }
   };
 

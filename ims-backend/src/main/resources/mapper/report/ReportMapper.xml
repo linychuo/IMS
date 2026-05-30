@@ -409,4 +409,48 @@
         ORDER BY rd.reportDate DESC
     </select>
 
+    <!-- 获取应收账龄明细 -->
+    <select id="getReceivableAgingList" resultType="com.ims.report.dto.AgingAnalysisDTO$AgingItem">
+        SELECT
+            r.id,
+            r.receivable_no as orderNo,
+            r.customer_name as partnerName,
+            r.total_amount as totalAmount,
+            r.pending_amount as pendingAmount,
+            r.due_date as dueDate,
+            COALESCE(r.overdue_days, 0) as overdueDays,
+            r.status,
+            CASE r.status
+                WHEN 1 THEN '未结清'
+                WHEN 2 THEN '部分收款'
+                WHEN 3 THEN '已结清'
+                ELSE '未知'
+            END as statusName
+        FROM receivable r
+        WHERE r.deleted = 0 AND r.status != 3
+        ORDER BY r.overdue_days DESC NULLS LAST, r.due_date ASC
+    </select>
+
+    <!-- 获取应付账龄明细 -->
+    <select id="getPayableAgingList" resultType="com.ims.report.dto.AgingAnalysisDTO$AgingItem">
+        SELECT
+            p.id,
+            p.payable_no as orderNo,
+            p.supplier_name as partnerName,
+            p.total_amount as totalAmount,
+            p.pending_amount as pendingAmount,
+            p.due_date as dueDate,
+            COALESCE(p.overdue_days, 0) as overdueDays,
+            p.status,
+            CASE p.status
+                WHEN 1 THEN '未结清'
+                WHEN 2 THEN '部分付款'
+                WHEN 3 THEN '已结清'
+                ELSE '未知'
+            END as statusName
+        FROM payable p
+        WHERE p.deleted = 0 AND p.status != 3
+        ORDER BY p.overdue_days DESC NULLS LAST, p.due_date ASC
+    </select>
+
 </mapper>

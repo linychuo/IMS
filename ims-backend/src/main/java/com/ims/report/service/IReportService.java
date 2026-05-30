@@ -102,4 +102,14 @@ public interface IReportService {
      * 获取回款统计
      */
     java.util.List<CollectionStatisticsDTO> getCollectionStatistics(java.time.LocalDate startDate, java.time.LocalDate endDate);
+
+    /**
+     * 获取应收账龄分析
+     */
+    AgingAnalysisDTO getReceivableAging();
+
+    /**
+     * 获取应付账龄分析
+     */
+    AgingAnalysisDTO getPayableAging();
 }
