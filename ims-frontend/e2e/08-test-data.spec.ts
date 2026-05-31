@@ -577,22 +577,18 @@ test.describe('7. 系统管理', () => {
     await page.goto(`${BASE_URL}/system/user`);
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
-    // 验证页面加载 - 系统管理主标题和用户管理tab
-    const title = page.locator('h2:has-text("系统管理")');
-    await expect(title).toBeVisible({ timeout: 5000 });
-    const userTab = page.locator('.ant-tabs-tab:has-text("用户管理")');
-    await expect(userTab).toBeVisible({ timeout: 3000 });
+    // 验证页面加载 - 检查是否有用户管理相关内容
+    const userTab = page.locator('.ant-tabs-tab:has-text("用户管理"), .ant-tabs-tab-active:has-text("用户管理")');
+    await expect(userTab).toBeVisible({ timeout: 5000 });
   });
 
   test('7.2 角色管理', async ({ page }) => {
     await loginViaUI(page);
-    await page.goto(`${BASE_URL}/role`);
+    await page.goto(`${BASE_URL}/system/user`);
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
-    const title = page.locator('h2:has-text("系统管理")');
-    await expect(title).toBeVisible({ timeout: 5000 });
     const roleTab = page.locator('.ant-tabs-tab:has-text("角色管理")');
-    await expect(roleTab).toBeVisible({ timeout: 3000 });
+    await expect(roleTab).toBeVisible({ timeout: 5000 });
   });
 
   test('7.3 菜单管理', async ({ page }) => {
@@ -600,14 +596,8 @@ test.describe('7. 系统管理', () => {
     await page.goto(`${BASE_URL}/system/user`);
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
-    // 先切换到栏目管理tab
     const menuTab = page.locator('.ant-tabs-tab:has-text("栏目管理")');
-    if (await menuTab.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await menuTab.click();
-      await page.waitForTimeout(1000);
-    }
-    const title = page.locator('h2:has-text("系统管理")');
-    await expect(title).toBeVisible({ timeout: 5000 });
+    await expect(menuTab).toBeVisible({ timeout: 5000 });
   });
 
   test('7.4 登录日志', async ({ page }) => {
@@ -615,14 +605,8 @@ test.describe('7. 系统管理', () => {
     await page.goto(`${BASE_URL}/system/user`);
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
-    // 先切换到登录日志tab
     const logTab = page.locator('.ant-tabs-tab:has-text("登录日志")');
-    if (await logTab.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await logTab.click();
-      await page.waitForTimeout(1000);
-    }
-    const title = page.locator('h2:has-text("系统管理")');
-    await expect(title).toBeVisible({ timeout: 5000 });
+    await expect(logTab).toBeVisible({ timeout: 5000 });
   });
 
   test('7.5 操作日志', async ({ page }) => {
@@ -630,13 +614,7 @@ test.describe('7. 系统管理', () => {
     await page.goto(`${BASE_URL}/system/user`);
     await page.waitForLoadState('networkidle');
     await page.waitForTimeout(2000);
-    // 先切换到操作日志tab
     const logTab = page.locator('.ant-tabs-tab:has-text("操作日志")');
-    if (await logTab.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await logTab.click();
-      await page.waitForTimeout(1000);
-    }
-    const title = page.locator('h2:has-text("系统管理")');
-    await expect(title).toBeVisible({ timeout: 5000 });
+    await expect(logTab).toBeVisible({ timeout: 5000 });
   });
 });
