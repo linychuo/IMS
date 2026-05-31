@@ -14,12 +14,13 @@ import org.springframework.stereotype.Component;
 
 import java.sql.Connection;
 import java.util.Properties;
+import java.util.Set;
 
 /**
  * 数据权限 MyBatis 拦截器
- * 自动为所有 SELECT 查询添加数据权限过滤条件
+ * 自动为包含warehouse_id字段的表添加数据权限过滤条件
  */
-//@Component  // 暂时禁用数据权限拦截器，因为它会对没有warehouse_id字段的表也添加过滤条件，导致查询为空
+@Component
 @Intercepts({
     @Signature(type = StatementHandler.class, method = "prepare", args = {Connection.class, Integer.class})
 })
@@ -34,7 +35,21 @@ public class DataPermissionInterceptor implements Interceptor {
         this.dataPermissionService = dataPermissionService;
     }
 
-    private static final String WAREHOUSE_FILTER_SQL = " AND warehouse_id IN (%s) ";
+    // 真正需要数据权限过滤的表（这些表有warehouse_id字段）
+    private static final Set<String> TABLES_WITH_WAREHOUSE = Set.of(
+        "inventory",
+        "inventory_in",
+        "inventory_out",
+        "inventory_transfer",
+        "inventory_check",
+        "inventory_record",
+        "quality_check",
+        "sales_out",
+        "sales_return",
+        "purchase_in",
+        "purchase_return",
+        "sys_user_warehouse"
+    );
 
     @Override
     public Object intercept(Invocation invocation) throws Throwable {
@@ -52,7 +67,8 @@ public class DataPermissionInterceptor implements Interceptor {
         BoundSql boundSql = statementHandler.getBoundSql();
         String originalSql = boundSql.getSql();
 
-        if (!requiresDataPermission(ms.getId())) {
+        // 检查SQL是否查询包含warehouse_id的表
+        if (!requiresWarehouseFilter(originalSql)) {
             return invocation.proceed();
         }
 
@@ -73,7 +89,7 @@ public class DataPermissionInterceptor implements Interceptor {
         }
 
         String warehouseIds = filterCondition.replace("warehouse_id IN (", "").replace(")", "");
-        String filteredSql = addWhereCondition(originalSql, String.format(WAREHOUSE_FILTER_SQL, warehouseIds));
+        String filteredSql = addWhereCondition(originalSql, " AND warehouse_id IN (" + warehouseIds + ")");
 
         metaObject.setValue("delegate.boundSql.sql", filteredSql);
 
@@ -116,11 +132,21 @@ public class DataPermissionInterceptor implements Interceptor {
         return null;
     }
 
-    private boolean requiresDataPermission(String mapperId) {
-        return mapperId.contains("inventory.") ||
-               mapperId.contains("sales.") ||
-               mapperId.contains("purchase.") ||
-               mapperId.contains("warehouse.");
+    /**
+     * 检查SQL是否查询包含warehouse_id字段的表
+     */
+    private boolean requiresWarehouseFilter(String sql) {
+        String upperSql = sql.toUpperCase();
+        for (String table : TABLES_WITH_WAREHOUSE) {
+            // 检查FROM子句中是否有这个表（简单匹配，实际生产可能需要更精确的解析）
+            if (upperSql.contains("FROM " + table.toUpperCase()) ||
+                upperSql.contains("JOIN " + table.toUpperCase()) ||
+                upperSql.contains("LEFT JOIN " + table.toUpperCase()) ||
+                upperSql.contains("RIGHT JOIN " + table.toUpperCase())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private String addWhereCondition(String sql, String condition) {
