@@ -19,7 +19,7 @@ import java.util.Properties;
  * 数据权限 MyBatis 拦截器
  * 自动为所有 SELECT 查询添加数据权限过滤条件
  */
-@Component
+//@Component  // 暂时禁用数据权限拦截器，因为它会对没有warehouse_id字段的表也添加过滤条件，导致查询为空
 @Intercepts({
     @Signature(type = StatementHandler.class, method = "prepare", args = {Connection.class, Integer.class})
 })
@@ -53,6 +53,12 @@ public class DataPermissionInterceptor implements Interceptor {
         String originalSql = boundSql.getSql();
 
         if (!requiresDataPermission(ms.getId())) {
+            return invocation.proceed();
+        }
+
+        // 检查SQL是否已经包含warehouse_id过滤，避免重复添加
+        String upperSql = originalSql.toUpperCase();
+        if (upperSql.contains("WAREHOUSE_ID")) {
             return invocation.proceed();
         }
 

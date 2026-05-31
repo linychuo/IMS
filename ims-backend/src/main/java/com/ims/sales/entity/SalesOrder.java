@@ -41,7 +41,7 @@ public class SalesOrder extends BaseEntity {
     /**
      * 状态: 0-待审核/1-已审核/2-部分出库/3-已完成/9-已取消
      */
-    private Integer status = 0;
+    private Integer status;
 
     /**
      * 订单总金额
